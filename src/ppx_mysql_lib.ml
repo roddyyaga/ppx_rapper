@@ -7,6 +7,14 @@ type param =
     to_string: string;
     }
 
+type parse_error =
+    [ `Bad_param
+    | `Escape_at_end
+    | `Unknown_mysql_type of string
+    | `Unterminated_string
+    ]
+
+(* FIXME: 'stringly'-typed... *)
 let ocaml_of_mysql = function
     | "INT"  -> Ok ("int64", "Int64.of_string", "Int64.to_string")
     | "TEXT" -> Ok ("string", "Ppx_mysql_lib.identity", "Ppx_mysql_lib.identity")
@@ -17,6 +25,10 @@ let identity x = x
 let map_option f = function
     | Some x -> Some (f x)
     | None   -> None
+
+let get_option = function
+    | Some x -> x
+    | None   -> assert false (* FIXME *)
 
 let parse_query =
     let param_re = Re.(seq [
