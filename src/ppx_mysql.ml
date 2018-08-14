@@ -1,7 +1,7 @@
 open Ppxlib
 open Ppx_mysql_lib
 
-module Astdef = Ast_builder.Default
+module Buildef = Ast_builder.Default
 
 type sql_variant =
     | Select_one
@@ -22,7 +22,7 @@ let rec build_fun_chain ~loc expr = function
     | [] ->
         expr
     | {typ; opt; name; _} :: tl ->
-        let open Astdef in
+        let open Buildef in
         let tl' = build_fun_chain ~loc expr tl in
         let var = ppat_var ~loc (Loc.make ~loc name) in
         let basetyp = ptyp_constr ~loc (Loc.make ~loc (Lident typ)) [] in
@@ -34,26 +34,28 @@ let rec build_fun_chain ~loc expr = function
         pexp_fun ~loc (Labelled name) None pat tl'
 
 let build_in_param ~loc param =
-    let f = Astdef.pexp_ident ~loc (Loc.make ~loc (Lident param.to_string)) in
-    let arg = Astdef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
+    let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.to_string)) in
+    let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
     if param.opt
     then [%expr (Ppx_mysql_lib.map_option [%e f]) [%e arg]]
     else [%expr Some ([%e f] [%e arg])]
 
 let build_out_param_processor ~loc out_params =
-    let make_tuple_elem i param =
-        let f = Astdef.pexp_ident ~loc (Loc.make ~loc (Lident param.of_string)) in
-        let arg = [%expr row.([%e Astdef.eint ~loc i])] in
+    let make_elem i param =
+        let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.of_string)) in
+        let arg = [%expr row.([%e Buildef.eint ~loc i])] in
         let appl = [%expr (Ppx_mysql_lib.map_option [%e f]) [%e arg]] in
         if param.opt
         then appl
         else [%expr (Ppx_mysql_lib.get_option [%e appl])] in
+    let ret_expr = match out_params with
+        | []     -> [%expr ()]
+        | [x]    -> make_elem 0 x
+        | _ :: _ -> Buildef.pexp_tuple ~loc (List.mapi make_elem out_params) in
     [%expr fun row ->
-        if Array.length row = [%e Astdef.eint ~loc (List.length out_params)]
-        then
-            [%e Astdef.pexp_tuple ~loc (List.mapi make_tuple_elem out_params)]
-        else
-            assert false (* FIXME *)
+        if Array.length row = [%e Buildef.eint ~loc (List.length out_params)]
+        then [%e ret_expr]
+        else assert false (* FIXME *)
         ]
 
 let expand ~loc ~path:_ (sql_variant: string) (query: string) =
@@ -63,14 +65,14 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
         | "Select_all" -> "select_all"
         | "Execute"    -> "execute"
         | _            -> assert false in (* FIX ME *)
-    let fq_postproc = Astdef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_lib." ^ postproc))) in
+    let fq_postproc = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_lib." ^ postproc))) in
     match Ppx_mysql_lib.parse_query query with
         | Ok {query; in_params; out_params} ->
             let expr =
                 [%expr
                 let open Ppx_mysql_aux.IO in
-                let query = [%e Astdef.estring ~loc query] in
-                let params = [%e Astdef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params) ] in
+                let query = [%e Buildef.estring ~loc query] in
+                let params = [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params) ] in
                 let process_out_params = [%e build_out_param_processor ~loc out_params] in
                 Ppx_mysql_aux.Prepared.with' dbh query @@ fun stmt ->
                     Ppx_mysql_aux.Prepared.execute stmt params >>= fun stmt_result ->
