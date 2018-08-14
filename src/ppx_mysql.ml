@@ -38,7 +38,7 @@ let build_in_param ~loc param =
     let arg = Astdef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
     if param.opt
     then [%expr (Ppx_mysql_lib.map_option [%e f]) [%e arg]]
-    else [%expr [%e f] [%e arg]]
+    else [%expr Some ([%e f] [%e arg])]
 
 let build_out_param_processor ~loc out_params =
     let make_tuple_elem i param =
@@ -48,7 +48,7 @@ let build_out_param_processor ~loc out_params =
         if param.opt
         then appl
         else [%expr (Ppx_mysql_lib.get_option [%e appl])] in
-    [%expr fun f row ->
+    [%expr fun row ->
         if Array.length row = [%e Astdef.eint ~loc (List.length out_params)]
         then
             [%e Astdef.pexp_tuple ~loc (List.mapi make_tuple_elem out_params)]
@@ -57,19 +57,25 @@ let build_out_param_processor ~loc out_params =
         ]
 
 let expand ~loc ~path:_ (sql_variant: string) (query: string) =
-    let sql_variant = sql_variant_of_string sql_variant in
+    let postproc = match sql_variant with
+        | "Select_one" -> "select_one"
+        | "Select_opt" -> "select_opt"
+        | "Select_all" -> "select_all"
+        | "Execute"    -> "execute"
+        | _            -> assert false in (* FIX ME *)
+    let fq_postproc = Astdef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_lib." ^ postproc))) in
     match Ppx_mysql_lib.parse_query query with
-        | Ok (query, in_params, out_params) ->
+        | Ok {query; in_params; out_params} ->
             let expr =
                 [%expr
-                let open IO in
+                let open Ppx_mysql_aux.IO in
                 let query = [%e Astdef.estring ~loc query] in
                 let params = [%e Astdef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params) ] in
                 let process_out_params = [%e build_out_param_processor ~loc out_params] in
-                Ppx_mysql_lib.Prepared.with' dbh query @@ fun stmt ->
-                    Ppx_mysql_lib.Prepared.execute stmt params >>= fun stmt_result ->
-                    Ppx_mysql_lib.Prepared.map f stmt_result >>= fun fetch_result ->
-                    fetch_result
+                Ppx_mysql_aux.Prepared.with' dbh query @@ fun stmt ->
+                    Ppx_mysql_aux.Prepared.execute stmt params >>= fun stmt_result ->
+                    Ppx_mysql_aux.Prepared.map process_out_params stmt_result >>= fun xs ->
+                    IO.return ([%e fq_postproc] xs)
                 ] in
             build_fun_chain ~loc expr in_params
         | Error _ ->

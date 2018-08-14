@@ -1,3 +1,7 @@
+(********************************************************************************)
+(** {1 Type definitions}                                                        *)
+(********************************************************************************)
+
 type param =
     {
     typ: string;
@@ -7,6 +11,13 @@ type param =
     to_string: string;
     }
 
+type parsed_query =
+    {
+    query: string;
+    in_params: param list;
+    out_params: param list;
+    }
+
 type parse_error =
     [ `Bad_param
     | `Escape_at_end
@@ -14,11 +25,21 @@ type parse_error =
     | `Unterminated_string
     ]
 
+
+(********************************************************************************)
+(** {1 Private functions and values}                                            *)
+(********************************************************************************)
+
 (* FIXME: 'stringly'-typed... *)
 let ocaml_of_mysql = function
     | "INT"  -> Ok ("int64", "Int64.of_string", "Int64.to_string")
     | "TEXT" -> Ok ("string", "Ppx_mysql_lib.identity", "Ppx_mysql_lib.identity")
     | _      -> Error ()
+
+
+(********************************************************************************)
+(** {1 Public functions and values}                                             *)
+(********************************************************************************)
 
 let identity x = x
 
@@ -44,7 +65,7 @@ let parse_query =
         let rec main_loop i string_delim acc_in acc_out =
             if i >= len
             then match string_delim with
-                | None   -> Ok (Buffer.contents buf, List.rev acc_in, List.rev acc_out)
+                | None   -> Ok {query = Buffer.contents buf; in_params = List.rev acc_in; out_params = List.rev acc_out}
                 | Some _ -> Error `Unterminated_string
             else
                 let this = query.[i] in
@@ -101,41 +122,19 @@ let parse_query =
                     end
         in main_loop 0 None [] []
 
-(*
-let perform ?(min = 0) ?max dbh expr =
-    Mysql.Prepared.execute_null expr.statement expr.params >>= fun stmt_result ->
-    let rec loop acc acc_len =
-        MySql.Prepared.fetch stmt_result >>= function
-            | Some arr when acc_len < max ->
-                begin match expr.parse_result arr with
-                    | Some parsed -> loop (parsed :: acc) (acc_len + 1)
-                    | None -> return (Error `Unexpected_output)
-                end
-            | Some arr ->
-                return (Error `Too_many_results)
-            | None when acc_len >= min ->
-                return (Ok acc)
-            | None ->
-                return (Error `Too_few_results)
-    in loop [] 0
+let select_one = function
+    | [x] -> Ok x
+    | []  -> Error `Found_none_expected_one
+    | _   -> Error `Found_many_expected_one
 
-let select_one dbh expr =
-    perform ~min:1 ~max:1 dbh expr >>>| function
-        | [x] -> x
-        | _   -> assert false
+let select_opt = function
+    | [x] -> Ok (Some x)
+    | []  -> Ok None
+    | _   -> Error `Found_many_expected_maybe_one
 
-let select_opt dbh expr =
-    perform ~max:1 dbh expr >>>| function
-        | [x] -> Some x
-        | []  -> None
-        | _   -> assert false
+let select_all xs =
+    Ok xs
 
-let select_all dbh expr =
-    perform dbh expr
-
-let execute dbh expr =
-    perform ~max:0 dbh expr >>>| function
-        | [] -> ()
-        | _  -> assert false
-*)
-
+let execute = function
+    | [] -> Ok ()
+    | _  -> Error `Found_nonzero_expected_zero
