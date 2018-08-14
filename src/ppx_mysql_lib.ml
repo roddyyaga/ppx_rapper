@@ -19,7 +19,7 @@ type parsed_query =
     }
 
 type parse_error =
-    [ `Bad_param
+    [ `Bad_param of int
     | `Escape_at_end
     | `Unknown_mysql_type of string
     | `Unterminated_string
@@ -102,7 +102,7 @@ let parse_query =
         and parse_param i param_typ acc_in acc_out =
             match Re.exec_opt ~pos:i param_re query with
                 | None ->
-                    Error `Bad_param
+                    Error (`Bad_param i)
                 | Some groups ->
                     begin match Re.Group.all groups with
                         | [| all; typ; opt; name |] ->
@@ -122,6 +122,12 @@ let parse_query =
                     end
         in main_loop 0 None [] []
 
+let explain_parse_error = function
+    | `Bad_param pos          -> Printf.sprintf "Syntax error on parameter specification starting at position %d" pos
+    | `Escape_at_end          -> "The last character of the query cannot be an escape character"
+    | `Unknown_mysql_type typ -> Printf.sprintf "Unknown MySQL type '%s'" typ
+    | `Unterminated_string    -> "The query contains an unterminated string"
+    
 let select_one = function
     | [x] -> Ok x
     | []  -> Error `Found_none_expected_one

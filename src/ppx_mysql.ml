@@ -68,7 +68,7 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
         | "Select_opt" -> "select_opt"
         | "Select_all" -> "select_all"
         | "Execute"    -> "execute"
-        | _            -> assert false in (* FIX ME *)
+        | _            -> assert false in (* FIXME *)
     let fq_postproc = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_lib." ^ postproc))) in
     match Ppx_mysql_lib.parse_query query with
         | Ok {query; in_params; out_params} ->
@@ -84,8 +84,9 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                     Ppx_mysql_aux.IO.return ([%e fq_postproc] xs)
                 ] in
             build_fun_chain ~loc expr Used_set.empty in_params
-        | Error _ ->
-            raise (Location.Error (Location.Error.createf ~loc "Error in mysql extension"))
+        | Error err ->
+            let msg = Ppx_mysql_lib.explain_parse_error err in
+            raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
 
 let pattern =
     Ast_pattern.(pexp_construct (lident __) (some (estring __)))

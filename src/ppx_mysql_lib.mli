@@ -19,7 +19,7 @@ type parsed_query =
     }
 
 type parse_error =
-    [ `Bad_param
+    [ `Bad_param of int
     | `Escape_at_end
     | `Unknown_mysql_type of string
     | `Unterminated_string
@@ -37,6 +37,8 @@ val map_option: ('a -> 'b) -> 'a option -> 'b option
 val get_option: 'a option -> 'a
 
 val parse_query: string -> (parsed_query, [> parse_error ]) result
+
+val explain_parse_error: parse_error -> string
 
 val select_one: 'a list -> ('a, [> `Found_none_expected_one | `Found_many_expected_one ]) result
 
