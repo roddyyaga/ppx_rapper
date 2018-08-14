@@ -1,6 +1,7 @@
 open Ppxlib
 open Ppx_mysql_lib
 
+module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
 type sql_variant =
@@ -18,12 +19,15 @@ let sql_variant_of_string = function
 
 let name = "mysql"
 
-let rec build_fun_chain ~loc expr = function
+let rec build_fun_chain ~loc expr used_set = function
     | [] ->
         expr
+    | {name; _} :: tl when Used_set.mem name used_set ->
+        build_fun_chain ~loc expr used_set tl
     | {typ; opt; name; _} :: tl ->
         let open Buildef in
-        let tl' = build_fun_chain ~loc expr tl in
+        let used_set = Used_set.add name used_set in
+        let tl' = build_fun_chain ~loc expr used_set tl in
         let var = ppat_var ~loc (Loc.make ~loc name) in
         let basetyp = ptyp_constr ~loc (Loc.make ~loc (Lident typ)) [] in
         let fulltyp =
@@ -79,7 +83,7 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                     Ppx_mysql_aux.Prepared.map process_out_params stmt_result >>= fun xs ->
                     IO.return ([%e fq_postproc] xs)
                 ] in
-            build_fun_chain ~loc expr in_params
+            build_fun_chain ~loc expr Used_set.empty in_params
         | Error _ ->
             raise (Location.Error (Location.Error.createf ~loc "Error in mysql extension"))
 
