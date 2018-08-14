@@ -81,7 +81,7 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                 Ppx_mysql_aux.Prepared.with' dbh query @@ fun stmt ->
                     Ppx_mysql_aux.Prepared.execute stmt params >>= fun stmt_result ->
                     Ppx_mysql_aux.Prepared.map process_out_params stmt_result >>= fun xs ->
-                    IO.return ([%e fq_postproc] xs)
+                    Ppx_mysql_aux.IO.return ([%e fq_postproc] xs)
                 ] in
             build_fun_chain ~loc expr Used_set.empty in_params
         | Error _ ->
