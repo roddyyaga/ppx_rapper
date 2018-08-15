@@ -190,7 +190,9 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                     Ppx_mysql_aux.Prepared.map process_out_params stmt_result >>= fun xs ->
                     Ppx_mysql_aux.IO.return ([%e fq_postproc] xs)
                 ] in
-            build_fun_chain ~loc expr Used_set.empty in_params
+            let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
+            let chain = build_fun_chain ~loc expr Used_set.empty in_params in
+            Buildef.pexp_fun ~loc Nolabel None dbh_pat chain
         | Error err ->
             let msg = explain_parse_error err in
             raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
