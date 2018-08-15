@@ -204,9 +204,30 @@ let parsed_query_quoted3 =
         ];
     }
 
+let query_bad0 = "SELECT @INT{}"
+let error_bad0 = `Bad_param "@INT{}"
+
+let query_bad1 = "SELECT %INT{}"
+let error_bad1 = `Bad_param "%INT{}"
+
+let query_bad2 = "SELECT true\\"
+let error_bad2 = `Escape_at_end
+
+let query_bad3 = "SELECT @FOO{id} FROM users"
+let error_bad3 = `Unknown_mysql_type "FOO"
+
+let query_bad4 = "SELECT id, name FROM users WHERE id = %FOO{id}"
+let error_bad4 = `Unknown_mysql_type "FOO"
+
+let query_bad5 = "SELECT 'hello"
+let error_bad5 = `Unterminated_string
+
+let query_bad6 = "SELECT \"hello"
+let error_bad6 = `Unterminated_string
+
 let test_parse_query () =
-    let run desc query parsed_query =
-        Alcotest.(check (result parsed_query_mod parse_error_mod) desc parsed_query (Ppx_mysql.parse_query query)) in
+    let run desc query expected =
+        Alcotest.(check (result parsed_query_mod parse_error_mod) desc expected (Ppx_mysql.parse_query query)) in
     run "query_0" query_0 (Ok parsed_query_0);
     run "query_out1" query_out1 (Ok parsed_query_out1);
     run "query_out2" query_out2 (Ok parsed_query_out2);
@@ -218,7 +239,14 @@ let test_parse_query () =
     run "query_quoted0" query_quoted0 (Ok parsed_query_quoted0);
     run "query_quoted1" query_quoted1 (Ok parsed_query_quoted1);
     run "query_quoted2" query_quoted2 (Ok parsed_query_quoted2);
-    run "query_quoted3" query_quoted3 (Ok parsed_query_quoted3)
+    run "query_quoted3" query_quoted3 (Ok parsed_query_quoted3);
+    run "query_bad0" query_bad0 (Error error_bad0);
+    run "query_bad1" query_bad1 (Error error_bad1);
+    run "query_bad2" query_bad2 (Error error_bad2);
+    run "query_bad3" query_bad3 (Error error_bad3);
+    run "query_bad4" query_bad4 (Error error_bad4);
+    run "query_bad5" query_bad5 (Error error_bad5);
+    run "query_bad6" query_bad6 (Error error_bad6)
 
 let testset =
     [
