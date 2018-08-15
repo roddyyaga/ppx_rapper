@@ -24,7 +24,7 @@ type parsed_query = Ppx_mysql.parsed_query =
     } [@@deriving eq, show]
 
 type parse_error =
-    [ `Bad_param of int
+    [ `Bad_param of string
     | `Escape_at_end
     | `Unknown_mysql_type of string
     | `Unterminated_string
