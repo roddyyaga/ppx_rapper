@@ -144,6 +144,66 @@ let parsed_query_inout =
         ];
     }
 
+let query_quoted0 = "SELECT @INT{id}, @TEXT{name} FROM users WHERE id = %INT{id} OR NAME = 'Hello @INT{name} world'"
+let parsed_query_quoted0 =
+    {
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello @INT{name} world'";
+    in_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        ];
+    out_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        ];
+    }
+
+let query_quoted1 = "SELECT @INT{id}, @TEXT{name} FROM users WHERE id = %INT{id} OR NAME = \"Hello @INT{name} world\""
+let parsed_query_quoted1 =
+    {
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello @INT{name} world\"";
+    in_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        ];
+    out_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        ];
+    }
+
+let query_quoted2 = "SELECT @INT{id}, @TEXT{name} FROM users WHERE id = %INT{id} OR NAME = 'Hello ''@INT{name}'' world'"
+let parsed_query_quoted2 =
+    {
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello ''@INT{name}'' world'";
+    in_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        ];
+    out_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        ];
+    }
+
+let query_quoted3 = "SELECT @INT{id}, @TEXT{name} FROM users WHERE id = %INT{id} OR NAME = \"Hello '@INT{name}' world\""
+let parsed_query_quoted3 =
+    {
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello '@INT{name}' world\"";
+    in_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        ];
+    out_params =
+        [
+        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        ];
+    }
+
 let test_parse_query () =
     let run desc query parsed_query =
         Alcotest.(check (result parsed_query_mod parse_error_mod) desc parsed_query (Ppx_mysql.parse_query query)) in
@@ -154,7 +214,11 @@ let test_parse_query () =
     run "query_in1" query_in1 (Ok parsed_query_in1);
     run "query_in2" query_in2 (Ok parsed_query_in2);
     run "query_in3" query_in3 (Ok parsed_query_in3);
-    run "query_inout" query_inout (Ok parsed_query_inout)
+    run "query_inout" query_inout (Ok parsed_query_inout);
+    run "query_quoted0" query_quoted0 (Ok parsed_query_quoted0);
+    run "query_quoted1" query_quoted1 (Ok parsed_query_quoted1);
+    run "query_quoted2" query_quoted2 (Ok parsed_query_quoted2);
+    run "query_quoted3" query_quoted3 (Ok parsed_query_quoted3)
 
 let testset =
     [
