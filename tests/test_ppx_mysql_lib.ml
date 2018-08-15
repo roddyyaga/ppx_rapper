@@ -1,5 +1,5 @@
 (********************************************************************************)
-(*  Test_ppx_mysql_lib.ml                                                       *)
+(*  Test_ppx_mysql.ml                                                           *)
 (********************************************************************************)
 
 
@@ -7,7 +7,7 @@
 (** {1 Type definitions}                                                        *)
 (********************************************************************************)
 
-type param = Ppx_mysql_lib.param =
+type param = Ppx_mysql.param =
     {
     typ: string;
     opt: bool;
@@ -16,7 +16,7 @@ type param = Ppx_mysql_lib.param =
     to_string: string;
     } [@@deriving eq, show]
 
-type parsed_query = Ppx_mysql_lib.parsed_query =
+type parsed_query = Ppx_mysql.parsed_query =
     {
     query: string;
     in_params: param list;
@@ -24,7 +24,7 @@ type parsed_query = Ppx_mysql_lib.parsed_query =
     } [@@deriving eq, show]
 
 type parse_error =
-    [ `Bad_param
+    [ `Bad_param of int
     | `Escape_at_end
     | `Unknown_mysql_type of string
     | `Unterminated_string
@@ -73,7 +73,7 @@ let parsed_query_out2 =
     out_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
         ];
     }
 
@@ -85,8 +85,8 @@ let parsed_query_out3 =
     out_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
         ];
     }
 
@@ -108,7 +108,7 @@ let parsed_query_in2 =
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
         ];
     out_params = [];
     }
@@ -120,8 +120,8 @@ let parsed_query_in3 =
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
         ];
     out_params = [];
     }
@@ -133,20 +133,20 @@ let parsed_query_inout =
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
         ];
     out_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_lib.identity"; to_string = "Ppx_mysql_lib.identity"};
+        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
         ];
     }
 
 let test_parse_query () =
     let run desc query parsed_query =
-        Alcotest.(check (result parsed_query_mod parse_error_mod) desc parsed_query (Ppx_mysql_lib.parse_query query)) in
+        Alcotest.(check (result parsed_query_mod parse_error_mod) desc parsed_query (Ppx_mysql.parse_query query)) in
     run "query_0" query_0 (Ok parsed_query_0);
     run "query_out1" query_out1 (Ok parsed_query_out1);
     run "query_out2" query_out2 (Ok parsed_query_out2);
@@ -166,7 +166,7 @@ let testset =
 (** {1 Main}                                                                    *)
 (********************************************************************************)
 
-let () = Alcotest.run "Ppx_mysql_lib module"
+let () = Alcotest.run "Ppx_mysql module"
     [
-    ("Ppx_mysql_lib", testset);
+    ("Ppx_mysql", testset);
     ]

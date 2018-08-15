@@ -1,24 +1,128 @@
+(********************************************************************************)
+(* Ppx_mysql.ml                                                                 *)
+(********************************************************************************)
+
 open Ppxlib
-open Ppx_mysql_lib
 
 module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
-type sql_variant =
-    | Select_one
-    | Select_opt
-    | Select_all
-    | Execute
 
-let sql_variant_of_string = function
-    | "Select_one" -> Select_one
-    | "Select_opt" -> Select_opt
-    | "Select_all" -> Select_all
-    | "Execute"    -> Execute
-    | x            -> invalid_arg ("sql_variant_of_string: " ^ x)
+(********************************************************************************)
+(** {1 Type definitions}                                                        *)
+(********************************************************************************)
 
-let name = "mysql"
+type param =
+    {
+    typ: string;
+    opt: bool;
+    name: string;
+    of_string: string;
+    to_string: string;
+    }
 
+type parsed_query =
+    {
+    query: string;
+    in_params: param list;
+    out_params: param list;
+    }
+
+type parse_error =
+    [ `Bad_param of int
+    | `Escape_at_end
+    | `Unknown_mysql_type of string
+    | `Unterminated_string
+    ]
+
+
+(********************************************************************************)
+(** {1 Functions and values}                                                    *)
+(********************************************************************************)
+
+(* FIXME: 'stringly'-typed... *)
+let ocaml_of_mysql = function
+    | "INT"  -> Ok ("int64", "Int64.of_string", "Int64.to_string")
+    | "TEXT" -> Ok ("string", "Ppx_mysql_runtime.identity", "Ppx_mysql_runtime.identity")
+    | _      -> Error ()
+
+let parse_query =
+    let param_re = Re.(seq [
+        group (rep1 (compl [char '{'; char '?']));
+        group (opt (char '?'));
+        char '{';
+        group (rep1 (compl [char '}']));
+        char '}';
+        ]) |> Re.compile in
+    fun query ->
+        let len = String.length query in
+        let buf = Buffer.create len in
+        let rec main_loop i string_delim acc_in acc_out =
+            if i >= len
+            then match string_delim with
+                | None   -> Ok {query = Buffer.contents buf; in_params = List.rev acc_in; out_params = List.rev acc_out}
+                | Some _ -> Error `Unterminated_string
+            else
+                let this = query.[i] in
+                match string_delim with
+                    | _ when this = '\\' ->
+                        Buffer.add_char buf this;
+                        if i + 1 >= len
+                        then
+                            Error `Escape_at_end
+                        else begin
+                            Buffer.add_char buf query.[i + 1];
+                            main_loop (i + 2) string_delim acc_in acc_out
+                        end
+                    | None when this = '\'' || this = '"' ->
+                        Buffer.add_char buf this;
+                        main_loop (i + 1) (Some this) acc_in acc_out
+                    | None when this = '%' ->
+                        parse_param (i + 1) `In_param acc_in acc_out
+                    | None when this = '@' ->
+                        parse_param (i + 1) `Out_param acc_in acc_out
+                    | Some delim when this = delim ->
+                        Buffer.add_char buf this;
+                        if i + 1 < len && query.[i + 1] = delim
+                        then begin
+                            Buffer.add_char buf this;
+                            main_loop (i + 2) string_delim acc_in acc_out
+                        end
+                        else begin
+                            main_loop (i + 1) None acc_in acc_out
+                        end
+                    | _ ->
+                        Buffer.add_char buf this;
+                        main_loop (i + 1) string_delim acc_in acc_out
+        and parse_param i param_typ acc_in acc_out =
+            match Re.exec_opt ~pos:i param_re query with
+                | None ->
+                    Error (`Bad_param i)
+                | Some groups ->
+                    begin match Re.Group.all groups with
+                        | [| all; typ; opt; name |] ->
+                            begin match ocaml_of_mysql typ with
+                                | Ok (typ, of_string, to_string) ->
+                                    let param = {typ; opt = opt = "?"; name; of_string; to_string} in
+                                    let (replacement, acc_in, acc_out) = match param_typ with
+                                        | `In_param  -> ("?", param :: acc_in, acc_out)
+                                        | `Out_param -> (name, acc_in, param :: acc_out) in
+                                    Buffer.add_string buf replacement;
+                                    main_loop (i + String.length all) None acc_in acc_out
+                                | Error () ->
+                                    Error (`Unknown_mysql_type typ)
+                            end
+                        | _ ->
+                            assert false (* This should never happen. *)
+                    end
+        in main_loop 0 None [] []
+
+let explain_parse_error = function
+    | `Bad_param pos          -> Printf.sprintf "Syntax error on parameter specification starting at position %d" pos
+    | `Escape_at_end          -> "The last character of the query cannot be an escape character"
+    | `Unknown_mysql_type typ -> Printf.sprintf "Unknown MySQL type '%s'" typ
+    | `Unterminated_string    -> "The query contains an unterminated string"
+    
 let rec build_fun_chain ~loc expr used_set = function
     | [] ->
         expr
@@ -41,17 +145,17 @@ let build_in_param ~loc param =
     let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.to_string)) in
     let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
     if param.opt
-    then [%expr (Ppx_mysql_lib.map_option [%e f]) [%e arg]]
+    then [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]]
     else [%expr Some ([%e f] [%e arg])]
 
 let build_out_param_processor ~loc out_params =
     let make_elem i param =
         let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.of_string)) in
         let arg = [%expr row.([%e Buildef.eint ~loc i])] in
-        let appl = [%expr (Ppx_mysql_lib.map_option [%e f]) [%e arg]] in
+        let appl = [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]] in
         if param.opt
         then appl
-        else [%expr (Ppx_mysql_lib.get_option [%e appl])] in
+        else [%expr (Ppx_mysql_runtime.get_option [%e appl])] in
     let ret_expr = match out_params with
         | []     -> [%expr ()]
         | [x]    -> make_elem 0 x
@@ -69,8 +173,8 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
         | "Select_all" -> "select_all"
         | "Execute"    -> "execute"
         | _            -> assert false in (* FIXME *)
-    let fq_postproc = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_lib." ^ postproc))) in
-    match Ppx_mysql_lib.parse_query query with
+    let fq_postproc = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_runtime." ^ postproc))) in
+    match parse_query query with
         | Ok {query; in_params; out_params} ->
             let expr =
                 [%expr
@@ -85,11 +189,13 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                 ] in
             build_fun_chain ~loc expr Used_set.empty in_params
         | Error err ->
-            let msg = Ppx_mysql_lib.explain_parse_error err in
+            let msg = explain_parse_error err in
             raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
 
 let pattern =
     Ast_pattern.(pexp_construct (lident __) (some (estring __)))
+
+let name = "mysql"
 
 let ext = Extension.declare
     name

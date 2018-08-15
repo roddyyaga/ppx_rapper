@@ -1,29 +1,6 @@
 (********************************************************************************)
-(** {1 Type definitions}                                                        *)
+(* Ppx_mysql_runtime.mli                                                        *)
 (********************************************************************************)
-
-type param =
-    {
-    typ : string;
-    opt : bool;
-    name : string;
-    of_string : string;
-    to_string : string;
-    }
-
-type parsed_query =
-    {
-    query: string;
-    in_params: param list;
-    out_params: param list;
-    }
-
-type parse_error =
-    [ `Bad_param of int
-    | `Escape_at_end
-    | `Unknown_mysql_type of string
-    | `Unterminated_string
-    ]
 
 
 (********************************************************************************)
@@ -35,10 +12,6 @@ val identity: 'a -> 'a
 val map_option: ('a -> 'b) -> 'a option -> 'b option
 
 val get_option: 'a option -> 'a
-
-val parse_query: string -> (parsed_query, [> parse_error ]) result
-
-val explain_parse_error: parse_error -> string
 
 val select_one: 'a list -> ('a, [> `Found_none_expected_one | `Found_many_expected_one ]) result
 
