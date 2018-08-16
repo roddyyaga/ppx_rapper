@@ -12,8 +12,8 @@ type param = Ppx_mysql.param =
     typ: string;
     opt: bool;
     name: string;
-    of_string: string;
-    to_string: string;
+    of_string: string * string;
+    to_string: string * string;
     } [@@deriving eq, show]
 
 type parsed_query = Ppx_mysql.parsed_query =
@@ -61,7 +61,7 @@ let parsed_query_out1 =
     in_params = [];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
         ];
     }
 
@@ -72,8 +72,8 @@ let parsed_query_out2 =
     in_params = [];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
@@ -84,9 +84,9 @@ let parsed_query_out3 =
     in_params = [];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
+        {typ = "string"; opt = true; name = "phone"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
@@ -96,7 +96,7 @@ let parsed_query_in1 =
     query = "INSERT INTO users (id) VALUES (?)";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
         ];
     out_params = [];
     }
@@ -107,8 +107,8 @@ let parsed_query_in2 =
     query = "INSERT INTO users (id, name) VALUES (?, ?)";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     out_params = [];
     }
@@ -119,9 +119,9 @@ let parsed_query_in3 =
     query = "INSERT INTO users (id, name, phone) VALUES (?, ?, ?)";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
+        {typ = "string"; opt = true; name = "phone"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     out_params = [];
     }
@@ -132,15 +132,15 @@ let parsed_query_inout =
     query = "SELECT id, name, phone FROM users WHERE id = ? OR name = ? OR PHONE = ?";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
+        {typ = "string"; opt = true; name = "phone"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
-        {typ = "string"; opt = true; name = "phone"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
+        {typ = "string"; opt = true; name = "phone"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
@@ -150,12 +150,12 @@ let parsed_query_quoted0 =
     query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello @INT{name} world'";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
         ];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
@@ -165,12 +165,12 @@ let parsed_query_quoted1 =
     query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello @INT{name} world\"";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
         ];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
@@ -180,12 +180,12 @@ let parsed_query_quoted2 =
     query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello ''@INT{name}'' world'";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
         ];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
@@ -195,12 +195,12 @@ let parsed_query_quoted3 =
     query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello '@INT{name}' world\"";
     in_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
         ];
     out_params =
         [
-        {typ = "int64"; opt = false; name = "id"; of_string = "Int64.of_string"; to_string = "Int64.to_string"};
-        {typ = "string"; opt = false; name = "name"; of_string = "Ppx_mysql_runtime.identity"; to_string = "Ppx_mysql_runtime.identity"};
+        {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
+        {typ = "string"; opt = false; name = "name"; of_string = ("Ppx_mysql_runtime", "identity"); to_string = ("Ppx_mysql_runtime", "identity")};
         ];
     }
 
