@@ -172,12 +172,51 @@ let build_out_param_processor ~loc out_params =
         ]
 
 let expand ~loc ~path:_ (sql_variant: string) (query: string) =
-    let (min_results, max_results, postproc) = match sql_variant with
-        | "Select_one" -> ([%expr 1], [%expr Some 1], [%expr function [x] -> x | _ -> assert false])
-        | "Select_opt" -> ([%expr 0], [%expr Some 1], [%expr function [] -> None | [x] -> Some x | _ -> assert false])
-        | "Select_all" -> ([%expr 0], [%expr None], [%expr function xs -> xs])
-        | "Execute"    -> ([%expr 0], [%expr Some 0], [%expr function [] -> () | _ -> assert false])
-        | _            -> assert false in (* FIXME *)
+    let process_rows = match sql_variant with
+        | "Select_one" ->
+            [%expr
+            fun () ->
+                let rec loop acc =
+                    Ppx_mysql_aux.Prepared.fetch stmt_result >>= fun maybe_row ->
+                    match (acc, maybe_row) with
+                        | ([], Some row)   -> loop [process_out_params row]
+                        | ([], None)       -> Ppx_mysql_aux.IO.return (Error `Expected_one_found_none)
+                        | (_ :: _, Some _) -> Ppx_mysql_aux.IO.return (Error `Expected_one_found_many)
+                        | (hd :: _, None)  -> Ppx_mysql_aux.IO.return (Ok hd)
+                in loop []
+            ]
+        | "Select_opt" ->
+            [%expr
+            fun () ->
+                let rec loop acc =
+                    Ppx_mysql_aux.Prepared.fetch stmt_result >>= fun maybe_row ->
+                    match (acc, maybe_row) with
+                        | ([], Some row)   -> loop [process_out_params row]
+                        | ([], None)       -> Ppx_mysql_aux.IO.return (Ok None)
+                        | (_ :: _, Some _) -> Ppx_mysql_aux.IO.return (Error `Expected_maybe_one_found_many)
+                        | (hd :: _, None)  -> Ppx_mysql_aux.IO.return (Ok (Some hd))
+                in loop []
+            ]
+        | "Select_all" ->
+            [%expr
+            fun () ->
+                let rec loop acc =
+                    Ppx_mysql_aux.Prepared.fetch stmt_result >>= function
+                        | Some row -> loop (process_out_params row :: acc)
+                        | None     -> Ppx_mysql_aux.IO.return (Ok (List.rev acc))
+                in loop []
+            ]
+        | "Execute" ->
+            [%expr
+            fun () ->
+                let rec loop acc =
+                    Ppx_mysql_aux.Prepared.fetch stmt_result >>= function
+                        | Some _ -> Ppx_mysql_aux.IO.return (Error `Expected_none_found_one)
+                        | None   -> Ppx_mysql_aux.IO.return (Ok ())
+                in loop []
+            ]
+        | _ ->
+            assert false in (* FIXME *)
     match parse_query query with
         | Ok {query; in_params; out_params} ->
             let expr =
@@ -186,19 +225,11 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                 let query = [%e Buildef.estring ~loc query] in
                 let params = [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params) ] in
                 let process_out_params = [%e build_out_param_processor ~loc out_params] in
-                let rec process ~min ~max count acc stmt_result = Ppx_mysql_aux.Prepared.fetch stmt_result >>= fun maybe_row ->
-                    match (maybe_row, max) with
-                        | (None, _) when count >= min -> Ppx_mysql_aux.IO.return (Ok (List.rev acc))
-                        | (None, _) -> Ppx_mysql_aux.IO.return (Error (`Expected_at_least min))
-                        | (Some row, Some max) when count >= max -> Ppx_mysql_aux.IO.return (Error (`Expected_at_most max))
-                        | (Some row, _) -> process ~min ~max (count + 1) (process_out_params row :: acc) stmt_result in
                 let stmt = Ppx_mysql_aux.Prepared.create dbh query in
                 Ppx_mysql_aux.Prepared.execute_null stmt params >>= fun stmt_result ->
-                process ~min:[%e min_results] ~max:[%e max_results] 0 [] stmt_result >>= fun rows_result ->
+                [%e process_rows] () >>= fun result ->
                 let () = Ppx_mysql_aux.Prepared.close stmt in
-                match rows_result with
-                    | Ok rows   -> Ppx_mysql_aux.IO.return (Ok ([%e postproc] rows))
-                    | Error err -> Ppx_mysql_aux.IO.return (Error err)
+                Ppx_mysql_aux.IO.return result
                 ] in
             let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
             let chain = build_fun_chain ~loc expr Used_set.empty in_params in
