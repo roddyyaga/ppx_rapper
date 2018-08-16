@@ -46,6 +46,36 @@ employee_of_tuple: employee_tuple -> employee
 tuple_of_employee: employee -> employee_tuple
 ```
 
+
+Setting up the environment
+--------------------------
+
+To minimise the amount of boilerplate, this syntax extension generates functions which expect
+the existence of two modules in the current context.  These modules must be called `IO` and
+`Prepared`, and must satisfy the following signatures, respectively:
+
+```ocaml
+module type IO =
+sig
+    type 'a t
+    val return : 'a -> 'a t
+    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+end
+
+module type PREPARED =
+sig
+    type dbh
+    type stmt
+    type stmt_result
+
+    val create : dbh ‑> string ‑> stmt
+    val execute_null : stmt ‑> string option array ‑> stmt_result
+    val fetch : stmt_result ‑> string option array option
+    val close : stmt ‑> unit
+end
+```
+
+
 Basic usage: selecting a single row
 -----------------------------------
 
@@ -74,7 +104,7 @@ neither necessary nor recommended for actual code.  Here's the same
 ```ocaml
 let get_employee dbh employee_id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         employee_id:int32 ->
         ((int32 * int32 option * string * string option), error) result IO.t =
         [%mysql Select_one
@@ -86,7 +116,7 @@ let get_employee dbh employee_id =
 
 Things to note:
 
- - Type `dbhandle` is the type of database handles.
+ - Type `Prepared.dbh` is the type of database handles.
 
  - We denote input parameters using the syntax `%TYPE{name}`, where
    `TYPE` is the MySQL type, and `name` is the OCaml named parameter
@@ -123,7 +153,7 @@ errors may still occur).
 ```ocaml
 let get_supervisor dbh employee_id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         employee_id:int32 ->
         ((int32 * int32 option * string * string option) option, error) result IO.t =
         [%mysql Select_opt
@@ -141,7 +171,7 @@ may occur).
 ```ocaml
 let get_underlings dbh supervisor_id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         supervisor_id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
@@ -165,7 +195,7 @@ usually need to worry about the order).
 ```ocaml
 let insert_employee {id; supervisor_id; name; phone} =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         id:int32 ->
         supervisor_id:int32 option ->
         name:string ->
@@ -186,7 +216,7 @@ extension will take only the database handle as parameter:
 ```ocaml
 let get_unsupervised dbh =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
         "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
@@ -201,7 +231,7 @@ SQL statement, the generated function will take it only once:
 ```ocaml
 let is_related dbh id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
