@@ -17,8 +17,8 @@ type param =
     typ: string;
     opt: bool;
     name: string;
-    of_string: string;
-    to_string: string;
+    of_string: string * string;
+    to_string: string * string;
     }
 
 type parsed_query =
@@ -42,8 +42,8 @@ type parse_error =
 
 (* FIXME: 'stringly'-typed... *)
 let ocaml_of_mysql = function
-    | "INT"  -> Ok ("int64", "Int64.of_string", "Int64.to_string")
-    | "TEXT" -> Ok ("string", "Ppx_mysql_runtime.identity", "Ppx_mysql_runtime.identity")
+    | "INT"  -> Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
+    | "TEXT" -> Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
     | _      -> Error ()
 
 let parse_query =
@@ -145,7 +145,8 @@ let rec build_fun_chain ~loc expr used_set = function
         pexp_fun ~loc (Labelled name) None pat tl'
 
 let build_in_param ~loc param =
-    let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.to_string)) in
+    let (to_string_mod, to_string_fun) = param.to_string in
+    let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident to_string_mod, to_string_fun))) in
     let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
     if param.opt
     then [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]]
@@ -153,7 +154,8 @@ let build_in_param ~loc param =
 
 let build_out_param_processor ~loc out_params =
     let make_elem i param =
-        let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.of_string)) in
+        let (of_string_mod, of_string_fun) = param.of_string in
+        let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun))) in
         let arg = [%expr row.([%e Buildef.eint ~loc i])] in
         let appl = [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]] in
         if param.opt
@@ -176,7 +178,7 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
         | "Select_all" -> "select_all"
         | "Execute"    -> "execute"
         | _            -> assert false in (* FIXME *)
-    let fq_postproc = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident ("Ppx_mysql_runtime." ^ postproc))) in
+    let fq_postproc = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident "Ppx_mysql_runtime", postproc))) in
     match parse_query query with
         | Ok {query; in_params; out_params} ->
             let expr =
