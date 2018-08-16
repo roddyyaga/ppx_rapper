@@ -215,8 +215,8 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                         | None   -> Ppx_mysql_aux.IO.return (Ok ())
                 in loop []
             ]
-        | _ ->
-            assert false in (* FIXME *)
+        | x ->
+            raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: I don't understand query variant '%s'" x)) in
     match parse_query query with
         | Ok {query; in_params; out_params} ->
             let expr =
