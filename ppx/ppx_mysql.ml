@@ -209,11 +209,9 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
         | "Execute" ->
             [%expr
             fun () ->
-                let rec loop acc =
-                    Prepared.fetch stmt_result >>= function
-                        | Some _ -> IO.return (Error `Expected_none_found_one)
-                        | None   -> IO.return (Ok ())
-                in loop []
+                Prepared.fetch stmt_result >>= function
+                    | Some _ -> IO.return (Error `Expected_none_found_one)
+                    | None   -> IO.return (Ok ())
             ]
         | x ->
             raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: I don't understand query variant '%s'" x)) in
