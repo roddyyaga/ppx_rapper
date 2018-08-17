@@ -1,0 +1,5 @@
+(executable
+    (name mysql_with_identity_monad)
+    (libraries mysql ppx_mysql rresult)
+    (preprocess (pps ppx_mysql))
+)
