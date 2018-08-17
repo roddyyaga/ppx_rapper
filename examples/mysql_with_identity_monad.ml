@@ -19,14 +19,6 @@
 (** {1 Required modules for the Ppx_syntax extension}                           *)
 (********************************************************************************)
 
-module Bah64 =
-struct
-    let of_string x =
-        Printf.eprintf "Converting '%s' to int64..." x;
-        Int64.of_string x
-end
-
-
 (* The Ppx_mysql syntax extension expects the existence of a module named 'IO'
  * where the IO monad is defined.  For this example we use the identity monad,
  * but normally you'd want to use Lwt or Async.
