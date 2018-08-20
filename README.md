@@ -68,10 +68,10 @@ sig
     type stmt
     type stmt_result
 
-    val create : dbh ‑> string ‑> stmt
-    val execute_null : stmt ‑> string option array ‑> stmt_result
-    val fetch : stmt_result ‑> string option array option
-    val close : stmt ‑> unit
+    val create : dbh ‑> string ‑> stmt IO.t
+    val execute_null : stmt ‑> string option array ‑> stmt_result IO.t
+    val fetch : stmt_result ‑> string option array option IO.t
+    val close : stmt ‑> unit IO.t
 end
 ```
 
