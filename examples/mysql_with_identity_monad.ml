@@ -68,11 +68,11 @@ let () =
         insert_user dbh ~id:3L ~name:"Claire" ~phone:None >>= fun () ->
         delete_user dbh ~id:3L >>= fun () ->
         get_users dbh >>= fun users ->
-        let () = List.iter print_user users in
+        List.iter print_user users;
         update_user dbh ~id:2L ~name:"Mary" ~phone:(Some "654321") >>= fun () ->
         get_user dbh ~id:2L >>= fun user ->
-        let () = print_user user in
-        let () = Mysql.disconnect dbh in
+        print_user user;
+        Mysql.disconnect dbh;
         ok ()
     in match result with
         | Ok ()   -> print_endline "All went well!"
