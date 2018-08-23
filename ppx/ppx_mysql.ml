@@ -42,9 +42,11 @@ type parse_error =
 
 (* FIXME: 'stringly'-typed... *)
 let ocaml_of_mysql = function
-    | "INT"  -> Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
-    | "TEXT" -> Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
-    | _      -> Error ()
+    | "d" -> Ok ("int", ("Pervasives", "int_of_string"), ("Pervasives", "string_of_int"))
+    | "l" -> Ok ("int32", ("Int32", "of_string"), ("Int32", "to_string"))
+    | "L" -> Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
+    | "s" -> Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
+    | _   -> Error ()
 
 let parse_query =
     let param_re = Re.(seq [

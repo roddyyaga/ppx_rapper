@@ -41,15 +41,15 @@ module Prepared = Mysql.Prepared
 (** {1 Database queries using the Ppx_mysql syntax extension}                   *)
 (********************************************************************************)
 
-let get_users = [%mysql Select_all "SELECT @INT{id}, @TEXT{name}, @TEXT?{phone} FROM users"]
+let get_users = [%mysql Select_all "SELECT @l{id}, @s{name}, @s?{phone} FROM users"]
 
-let get_user = [%mysql Select_one "SELECT @INT{id}, @TEXT{name}, @TEXT?{phone} FROM users WHERE id = %INT{id}"]
+let get_user = [%mysql Select_one "SELECT @l{id}, @s{name}, @s?{phone} FROM users WHERE id = %l{id}"]
 
-let insert_user = [%mysql Execute "INSERT INTO users (id, name, phone) VALUES (%INT{id}, %TEXT{name}, %TEXT?{phone})"]
+let insert_user = [%mysql Execute "INSERT INTO users (id, name, phone) VALUES (%l{id}, %s{name}, %s?{phone})"]
 
-let update_user = [%mysql Execute "UPDATE users SET name = %TEXT{name}, phone = %TEXT?{phone} WHERE id = %INT{id}"]
+let update_user = [%mysql Execute "UPDATE users SET name = %s{name}, phone = %s?{phone} WHERE id = %l{id}"]
 
-let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %INT{id}"]
+let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %l{id}"]
 
 
 (********************************************************************************)
@@ -57,20 +57,20 @@ let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %INT{id}"]
 (********************************************************************************)
 
 let print_user (id, name, phone) =
-    Printf.printf "%Ld -> %s (phone: %s)\n" id name (match phone with Some p -> p | None -> "--")
+    Printf.printf "%ld -> %s (phone: %s)\n" id name (match phone with Some p -> p | None -> "--")
 
 let () =
     let result =
         let open Rresult.R in (* For the result monad's (>>=) operator *)
         let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-        insert_user dbh ~id:1L ~name:"John Doe" ~phone:(Some "123456") >>= fun () ->
-        insert_user dbh ~id:2L ~name:"Jane Doe" ~phone:None >>= fun () ->
-        insert_user dbh ~id:3L ~name:"Claire" ~phone:None >>= fun () ->
-        delete_user dbh ~id:3L >>= fun () ->
+        insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456") >>= fun () ->
+        insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None >>= fun () ->
+        insert_user dbh ~id:3l ~name:"Claire" ~phone:None >>= fun () ->
+        delete_user dbh ~id:3l >>= fun () ->
         get_users dbh >>= fun users ->
         List.iter print_user users;
-        update_user dbh ~id:2L ~name:"Mary" ~phone:(Some "654321") >>= fun () ->
-        get_user dbh ~id:2L >>= fun user ->
+        update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321") >>= fun () ->
+        get_user dbh ~id:2l >>= fun user ->
         print_user user;
         Mysql.disconnect dbh;
         ok ()
