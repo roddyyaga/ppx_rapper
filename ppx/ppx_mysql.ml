@@ -225,10 +225,10 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                 let query = [%e Buildef.estring ~loc query] in
                 let params = [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params) ] in
                 let [@warning "-26"] process_out_params = [%e build_out_param_processor ~loc out_params] in
-                let stmt = Prepared.create dbh query in
+                Prepared.create dbh query >>= fun stmt ->
                 Prepared.execute_null stmt params >>= fun stmt_result ->
                 [%e process_rows] () >>= fun result ->
-                let () = Prepared.close stmt in
+                Prepared.close stmt >>= fun () ->
                 IO.return result
                 ] in
             let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
