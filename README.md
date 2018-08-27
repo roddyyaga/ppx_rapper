@@ -84,9 +84,9 @@ Writing a function to fetch one row from the DB is as simple as this:
 ```ocaml
 let get_employee dbh employee_id =
     [%mysql Select_one
-    "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+    "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
     FROM employees
-    WHERE id = %INT{employee_id}"] dbh ~employee_id >>| employee_of_tuple
+    WHERE id = %l{employee_id}"] dbh ~employee_id >>| employee_of_tuple
 ```
 
 The `%mysql` extension makes all the "magic" happen: it creates a function
@@ -108,9 +108,9 @@ let get_employee dbh employee_id =
         employee_id:int32 ->
         ((int32 * int32 option * string * string option), error) result IO.t =
         [%mysql Select_one
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
         FROM employees
-        WHERE id = %INT{employee_id}"]  in
+        WHERE id = %l{employee_id}"]  in
     q dbh ~employee_id >>| employee_of_tuple
 ```
 
@@ -118,27 +118,36 @@ Things to note:
 
  - Type `Prepared.dbh` is the type of database handles.
 
- - We denote input parameters using the syntax `%TYPE{name}`, where
-   `TYPE` is the MySQL type, and `name` is the OCaml named parameter
-   that will be part of the generated function's signature.
+ - We denote input parameters using the syntax `%TYPE{name}`, where `TYPE`
+   is a type specification (see next section), and `name` is the OCaml named
+   parameter that will be part of the generated function's signature.
 
- - We denote output parameters using the syntax `@TYPE{name}`, where
-   `TYPE` is the MySQL type, and `name` is the MySQL column we are
-   selecting.
+ - We denote output parameters using the syntax `@TYPE{name}`, where `TYPE`
+   is a type specification (see next section), and `name` is the MySQL
+   column we are selecting.
 
  - Both input and output parameters may be `NULL`, which is handled
-   by suffixing the MySQL type with the character `?` (Cf. the
-   `supervisor_id` and `phone` columns in this example).
+   by suffixing the type specification with the character `?`
+   (Cf. the `supervisor_id` and `phone` columns in this example).
 
  - The `Select_one` variant immediately after `%mysql` tells the
    extension that the function should return a single value.
    In this case, the value is of type `int32 * int32 option * string * string option`,
    which is wrapped inside a `result IO.t` because errors may occur.
 
- - The extension has a built-in dictionary that maps MySQL types
-   to their OCaml counterparts.  This particular example uses MySQL
-   types `INT` and `TEXT`, which are mapped to OCaml's `int32` and
-   `string`, respectively.
+
+Type specifications
+-------------------
+
+Serialization of input parameters and deserialization of output paramters
+is done according to single letter type specifications. The following list
+shows the mapping between the currently implemented type specifications and
+their OCaml counterparts.
+
+ - `s`: `string`
+ - `d`: `int`
+ - `l`: `int32`
+ - `L`: `int64`
 
 
 Other select queries
@@ -157,9 +166,9 @@ let get_supervisor dbh employee_id =
         employee_id:int32 ->
         ((int32 * int32 option * string * string option) option, error) result IO.t =
         [%mysql Select_opt
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
         FROM employees
-        WHERE supervisor_id = %INT{employee_id}"] in
+        WHERE supervisor_id = %l{employee_id}"] in
     q dbh ~employee_id >>| maybe employee_of_tuple   (* val maybe: ('a -> 'b) -> 'a option -> 'b option *)
 ```
 
@@ -175,9 +184,9 @@ let get_underlings dbh supervisor_id =
         supervisor_id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
         FROM employees
-        WHERE supervisor_id = %INT{supervisor_id}"] in
+        WHERE supervisor_id = %l{supervisor_id}"] in
     q dbh ~supervisor_id >>| List.map employee_of_tuple
 ```
 
@@ -202,8 +211,8 @@ let insert_employee {id; supervisor_id; name; phone} =
         phone:string option ->
         (unit, error) result IO.t =
         [%mysql Execute
-        "INSERT INTO employees (id, supervisor_id, name, phone)
-        VALUES (%INT{id}, %INT?{supervisor_id}, %TEXT{name}, %TEXT?{phone}"] in
+        "INSERT LO employees (id, supervisor_id, name, phone)
+        VALUES (%l{id}, %l?{supervisor_id}, %s{name}, %s?{phone}"] in
     q dbh ~id ~supervisor_id ~name ~phone
 ```
 
@@ -219,7 +228,7 @@ let get_unsupervised dbh =
         Prepared.dbh ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
         FROM employees
         WHERE supervisor_id IS NULL"] in
     q dbh >>| List.map employee_of_tuple
@@ -235,9 +244,9 @@ let is_related dbh id =
         id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
         FROM employees
-        WHERE (id = %INT{id} OR supervisor_id = %INT{id}"] in
+        WHERE (id = %l{id} OR supervisor_id = %l{id}"] in
     q dbh ~id >>| List.map employee_of_tuple
 ```
 
@@ -249,7 +258,7 @@ All output columns must be specified explicitly, and queries such as
 `SELECT * FROM employees` are not supported.  However, since these
 queries are brittle and should not be used anyway, this limitation
 is unlikely to ever be a problem.  Moreover, note that queries such
-as `SELECT @INT{count(*)} FROM employees` are supported just fine.
+as `SELECT @d{count(*)} FROM employees` are supported just fine.
 
 
 Summary of the query variants
