@@ -1,0 +1,4 @@
+(library
+    (name ppx_mysql_runtime)
+    (public_name ppx_mysql.runtime)
+    (wrapped false))

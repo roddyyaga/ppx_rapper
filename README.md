@@ -46,6 +46,36 @@ employee_of_tuple: employee_tuple -> employee
 tuple_of_employee: employee -> employee_tuple
 ```
 
+
+Setting up the environment
+--------------------------
+
+To minimise the amount of boilerplate, this syntax extension generates functions which expect
+the existence of two modules in the current context.  These modules must be called `IO` and
+`Prepared`, and must satisfy the following signatures, respectively:
+
+```ocaml
+module type IO =
+sig
+    type 'a t
+    val return : 'a -> 'a t
+    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+end
+
+module type PREPARED =
+sig
+    type dbh
+    type stmt
+    type stmt_result
+
+    val create : dbh ‑> string ‑> stmt IO.t
+    val execute_null : stmt ‑> string option array ‑> stmt_result IO.t
+    val fetch : stmt_result ‑> string option array option IO.t
+    val close : stmt ‑> unit IO.t
+end
+```
+
+
 Basic usage: selecting a single row
 -----------------------------------
 
@@ -54,9 +84,9 @@ Writing a function to fetch one row from the DB is as simple as this:
 ```ocaml
 let get_employee dbh employee_id =
     [%mysql Select_one
-    "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+    "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
     FROM employees
-    WHERE id = %INT{employee_id}"] dbh ~employee_id >>| employee_of_tuple
+    WHERE id = %int32{employee_id}"] dbh ~employee_id >>| employee_of_tuple
 ```
 
 The `%mysql` extension makes all the "magic" happen: it creates a function
@@ -74,41 +104,51 @@ neither necessary nor recommended for actual code.  Here's the same
 ```ocaml
 let get_employee dbh employee_id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         employee_id:int32 ->
         ((int32 * int32 option * string * string option), error) result IO.t =
         [%mysql Select_one
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE id = %INT{employee_id}"]  in
+        WHERE id = %int32{employee_id}"]  in
     q dbh ~employee_id >>| employee_of_tuple
 ```
 
 Things to note:
 
- - Type `dbhandle` is the type of database handles.
+ - Type `Prepared.dbh` is the type of database handles.
 
- - We denote input parameters using the syntax `%TYPE{name}`, where
-   `TYPE` is the MySQL type, and `name` is the OCaml named parameter
-   that will be part of the generated function's signature.
+ - We denote input parameters using the syntax `%TYPE{name}`, where `TYPE`
+   is a type specification (see next section), and `name` is the OCaml named
+   parameter that will be part of the generated function's signature.
 
- - We denote output parameters using the syntax `@TYPE{name}`, where
-   `TYPE` is the MySQL type, and `name` is the MySQL column we are
-   selecting.
+ - We denote output parameters using the syntax `@TYPE{name}`, where `TYPE`
+   is a type specification (see next section), and `name` is the MySQL
+   column we are selecting.
 
  - Both input and output parameters may be `NULL`, which is handled
-   by suffixing the MySQL type with the character `?` (Cf. the
-   `supervisor_id` and `phone` columns in this example).
+   by suffixing the type specification with the character `?`
+   (Cf. the `supervisor_id` and `phone` columns in this example).
 
  - The `Select_one` variant immediately after `%mysql` tells the
    extension that the function should return a single value.
    In this case, the value is of type `int32 * int32 option * string * string option`,
    which is wrapped inside a `result IO.t` because errors may occur.
 
- - The extension has a built-in dictionary that maps MySQL types
-   to their OCaml counterparts.  This particular example uses MySQL
-   types `INT` and `TEXT`, which are mapped to OCaml's `int32` and
-   `string`, respectively.
+
+Type specifications
+-------------------
+
+Serialization of input parameters and deserialization of output paramters
+is done according to provided type specifications. The following list
+shows the mapping between the currently implemented type specifications
+and their OCaml counterparts. Note that you may always use the name of
+the OCaml type.
+
+ - `string`, `TEXT`, `VARCHAR`\*: `string`
+ - `int`, `INT`: `int`
+ - `int32`: `int32`
+ - `int64`: `int64`
 
 
 Other select queries
@@ -123,13 +163,13 @@ errors may still occur).
 ```ocaml
 let get_supervisor dbh employee_id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         employee_id:int32 ->
         ((int32 * int32 option * string * string option) option, error) result IO.t =
         [%mysql Select_opt
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE supervisor_id = %INT{employee_id}"] in
+        WHERE supervisor_id = %int32{employee_id}"] in
     q dbh ~employee_id >>| maybe employee_of_tuple   (* val maybe: ('a -> 'b) -> 'a option -> 'b option *)
 ```
 
@@ -141,13 +181,13 @@ may occur).
 ```ocaml
 let get_underlings dbh supervisor_id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         supervisor_id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE supervisor_id = %INT{supervisor_id}"] in
+        WHERE supervisor_id = %int32{supervisor_id}"] in
     q dbh ~supervisor_id >>| List.map employee_of_tuple
 ```
 
@@ -165,15 +205,15 @@ usually need to worry about the order).
 ```ocaml
 let insert_employee {id; supervisor_id; name; phone} =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         id:int32 ->
         supervisor_id:int32 option ->
         name:string ->
         phone:string option ->
         (unit, error) result IO.t =
         [%mysql Execute
-        "INSERT INTO employees (id, supervisor_id, name, phone)
-        VALUES (%INT{id}, %INT?{supervisor_id}, %TEXT{name}, %TEXT?{phone}"] in
+        "INSERT LO employees (id, supervisor_id, name, phone)
+        VALUES (%int32{id}, %int32?{supervisor_id}, %string{name}, %string?{phone}"] in
     q dbh ~id ~supervisor_id ~name ~phone
 ```
 
@@ -186,10 +226,10 @@ extension will take only the database handle as parameter:
 ```ocaml
 let get_unsupervised dbh =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE supervisor_id IS NULL"] in
     q dbh >>| List.map employee_of_tuple
@@ -201,15 +241,25 @@ SQL statement, the generated function will take it only once:
 ```ocaml
 let is_related dbh id =
     let q :
-        dbhandle ->
+        Prepared.dbh ->
         id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @INT{id}, @INT?{supervisor_id}, @TEXT{name}, @TEXT?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE (id = %INT{id} OR supervisor_id = %INT{id}"] in
+        WHERE (id = %int32{id} OR supervisor_id = %int32{id}"] in
     q dbh ~id >>| List.map employee_of_tuple
 ```
+
+
+Limitations
+-----------
+
+All output columns must be specified explicitly, and queries such as
+`SELECT * FROM employees` are not supported.  However, since these
+queries are brittle and should not be used anyway, this limitation
+is unlikely to ever be a problem.  Moreover, note that queries such
+as `SELECT @d{count(*)} FROM employees` are supported just fine.
 
 
 Summary of the query variants
