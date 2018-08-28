@@ -222,7 +222,8 @@ let error_bad6 = `Unterminated_string
 
 let test_parse_query () =
     let run desc query expected =
-        Alcotest.(check (result parsed_query_mod parse_error_mod) desc expected (Ppx_mysql.parse_query query)) in
+        Alcotest.(check (result parsed_query_mod parse_error_mod) desc expected (Ppx_mysql.parse_query query))
+    in
     run "query_0" query_0 (Ok parsed_query_0);
     run "query_out1" query_out1 (Ok parsed_query_out1);
     run "query_out2" query_out2 (Ok parsed_query_out2);

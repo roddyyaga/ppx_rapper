@@ -58,7 +58,8 @@ let parse_query =
         char '{';
         group (rep1 (compl [char '}']));
         char '}';
-        ]) |> Re.compile in
+        ]) |> Re.compile
+    in
     fun query ->
         let len = String.length query in
         let buf = Buffer.create len in
@@ -104,7 +105,8 @@ let parse_query =
                 | None ->
                     let until = match Caml.String.index_from_opt query (i - 1) ' ' with
                         | Some x -> x
-                        | None -> String.length query in
+                        | None -> String.length query
+                    in
                     Error (`Bad_param (Caml.String.sub query (i - 1) (until - i + 1)))
                 | Some groups ->
                     begin match Re.Group.all groups with
@@ -114,7 +116,8 @@ let parse_query =
                                     let param = {typ; opt = String.(opt = "?"); name; of_string; to_string} in
                                     let (replacement, acc_in, acc_out) = match param_typ with
                                         | `In_param  -> ("?", param :: acc_in, acc_out)
-                                        | `Out_param -> (name, acc_in, param :: acc_out) in
+                                        | `Out_param -> (name, acc_in, param :: acc_out)
+                                    in
                                     Buffer.add_string buf replacement;
                                     main_loop (i + String.length all) None acc_in acc_out
                                 | Error () ->
@@ -146,7 +149,8 @@ let rec build_fun_chain ~loc expr used_set = function
         let fulltyp =
             if opt
             then ptyp_constr ~loc (Loc.make ~loc (Lident "option")) [basetyp]
-            else basetyp in
+            else basetyp
+        in
         let pat = ppat_constraint ~loc var fulltyp in
         pexp_fun ~loc (Labelled name) None pat tl'
 
@@ -166,11 +170,13 @@ let build_out_param_processor ~loc out_params =
         let appl = [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]] in
         if param.opt
         then appl
-        else [%expr (Ppx_mysql_runtime.get_option [%e appl])] in
+        else [%expr (Ppx_mysql_runtime.get_option [%e appl])]
+    in
     let ret_expr = match out_params with
         | []     -> [%expr ()]
         | [x]    -> make_elem 0 x
-        | _ :: _ -> Buildef.pexp_tuple ~loc (Caml.List.mapi make_elem out_params) in
+        | _ :: _ -> Buildef.pexp_tuple ~loc (Caml.List.mapi make_elem out_params)
+    in
     [%expr fun row ->
         if Caml.Array.length row = [%e Buildef.eint ~loc (List.length out_params)]
         then [%e ret_expr]

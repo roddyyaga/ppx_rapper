@@ -70,6 +70,7 @@ let () =
         print_user user;
         Mysql.disconnect dbh;
         Ok ()
-    in match result with
+    in
+    match result with
         | Ok ()   -> print_endline "All went well!"
         | Error _ -> print_endline "An error occurred!"
