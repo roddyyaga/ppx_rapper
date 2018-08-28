@@ -1,4 +1,4 @@
-open Core
+open Base
 open Ppxlib
 
 module Used_set = Caml.Set.Make (String)
@@ -64,7 +64,7 @@ let parse_query =
             else
                 let this = query.[i] in
                 match string_delim with
-                    | _ when this = '\\' ->
+                    | _ when Char.(this = '\\') ->
                         Buffer.add_char buf this;
                         if i + 1 >= len
                         then
@@ -73,16 +73,16 @@ let parse_query =
                             Buffer.add_char buf query.[i + 1];
                             main_loop (i + 2) string_delim acc_in acc_out
                         end
-                    | None when this = '\'' || this = '"' ->
+                    | None when Char.(this = '\'' || this = '"') ->
                         Buffer.add_char buf this;
                         main_loop (i + 1) (Some this) acc_in acc_out
-                    | None when this = '%' ->
+                    | None when Char.(this = '%') ->
                         parse_param (i + 1) `In_param acc_in acc_out
-                    | None when this = '@' ->
+                    | None when Char.(this = '@') ->
                         parse_param (i + 1) `Out_param acc_in acc_out
-                    | Some delim when this = delim ->
+                    | Some delim when Char.(this = delim) ->
                         Buffer.add_char buf this;
-                        if i + 1 < len && query.[i + 1] = delim
+                        if i + 1 < len && Char.(query.[i + 1] = delim)
                         then begin
                             Buffer.add_char buf this;
                             main_loop (i + 2) string_delim acc_in acc_out
@@ -105,7 +105,7 @@ let parse_query =
                         | [| all; typ; opt; name |] ->
                             begin match ocaml_of_mysql typ with
                                 | Ok (typ, of_string, to_string) ->
-                                    let param = {typ; opt = opt = "?"; name; of_string; to_string} in
+                                    let param = {typ; opt = String.(opt = "?"); name; of_string; to_string} in
                                     let (replacement, acc_in, acc_out) = match param_typ with
                                         | `In_param  -> ("?", param :: acc_in, acc_out)
                                         | `Out_param -> (name, acc_in, param :: acc_out) in

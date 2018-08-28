@@ -3,6 +3,6 @@
     (public_name ppx_mysql)
     (wrapped false)
     (kind ppx_rewriter)
-    (libraries core re ppxlib ppx_mysql.runtime)
+    (libraries base re ppxlib ppx_mysql.runtime)
     (preprocess (pps ppxlib.metaquot))
     (flags (:standard -w -26 -w -27)))
