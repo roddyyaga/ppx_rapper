@@ -3,3 +3,7 @@
     (libraries mysql ppx_mysql)
     (preprocess (pps ppx_mysql))
 )
+
+(alias
+  (name examples)
+  (deps mysql_with_identity_monad.exe))
