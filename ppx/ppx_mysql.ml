@@ -146,10 +146,9 @@ let rec build_fun_chain ~loc expr used_set = function
         let tl' = build_fun_chain ~loc expr used_set tl in
         let var = ppat_var ~loc (Loc.make ~loc name) in
         let basetyp = ptyp_constr ~loc (Loc.make ~loc (Lident typ)) [] in
-        let fulltyp =
-            if opt
-            then ptyp_constr ~loc (Loc.make ~loc (Lident "option")) [basetyp]
-            else basetyp
+        let fulltyp = match opt with
+            | true -> ptyp_constr ~loc (Loc.make ~loc (Lident "option")) [basetyp]
+            | false -> basetyp
         in
         let pat = ppat_constraint ~loc var fulltyp in
         pexp_fun ~loc (Labelled name) None pat tl'
@@ -158,9 +157,9 @@ let build_in_param ~loc param =
     let (to_string_mod, to_string_fun) = param.to_string in
     let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident to_string_mod, to_string_fun))) in
     let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
-    if param.opt
-    then [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]]
-    else [%expr Some ([%e f] [%e arg])]
+    match param.opt with
+        | true -> [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]]
+        | false -> [%expr Some ([%e f] [%e arg])]
 
 let build_out_param_processor ~loc out_params =
     let make_elem i param =
@@ -168,9 +167,9 @@ let build_out_param_processor ~loc out_params =
         let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun))) in
         let arg = [%expr Caml.Array.get row [%e Buildef.eint ~loc i]] in
         let appl = [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]] in
-        if param.opt
-        then appl
-        else [%expr (Ppx_mysql_runtime.get_option [%e appl])]
+        match param.opt with
+            | true -> appl
+            | false -> [%expr (Ppx_mysql_runtime.get_option [%e appl])]
     in
     let ret_expr = match out_params with
         | []     -> [%expr ()]
