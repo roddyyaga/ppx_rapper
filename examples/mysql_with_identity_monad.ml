@@ -57,7 +57,7 @@ let print_user (id, name, phone) =
 
 let () =
     let result =
-        let open Rresult.R in (* For the result monad's (>>=) operator *)
+        let (>>=) res f = match res with Ok ok -> f ok | Error err -> Error err in
         let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
         insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456") >>= fun () ->
         insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None >>= fun () ->
@@ -69,7 +69,7 @@ let () =
         get_user dbh ~id:2l >>= fun user ->
         print_user user;
         Mysql.disconnect dbh;
-        ok ()
+        Ok ()
     in match result with
         | Ok ()   -> print_endline "All went well!"
         | Error _ -> print_endline "An error occurred!"
