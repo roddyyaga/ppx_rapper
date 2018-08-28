@@ -1,6 +1,8 @@
 Ppx_mysql
 =========
 
+[![Build Status](https://travis-ci.org/issuu/ppx_mysql.svg?branch=master)](https://travis-ci.org/issuu/ppx_mysql)
+
 This syntax extension aims to reduce the pain and boilerplate associated with using
 MySQL bindings from OCaml.
 

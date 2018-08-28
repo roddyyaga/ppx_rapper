@@ -1,0 +1,2 @@
+PGOCaml/HugSQL/YeSQL like syntax extension for writing MySQL SQL code in
+OCaml source files.
