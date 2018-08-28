@@ -84,9 +84,9 @@ Writing a function to fetch one row from the DB is as simple as this:
 ```ocaml
 let get_employee dbh employee_id =
     [%mysql Select_one
-    "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
+    "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
     FROM employees
-    WHERE id = %l{employee_id}"] dbh ~employee_id >>| employee_of_tuple
+    WHERE id = %int32{employee_id}"] dbh ~employee_id >>| employee_of_tuple
 ```
 
 The `%mysql` extension makes all the "magic" happen: it creates a function
@@ -108,9 +108,9 @@ let get_employee dbh employee_id =
         employee_id:int32 ->
         ((int32 * int32 option * string * string option), error) result IO.t =
         [%mysql Select_one
-        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE id = %l{employee_id}"]  in
+        WHERE id = %int32{employee_id}"]  in
     q dbh ~employee_id >>| employee_of_tuple
 ```
 
@@ -140,14 +140,15 @@ Type specifications
 -------------------
 
 Serialization of input parameters and deserialization of output paramters
-is done according to single letter type specifications. The following list
-shows the mapping between the currently implemented type specifications and
-their OCaml counterparts.
+is done according to provided type specifications. The following list
+shows the mapping between the currently implemented type specifications
+and their OCaml counterparts. Note that you may always use the name of
+the OCaml type.
 
- - `s`: `string`
- - `d`: `int`
- - `l`: `int32`
- - `L`: `int64`
+ - `string`, `TEXT`, `VARCHAR`\*: `string`
+ - `int`, `INT`: `int`
+ - `int32`: `int32`
+ - `int64`: `int64`
 
 
 Other select queries
@@ -166,9 +167,9 @@ let get_supervisor dbh employee_id =
         employee_id:int32 ->
         ((int32 * int32 option * string * string option) option, error) result IO.t =
         [%mysql Select_opt
-        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE supervisor_id = %l{employee_id}"] in
+        WHERE supervisor_id = %int32{employee_id}"] in
     q dbh ~employee_id >>| maybe employee_of_tuple   (* val maybe: ('a -> 'b) -> 'a option -> 'b option *)
 ```
 
@@ -184,9 +185,9 @@ let get_underlings dbh supervisor_id =
         supervisor_id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE supervisor_id = %l{supervisor_id}"] in
+        WHERE supervisor_id = %int32{supervisor_id}"] in
     q dbh ~supervisor_id >>| List.map employee_of_tuple
 ```
 
@@ -212,7 +213,7 @@ let insert_employee {id; supervisor_id; name; phone} =
         (unit, error) result IO.t =
         [%mysql Execute
         "INSERT LO employees (id, supervisor_id, name, phone)
-        VALUES (%l{id}, %l?{supervisor_id}, %s{name}, %s?{phone}"] in
+        VALUES (%int32{id}, %int32?{supervisor_id}, %string{name}, %string?{phone}"] in
     q dbh ~id ~supervisor_id ~name ~phone
 ```
 
@@ -228,7 +229,7 @@ let get_unsupervised dbh =
         Prepared.dbh ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE supervisor_id IS NULL"] in
     q dbh >>| List.map employee_of_tuple
@@ -244,9 +245,9 @@ let is_related dbh id =
         id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
         [%mysql Select_all
-        "SELECT @l{id}, @l?{supervisor_id}, @s{name}, @s?{phone}
+        "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
-        WHERE (id = %l{id} OR supervisor_id = %l{id}"] in
+        WHERE (id = %int32{id} OR supervisor_id = %int32{id}"] in
     q dbh ~id >>| List.map employee_of_tuple
 ```
 

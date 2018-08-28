@@ -23,7 +23,7 @@ module IO =
 struct
     type 'a t = 'a
     let return x = x
-    let (>>=) x f = f x
+    let bind x f = f x
 end
 
 (* The Ppx_mysql syntax extension also expects the existence of a module named
@@ -37,15 +37,15 @@ module Prepared = Mysql.Prepared
 (** {1 Database queries using the Ppx_mysql syntax extension}                   *)
 (********************************************************************************)
 
-let get_users = [%mysql Select_all "SELECT @l{id}, @s{name}, @s?{phone} FROM users"]
+let get_users = [%mysql Select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
 
-let get_user = [%mysql Select_one "SELECT @l{id}, @s{name}, @s?{phone} FROM users WHERE id = %l{id}"]
+let get_user = [%mysql Select_one "SELECT @int32{id}, @string{name}, @string?{phone} FROM users WHERE id = %int32{id}"]
 
-let insert_user = [%mysql Execute "INSERT INTO users (id, name, phone) VALUES (%l{id}, %s{name}, %s?{phone})"]
+let insert_user = [%mysql Execute "INSERT INTO users (id, name, phone) VALUES (%int32{id}, %string{name}, %string?{phone})"]
 
-let update_user = [%mysql Execute "UPDATE users SET name = %s{name}, phone = %s?{phone} WHERE id = %l{id}"]
+let update_user = [%mysql Execute "UPDATE users SET name = %string{name}, phone = %string?{phone} WHERE id = %int32{id}"]
 
-let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %l{id}"]
+let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %int32{id}"]
 
 
 (********************************************************************************)

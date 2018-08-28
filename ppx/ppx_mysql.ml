@@ -37,13 +37,19 @@ type parse_error =
 (** {1 Functions and values}                                                    *)
 (********************************************************************************)
 
-(* FIXME: 'stringly'-typed... *)
 let ocaml_of_mysql = function
-    | "d" -> Ok ("int", ("Pervasives", "int_of_string"), ("Pervasives", "string_of_int"))
-    | "l" -> Ok ("int32", ("Int32", "of_string"), ("Int32", "to_string"))
-    | "L" -> Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
-    | "s" -> Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
-    | _   -> Error ()
+    | "int" | "INT" ->
+        Ok ("int", ("Pervasives", "int_of_string"), ("Pervasives", "string_of_int"))
+    | "int32" ->
+        Ok ("int32", ("Int32", "of_string"), ("Int32", "to_string"))
+    | "int64" ->
+        Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
+    | "string" | "TEXT" ->
+        Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
+    | other when Caml.String.length other >= 7 && String.(sub other ~pos:0 ~len:7 = "VARCHAR") ->
+        Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
+    | _ ->
+        Error ()
 
 let parse_query =
     let param_re = Re.(seq [
@@ -225,7 +231,7 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                no output parameters. *)
             let expr =
                 [%expr
-                let open IO in
+                let (>>=) = IO.bind in
                 let query = [%e Buildef.estring ~loc query] in
                 let params = [%e Buildef.(pexp_array ~loc @@ Caml.List.map (build_in_param ~loc) in_params) ] in
                 let [@warning "-26"] process_out_params = [%e build_out_param_processor ~loc out_params] in
