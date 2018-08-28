@@ -4,5 +4,4 @@
     (wrapped false)
     (kind ppx_rewriter)
     (libraries base re ppxlib ppx_mysql.runtime)
-    (preprocess (pps ppxlib.metaquot))
-    (flags (:standard -w -26 -w -27)))
+    (preprocess (pps ppxlib.metaquot)))
