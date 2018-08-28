@@ -49,7 +49,7 @@ let parsed_query_0 =
     out_params = [];
     }
 
-let query_out1 = "SELECT @L{id} FROM users"
+let query_out1 = "SELECT @int64{id} FROM users"
 let parsed_query_out1 =
     {
     query = "SELECT id FROM users";
@@ -60,7 +60,7 @@ let parsed_query_out1 =
         ];
     }
 
-let query_out2 = "SELECT @L{id}, @s{name} FROM users"
+let query_out2 = "SELECT @int64{id}, @string{name} FROM users"
 let parsed_query_out2 =
     {
     query = "SELECT id, name FROM users";
@@ -72,7 +72,7 @@ let parsed_query_out2 =
         ];
     }
 
-let query_out3 = "SELECT @L{id}, @s{name}, @s?{phone} FROM users"
+let query_out3 = "SELECT @int64{id}, @string{name}, @string?{phone} FROM users"
 let parsed_query_out3 =
     {
     query = "SELECT id, name, phone FROM users";
@@ -85,7 +85,7 @@ let parsed_query_out3 =
         ];
     }
 
-let query_in1 = "INSERT LO users (id) VALUES (%L{id})"
+let query_in1 = "INSERT LO users (id) VALUES (%int64{id})"
 let parsed_query_in1 =
     {
     query = "INSERT LO users (id) VALUES (?)";
@@ -96,7 +96,7 @@ let parsed_query_in1 =
     out_params = [];
     }
 
-let query_in2 = "INSERT LO users (id, name) VALUES (%L{id}, %s{name})"
+let query_in2 = "INSERT LO users (id, name) VALUES (%int64{id}, %string{name})"
 let parsed_query_in2 =
     {
     query = "INSERT LO users (id, name) VALUES (?, ?)";
@@ -108,7 +108,7 @@ let parsed_query_in2 =
     out_params = [];
     }
 
-let query_in3 = "INSERT LO users (id, name, phone) VALUES (%L{id}, %s{name}, %s?{phone})"
+let query_in3 = "INSERT LO users (id, name, phone) VALUES (%int64{id}, %string{name}, %string?{phone})"
 let parsed_query_in3 =
     {
     query = "INSERT LO users (id, name, phone) VALUES (?, ?, ?)";
@@ -121,7 +121,7 @@ let parsed_query_in3 =
     out_params = [];
     }
 
-let query_inout = "SELECT @L{id}, @s{name}, @s?{phone} FROM users WHERE id = %L{id} OR name = %s{name} OR PHONE = %s?{phone}"
+let query_inout = "SELECT @int64{id}, @string{name}, @string?{phone} FROM users WHERE id = %int64{id} OR name = %string{name} OR PHONE = %string?{phone}"
 let parsed_query_inout =
     {
     query = "SELECT id, name, phone FROM users WHERE id = ? OR name = ? OR PHONE = ?";
@@ -139,10 +139,10 @@ let parsed_query_inout =
         ];
     }
 
-let query_quoted0 = "SELECT @L{id}, @s{name} FROM users WHERE id = %L{id} OR NAME = 'Hello @L{name} world'"
+let query_quoted0 = "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = 'Hello @int64{name} world'"
 let parsed_query_quoted0 =
     {
-    query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello @L{name} world'";
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello @int64{name} world'";
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
@@ -154,10 +154,10 @@ let parsed_query_quoted0 =
         ];
     }
 
-let query_quoted1 = "SELECT @L{id}, @s{name} FROM users WHERE id = %L{id} OR NAME = \"Hello @L{name} world\""
+let query_quoted1 = "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = \"Hello @int64{name} world\""
 let parsed_query_quoted1 =
     {
-    query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello @L{name} world\"";
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello @int64{name} world\"";
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
@@ -169,10 +169,10 @@ let parsed_query_quoted1 =
         ];
     }
 
-let query_quoted2 = "SELECT @L{id}, @s{name} FROM users WHERE id = %L{id} OR NAME = 'Hello ''@L{name}'' world'"
+let query_quoted2 = "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = 'Hello ''@int64{name}'' world'"
 let parsed_query_quoted2 =
     {
-    query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello ''@L{name}'' world'";
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello ''@int64{name}'' world'";
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
@@ -184,10 +184,10 @@ let parsed_query_quoted2 =
         ];
     }
 
-let query_quoted3 = "SELECT @L{id}, @s{name} FROM users WHERE id = %L{id} OR NAME = \"Hello '@L{name}' world\""
+let query_quoted3 = "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = \"Hello '@int64{name}' world\""
 let parsed_query_quoted3 =
     {
-    query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello '@L{name}' world\"";
+    query = "SELECT id, name FROM users WHERE id = ? OR NAME = \"Hello '@int64{name}' world\"";
     in_params =
         [
         {typ = "int64"; opt = false; name = "id"; of_string = ("Int64", "of_string"); to_string = ("Int64", "to_string")};
@@ -199,11 +199,11 @@ let parsed_query_quoted3 =
         ];
     }
 
-let query_bad0 = "SELECT @L{}"
-let error_bad0 = `Bad_param "@L{}"
+let query_bad0 = "SELECT @int64{}"
+let error_bad0 = `Bad_param "@int64{}"
 
-let query_bad1 = "SELECT %L{}"
-let error_bad1 = `Bad_param "%L{}"
+let query_bad1 = "SELECT %int64{}"
+let error_bad1 = `Bad_param "%int64{}"
 
 let query_bad2 = "SELECT true\\"
 let error_bad2 = `Escape_at_end
