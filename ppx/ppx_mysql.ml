@@ -220,6 +220,9 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
             raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: I don't understand query variant '%s'" other)) in
     match parse_query query with
         | Ok {query; in_params; out_params} ->
+            (* Note that in the expr fragment below we disable warning 26 (about unused variables)
+               for the 'process_out_params' function, since it may indeed be unused if there are
+               no output parameters. *)
             let expr =
                 [%expr
                 let open IO in
