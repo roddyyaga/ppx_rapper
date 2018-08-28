@@ -1,7 +1,3 @@
-(********************************************************************************)
-(* Mysql_with_identity_monad.ml                                                 *)
-(********************************************************************************)
-
 (* This example assumes that a Mysql database 'test' exists for user 'root'.
  * Moreover, a table 'users' defined as follows is also present in the DB:
  *
