@@ -117,7 +117,8 @@ let parse_query =
                         | _ ->
                             assert false (* This should never happen. *)
                     end
-        in main_loop 0 None [] []
+        in
+        main_loop 0 None [] []
 
 let explain_parse_error = function
     | `Bad_param str          -> Printf.sprintf "Syntax error on parameter specification '%s'" str
@@ -182,7 +183,8 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                         | ([], None)       -> IO.return (Error `Expected_one_found_none)
                         | (_ :: _, Some _) -> IO.return (Error `Expected_one_found_many)
                         | (hd :: _, None)  -> IO.return (Ok hd)
-                in loop []
+                in
+                loop []
             ]
         | "Select_opt" ->
             [%expr
@@ -194,7 +196,8 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                         | ([], None)       -> IO.return (Ok None)
                         | (_ :: _, Some _) -> IO.return (Error `Expected_maybe_one_found_many)
                         | (hd :: _, None)  -> IO.return (Ok (Some hd))
-                in loop []
+                in
+                loop []
             ]
         | "Select_all" ->
             [%expr
@@ -203,7 +206,8 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                     Prepared.fetch stmt_result >>= function
                         | Some row -> loop (process_out_params row :: acc)
                         | None     -> IO.return (Ok (List.rev acc))
-                in loop []
+                in
+                loop []
             ]
         | "Execute" ->
             [%expr
@@ -212,8 +216,8 @@ let expand ~loc ~path:_ (sql_variant: string) (query: string) =
                     | Some _ -> IO.return (Error `Expected_none_found_one)
                     | None   -> IO.return (Ok ())
             ]
-        | x ->
-            raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: I don't understand query variant '%s'" x)) in
+        | other ->
+            raise (Location.Error (Location.Error.createf ~loc "Error in 'mysql' extension: I don't understand query variant '%s'" other)) in
     match parse_query query with
         | Ok {query; in_params; out_params} ->
             let expr =

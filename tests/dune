@@ -1,5 +1,4 @@
 (test
     (name test_ppx_mysql)
     (libraries alcotest ppx_mysql)
-    (preprocess (pps ppx_deriving.show ppx_deriving.eq))
-)
+    (preprocess (pps ppx_deriving.show ppx_deriving.eq)))
