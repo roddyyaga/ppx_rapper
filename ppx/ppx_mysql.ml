@@ -155,18 +155,18 @@ let rec build_fun_chain ~loc expr used_set = function
 
 let build_in_param ~loc param =
     let (to_string_mod, to_string_fun) = param.to_string in
-    let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident to_string_mod, to_string_fun))) in
+    let to_string = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident to_string_mod, to_string_fun))) in
     let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
     match param.opt with
-        | true -> [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]]
-        | false -> [%expr Some ([%e f] [%e arg])]
+        | true -> [%expr (Ppx_mysql_runtime.map_option [%e to_string]) [%e arg]]
+        | false -> [%expr Some ([%e to_string] [%e arg])]
 
 let build_out_param_processor ~loc out_params =
     let make_elem i param =
         let (of_string_mod, of_string_fun) = param.of_string in
-        let f = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun))) in
+        let of_string = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun))) in
         let arg = [%expr Caml.Array.get row [%e Buildef.eint ~loc i]] in
-        let appl = [%expr (Ppx_mysql_runtime.map_option [%e f]) [%e arg]] in
+        let appl = [%expr (Ppx_mysql_runtime.map_option [%e of_string]) [%e arg]] in
         match param.opt with
             | true -> appl
             | false -> [%expr (Ppx_mysql_runtime.get_option [%e appl])]
