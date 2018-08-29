@@ -216,9 +216,8 @@ let build_out_param_processor ~loc out_params =
     fun row ->
       if Caml.Array.length row = [%e Buildef.eint ~loc (List.length out_params)]
       then [%e ret_expr]
-      else assert false
-
-    (* FIXME *)]
+      else (* FIXME *)
+        assert false]
 
 
 let expand ~loc ~path:_ (sql_variant : string) (query : string) =

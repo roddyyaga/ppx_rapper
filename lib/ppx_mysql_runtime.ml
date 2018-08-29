@@ -16,6 +16,5 @@ let get_option = function
   | Some x ->
       x
   | None ->
+      (* FIXME *)
       assert false
-
-(* FIXME *)
