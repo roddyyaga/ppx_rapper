@@ -1,4 +1,4 @@
-break-cases=fit
+break-cases=all
 break-infix=fit-or-vertical
 break-string-literals=wrap
 doc-comments=before

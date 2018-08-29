@@ -40,10 +40,12 @@ module Prepared = Mysql.Prepared
 let get_users =
   [%mysql Select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
 
+
 let get_user =
   [%mysql
     Select_one
       "SELECT @int32{id}, @string{name}, @string?{phone} FROM users WHERE id = %int32{id}"]
+
 
 let insert_user =
   [%mysql
@@ -51,11 +53,13 @@ let insert_user =
       "INSERT INTO users (id, name, phone) VALUES (%int32{id}, %string{name}, \
        %string?{phone})"]
 
+
 let update_user =
   [%mysql
     Execute
       "UPDATE users SET name = %string{name}, phone = %string?{phone} WHERE id = \
        %int32{id}"]
+
 
 let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %int32{id}"]
 
@@ -69,11 +73,22 @@ let print_user (id, name, phone) =
     "%ld -> %s (phone: %s)\n"
     id
     name
-    (match phone with Some p -> p | None -> "--")
+    ( match phone with
+    | Some p ->
+        p
+    | None ->
+        "--" )
+
 
 let () =
   let result =
-    let ( >>= ) res f = match res with Ok ok -> f ok | Error err -> Error err in
+    let ( >>= ) res f =
+      match res with
+      | Ok ok ->
+          f ok
+      | Error err ->
+          Error err
+    in
     let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
     insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456")
     >>= fun () ->
@@ -91,5 +106,7 @@ let () =
     get_user dbh ~id:2l >>= fun user -> print_user user; Mysql.disconnect dbh; Ok ()
   in
   match result with
-  | Ok () -> print_endline "All went well!"
-  | Error _ -> print_endline "An error occurred!"
+  | Ok () ->
+      print_endline "All went well!"
+  | Error _ ->
+      print_endline "An error occurred!"
