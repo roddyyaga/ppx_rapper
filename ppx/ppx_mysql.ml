@@ -117,10 +117,10 @@ let parse_query =
                 String.length query
           in
           Error (`Bad_param (Caml.String.sub query (i - 1) (until - i + 1)))
-      | Some groups ->
-        ( match Re.Group.all groups with
-        | [|all; typ; opt; name|] ->
-          ( match ocaml_of_mysql typ with
+      | Some groups -> (
+        match Re.Group.all groups with
+        | [|all; typ; opt; name|] -> (
+          match ocaml_of_mysql typ with
           | Ok (typ, of_string, to_string) ->
               let param = {typ; opt = String.(opt = "?"); name; of_string; to_string} in
               let replacement, acc_in, acc_out =
@@ -270,15 +270,15 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                   IO.return (Ok (List.rev acc))
             in
             loop []]
-    | "Execute" ->
+    | "Execute" -> (
         [%expr
           fun () ->
             Prepared.fetch stmt_result
-            >>= (function
+            >>= function
             | Some _ ->
                 IO.return (Error `Expected_none_found_one)
             | None ->
-                IO.return (Ok ()))]
+                IO.return (Ok ())] )
     | other ->
         raise
           (Location.Error
