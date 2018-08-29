@@ -16,4 +16,4 @@ parens-tuple=multi-line-only
 sequence-style=terminator
 type-decl=sparse
 wrap-fun-args=false
-module-item-spacing=compact
+module-item-spacing=sparse

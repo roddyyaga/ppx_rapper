@@ -30,7 +30,9 @@ type parse_error =
 (********************************************************************************)
 
 let param_mod = Alcotest.testable pp_param equal_param
+
 let parsed_query_mod = Alcotest.testable pp_parsed_query equal_parsed_query
+
 let parse_error_mod = Alcotest.testable pp_parse_error equal_parse_error
 
 (********************************************************************************)
@@ -39,7 +41,9 @@ let parse_error_mod = Alcotest.testable pp_parse_error equal_parse_error
 (********************************************************************************)
 
 let query_0 = "SELECT true"
+
 let parsed_query_0 = {query = "SELECT true"; in_params = []; out_params = []}
+
 let query_out1 = "SELECT @int64{id} FROM users"
 
 let parsed_query_out1 =
@@ -299,18 +303,31 @@ let parsed_query_quoted3 =
 
 
 let query_bad0 = "SELECT @int64{}"
+
 let error_bad0 = `Bad_param "@int64{}"
+
 let query_bad1 = "SELECT %int64{}"
+
 let error_bad1 = `Bad_param "%int64{}"
+
 let query_bad2 = "SELECT true\\"
+
 let error_bad2 = `Escape_at_end
+
 let query_bad3 = "SELECT @FOO{id} FROM users"
+
 let error_bad3 = `Unknown_mysql_type "FOO"
+
 let query_bad4 = "SELECT id, name FROM users WHERE id = %FOO{id}"
+
 let error_bad4 = `Unknown_mysql_type "FOO"
+
 let query_bad5 = "SELECT 'hello"
+
 let error_bad5 = `Unterminated_string
+
 let query_bad6 = "SELECT \"hello"
+
 let error_bad6 = `Unterminated_string
 
 let test_parse_query () =

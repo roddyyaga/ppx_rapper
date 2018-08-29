@@ -321,6 +321,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
 
 
 let pattern = Ast_pattern.(pexp_construct (lident __) (some (estring __)))
+
 let name = "mysql"
 
 let ext =
