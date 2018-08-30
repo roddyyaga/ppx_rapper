@@ -43,7 +43,7 @@ let ocaml_of_mysql = function
   | "TEXT" ->
       Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
   | other
-    when Caml.String.length other >= 7 && String.(sub other ~pos:0 ~len:7 = "VARCHAR") ->
+    when String.length other >= 7 && String.(sub other ~pos:0 ~len:7 = "VARCHAR") ->
       Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
   | _ ->
       Error ()
@@ -110,13 +110,13 @@ let parse_query =
       match Re.exec_opt ~pos:i param_re query with
       | None ->
           let until =
-            match Caml.String.index_from_opt query (i - 1) ' ' with
+            match String.index_from query (i - 1) ' ' with
             | Some x ->
                 x
             | None ->
                 String.length query
           in
-          Error (`Bad_param (Caml.String.sub query (i - 1) (until - i + 1)))
+          Error (`Bad_param (String.sub query ~pos:(i - 1) ~len:(until - i + 1)))
       | Some groups -> (
         match Re.Group.all groups with
         | [|all; typ; opt; name|] -> (
@@ -195,7 +195,7 @@ let build_out_param_processor ~loc out_params =
         ~loc
         (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun)))
     in
-    let arg = [%expr Caml.Array.get row [%e Buildef.eint ~loc i]] in
+    let arg = [%expr Ppx_mysql_runtime.Stdlib.Array.get row [%e Buildef.eint ~loc i]] in
     let appl = [%expr (Ppx_mysql_runtime.map_option [%e of_string]) [%e arg]] in
     match param.opt with
     | true ->
@@ -210,11 +210,13 @@ let build_out_param_processor ~loc out_params =
     | [x] ->
         make_elem 0 x
     | _ :: _ ->
-        Buildef.pexp_tuple ~loc (Caml.List.mapi make_elem out_params)
+        Buildef.pexp_tuple ~loc @@ List.mapi ~f:make_elem out_params
   in
   [%expr
     fun row ->
-      if Caml.Array.length row = [%e Buildef.eint ~loc (List.length out_params)]
+      let ( = ) = Ppx_mysql_runtime.Stdlib.( = ) in
+      if Ppx_mysql_runtime.Stdlib.Array.length row
+         = [%e Buildef.eint ~loc (List.length out_params)]
       then [%e ret_expr]
       else (* FIXME *)
         assert false]
@@ -296,8 +298,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
           let ( >>= ) = IO.bind in
           let query = [%e Buildef.estring ~loc query] in
           let params =
-            [%e
-              Buildef.(pexp_array ~loc @@ Caml.List.map (build_in_param ~loc) in_params)]
+            [%e Buildef.(pexp_array ~loc @@ List.map ~f:(build_in_param ~loc) in_params)]
           in
           let[@warning "-26"] process_out_params =
             [%e build_out_param_processor ~loc out_params]
