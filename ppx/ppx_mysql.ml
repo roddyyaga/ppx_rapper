@@ -2,9 +2,7 @@ open Ppxlib
 module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
-(********************************************************************************)
-(** {1 Type definitions}                                                        *)
-(********************************************************************************)
+(** {1 Type definitions} *)
 
 type param =
   { typ : string
@@ -24,9 +22,7 @@ type parse_error =
   | `Unknown_mysql_type of string
   | `Unterminated_string ]
 
-(********************************************************************************)
-(** {1 Functions and values}                                                    *)
-(********************************************************************************)
+(** {1 Functions and values} *)
 
 let ocaml_of_mysql = function
   | "int" ->

@@ -1,7 +1,3 @@
-(********************************************************************************)
-(** {1 Public functions and values}                                             *)
-(********************************************************************************)
-
 (* This module is required to keep references to the OCaml operators in the stdlib *)
 module Stdlib = struct
   module Array = Array
