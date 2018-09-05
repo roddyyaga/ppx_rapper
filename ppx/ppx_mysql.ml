@@ -110,7 +110,7 @@ let parse_query =
         | [|all; typ; opt; name|] -> (
           match ocaml_of_mysql typ with
           | Ok (typ, of_string, to_string) ->
-              let param = {typ; opt = (opt = "?"); name; of_string; to_string} in
+              let param = {typ; opt = opt = "?"; name; of_string; to_string} in
               let replacement, acc_in, acc_out =
                 match param_typ with
                 | `In_param ->
@@ -172,7 +172,7 @@ let build_in_param ~loc param =
   | true ->
       [%expr (Ppx_mysql_runtime.Stdlib.Option.map [%e to_string]) [%e arg]]
   | false ->
-      [%expr Some ([%e to_string] [%e arg])]
+      [%expr Ppx_mysql_runtime.Stdlib.Option.Some ([%e to_string] [%e arg])]
 
 
 let build_out_param_processor ~loc out_params =
@@ -220,14 +220,16 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
               Prepared.fetch stmt_result
               >>= fun maybe_row ->
               match acc, maybe_row with
-              | [], Some row ->
+              | [], Ppx_mysql_runtime.Stdlib.Option.Some row ->
                   loop [process_out_params row]
-              | [], None ->
-                  IO.return (Error `Expected_one_found_none)
-              | _ :: _, Some _ ->
-                  IO.return (Error `Expected_one_found_many)
-              | hd :: _, None ->
-                  IO.return (Ok hd)
+              | [], Ppx_mysql_runtime.Stdlib.Option.None ->
+                  IO.return
+                    (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_one_found_none)
+              | _ :: _, Ppx_mysql_runtime.Stdlib.Option.Some _ ->
+                  IO.return
+                    (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_one_found_many)
+              | hd :: _, Ppx_mysql_runtime.Stdlib.Option.None ->
+                  IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok hd)
             in
             loop []]
     | "Select_opt" ->
@@ -237,14 +239,19 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
               Prepared.fetch stmt_result
               >>= fun maybe_row ->
               match acc, maybe_row with
-              | [], Some row ->
+              | [], Ppx_mysql_runtime.Stdlib.Option.Some row ->
                   loop [process_out_params row]
-              | [], None ->
-                  IO.return (Ok None)
-              | _ :: _, Some _ ->
-                  IO.return (Error `Expected_maybe_one_found_many)
-              | hd :: _, None ->
-                  IO.return (Ok (Some hd))
+              | [], Ppx_mysql_runtime.Stdlib.Option.None ->
+                  IO.return
+                    (Ppx_mysql_runtime.Stdlib.Result.Ok
+                       Ppx_mysql_runtime.Stdlib.Option.None)
+              | _ :: _, Ppx_mysql_runtime.Stdlib.Option.Some _ ->
+                  IO.return
+                    (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_maybe_one_found_many)
+              | hd :: _, Ppx_mysql_runtime.Stdlib.Option.None ->
+                  IO.return
+                    (Ppx_mysql_runtime.Stdlib.Result.Ok
+                       (Ppx_mysql_runtime.Stdlib.Option.Some hd))
             in
             loop []]
     | "Select_all" ->
@@ -253,10 +260,12 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
             let rec loop acc =
               Prepared.fetch stmt_result
               >>= function
-              | Some row ->
+              | Ppx_mysql_runtime.Stdlib.Option.Some row ->
                   loop (process_out_params row :: acc)
-              | None ->
-                  IO.return (Ok (List.rev acc))
+              | Ppx_mysql_runtime.Stdlib.Option.None ->
+                  IO.return
+                    (Ppx_mysql_runtime.Stdlib.Result.Ok
+                       (Ppx_mysql_runtime.Stdlib.List.rev acc))
             in
             loop []]
     | "Execute" -> (
@@ -264,10 +273,11 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
           fun () ->
             Prepared.fetch stmt_result
             >>= function
-            | Some _ ->
-                IO.return (Error `Expected_none_found_one)
-            | None ->
-                IO.return (Ok ())] )
+            | Ppx_mysql_runtime.Stdlib.Option.Some _ ->
+                IO.return
+                  (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_none_found_one)
+            | Ppx_mysql_runtime.Stdlib.Option.None ->
+                IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ())] )
     | other ->
         raise
           (Location.Error

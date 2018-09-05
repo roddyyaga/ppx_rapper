@@ -7,9 +7,26 @@ module Stdlib : sig
     end
   end
 
+  module List : sig
+    include module type of struct
+        include List
+    end
+  end
+
   module Option : sig
-    val map : ('a -> 'b) -> 'a option -> 'b option
-    val get : 'a option -> 'a
+    type 'a t = 'a option =
+      | None
+      | Some of 'a
+
+    val map : ('a -> 'b) -> 'a t -> 'b t
+
+    val get : 'a t -> 'a
+  end
+
+  module Result : sig
+    type ('a, 'e) t = ('a, 'e) result =
+      | Ok of 'a
+      | Error of 'e
   end
 
   val ( = ) : 'a -> 'a -> bool
