@@ -1,22 +1,6 @@
-(********************************************************************************)
-
-(** {1 Public functions and values}                                             *)
-
-(********************************************************************************)
-
 val identity : 'a -> 'a
 
-val map_option : ('a -> 'b) -> 'a option -> 'b option
-
-val get_option : 'a option -> 'a
-
 module Stdlib : sig
-  module String : sig
-    include module type of struct
-        include String
-    end
-  end
-
   module Array : sig
     include module type of struct
         include Array
@@ -27,6 +11,22 @@ module Stdlib : sig
     include module type of struct
         include List
     end
+  end
+
+  module Option : sig
+    type 'a t = 'a option =
+      | None
+      | Some of 'a
+
+    val map : ('a -> 'b) -> 'a t -> 'b t
+
+    val get : 'a t -> 'a
+  end
+
+  module Result : sig
+    type ('a, 'e) t = ('a, 'e) result =
+      | Ok of 'a
+      | Error of 'e
   end
 
   val ( = ) : 'a -> 'a -> bool
