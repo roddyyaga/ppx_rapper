@@ -1,11 +1,9 @@
-open Base
 open Ppxlib
-module Used_set = Caml.Set.Make (String)
+module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
 (********************************************************************************)
 (** {1 Type definitions}                                                        *)
-
 (********************************************************************************)
 
 type param =
@@ -28,7 +26,6 @@ type parse_error =
 
 (********************************************************************************)
 (** {1 Functions and values}                                                    *)
-
 (********************************************************************************)
 
 let ocaml_of_mysql = function
@@ -73,7 +70,7 @@ let parse_query =
         let this = query.[i] in
         match string_delim with
         | _
-          when Char.(this = '\\') ->
+          when this = '\\' ->
             Buffer.add_char buf this;
             if i + 1 >= len
             then Error `Escape_at_end
@@ -81,19 +78,19 @@ let parse_query =
               Buffer.add_char buf query.[i + 1];
               main_loop (i + 2) string_delim acc_in acc_out )
         | None
-          when Char.(this = '\'' || this = '"') ->
+          when this = '\'' || this = '"' ->
             Buffer.add_char buf this;
             main_loop (i + 1) (Some this) acc_in acc_out
         | None
-          when Char.(this = '%') ->
+          when this = '%' ->
             parse_param (i + 1) `In_param acc_in acc_out
         | None
-          when Char.(this = '@') ->
+          when this = '@' ->
             parse_param (i + 1) `Out_param acc_in acc_out
         | Some delim
-          when Char.(this = delim) ->
+          when this = delim ->
             Buffer.add_char buf this;
-            if i + 1 < len && Char.(query.[i + 1] = delim)
+            if i + 1 < len && query.[i + 1] = delim
             then (
               Buffer.add_char buf this;
               main_loop (i + 2) string_delim acc_in acc_out )
@@ -105,19 +102,19 @@ let parse_query =
       match Re.exec_opt ~pos:i param_re query with
       | None ->
           let until =
-            match String.index_from query (i - 1) ' ' with
+            match String.index_from_opt query (i - 1) ' ' with
             | Some x ->
                 x
             | None ->
                 String.length query
           in
-          Error (`Bad_param (String.sub query ~pos:(i - 1) ~len:(until - i + 1)))
+          Error (`Bad_param (String.sub query (i - 1) (until - i + 1)))
       | Some groups -> (
         match Re.Group.all groups with
         | [|all; typ; opt; name|] -> (
           match ocaml_of_mysql typ with
           | Ok (typ, of_string, to_string) ->
-              let param = {typ; opt = String.(opt = "?"); name; of_string; to_string} in
+              let param = {typ; opt = (opt = "?"); name; of_string; to_string} in
               let replacement, acc_in, acc_out =
                 match param_typ with
                 | `In_param ->
@@ -177,7 +174,7 @@ let build_in_param ~loc param =
   let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
   match param.opt with
   | true ->
-      [%expr (Ppx_mysql_runtime.map_option [%e to_string]) [%e arg]]
+      [%expr (Ppx_mysql_runtime.Stdlib.Option.map [%e to_string]) [%e arg]]
   | false ->
       [%expr Some ([%e to_string] [%e arg])]
 
@@ -191,12 +188,12 @@ let build_out_param_processor ~loc out_params =
         (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun)))
     in
     let arg = [%expr Ppx_mysql_runtime.Stdlib.Array.get row [%e Buildef.eint ~loc i]] in
-    let appl = [%expr (Ppx_mysql_runtime.map_option [%e of_string]) [%e arg]] in
+    let appl = [%expr (Ppx_mysql_runtime.Stdlib.Option.map [%e of_string]) [%e arg]] in
     match param.opt with
     | true ->
         appl
     | false ->
-        [%expr Ppx_mysql_runtime.get_option [%e appl]]
+        [%expr Ppx_mysql_runtime.Stdlib.Option.get [%e appl]]
   in
   let ret_expr =
     match out_params with
@@ -205,7 +202,7 @@ let build_out_param_processor ~loc out_params =
     | [x] ->
         make_elem 0 x
     | _ :: _ ->
-        Buildef.pexp_tuple ~loc @@ List.mapi ~f:make_elem out_params
+        Buildef.pexp_tuple ~loc @@ List.mapi make_elem out_params
   in
   [%expr
     fun row ->
@@ -293,7 +290,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
           let ( >>= ) = IO.bind in
           let query = [%e Buildef.estring ~loc query] in
           let params =
-            [%e Buildef.(pexp_array ~loc @@ List.map ~f:(build_in_param ~loc) in_params)]
+            [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params)]
           in
           let[@warning "-26"] process_out_params =
             [%e build_out_param_processor ~loc out_params]

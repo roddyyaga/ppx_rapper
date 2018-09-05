@@ -2,5 +2,5 @@
   (name ppx_mysql)
   (public_name ppx_mysql)
   (kind ppx_rewriter)
-  (libraries base re ppxlib ppx_mysql.runtime)
+  (libraries re ppxlib ppx_mysql.runtime)
   (preprocess (pps ppxlib.metaquot)))
