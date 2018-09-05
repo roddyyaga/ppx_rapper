@@ -32,18 +32,13 @@ type parse_error =
 (********************************************************************************)
 
 let ocaml_of_mysql = function
-  | "int"
-  | "INT" ->
+  | "int" ->
       Ok ("int", ("Pervasives", "int_of_string"), ("Pervasives", "string_of_int"))
   | "int32" ->
       Ok ("int32", ("Int32", "of_string"), ("Int32", "to_string"))
   | "int64" ->
       Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
-  | "string"
-  | "TEXT" ->
-      Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
-  | other
-    when String.length other >= 7 && String.(sub other ~pos:0 ~len:7 = "VARCHAR") ->
+  | "string" ->
       Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
   | _ ->
       Error ()
