@@ -26,6 +26,12 @@ module Stdlib = struct
     type ('a, 'e) t = ('a, 'e) result =
       | Ok of 'a
       | Error of 'e
+
+    let bind r f = match r with
+      | Ok x -> f x
+      | Error _ as e -> e
+
+    let ( >>= ) = bind
   end
 
   let ( = ) = ( = )

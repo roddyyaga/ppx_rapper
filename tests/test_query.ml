@@ -1,9 +1,8 @@
-(********************************************************************************)
-(** {1 Type definitions}                                                        *)
+open Ppx_mysql
 
-(********************************************************************************)
+(** {1 Type definitions} *)
 
-type param = Ppx_mysql.param =
+type param = Query.param =
   { typ : string
   ; opt : bool
   ; name : string
@@ -11,23 +10,20 @@ type param = Ppx_mysql.param =
   ; to_string : string * string }
 [@@deriving eq, show]
 
-type parsed_query = Ppx_mysql.parsed_query =
+type parsed_query = Query.parsed_query =
   { query : string
   ; in_params : param list
   ; out_params : param list }
 [@@deriving eq, show]
 
 type parse_error =
-  [ `Bad_param of string
-  | `Escape_at_end
-  | `Unknown_mysql_type of string
-  | `Unterminated_string ]
+  [ `Bad_identifier of string
+  | `Unknown_type_spec of string
+  | `Unterminated_string
+  | `Escape_at_end ]
 [@@deriving eq, show]
 
-(********************************************************************************)
-(** {1 TESTABLE modules}                                                        *)
-
-(********************************************************************************)
+(** {1 TESTABLE modules}  *)
 
 let param_mod = Alcotest.testable pp_param equal_param
 
@@ -35,10 +31,7 @@ let parsed_query_mod = Alcotest.testable pp_parsed_query equal_parsed_query
 
 let parse_error_mod = Alcotest.testable pp_parse_error equal_parse_error
 
-(********************************************************************************)
-(** {1 Functions and values}                                                    *)
-
-(********************************************************************************)
+(** {1 Functions and values} *)
 
 let query_0 = "SELECT true"
 
@@ -301,34 +294,29 @@ let parsed_query_quoted3 =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
+let query_bad0 = "SELECT true FROM users WHERE id = %int{ID}"
 
-let query_bad0 = "SELECT @int64{}"
+let error_bad0 = `Bad_identifier "ID"
 
-let error_bad0 = `Bad_param "@int64{}"
+let query_bad1 = "SELECT @FOO{id} FROM users"
 
-let query_bad1 = "SELECT %int64{}"
+let error_bad1 = `Unknown_type_spec "FOO"
 
-let error_bad1 = `Bad_param "%int64{}"
+let query_bad2 = "SELECT id, name FROM users WHERE id = %FOO{id}"
 
-let query_bad2 = "SELECT true\\"
+let error_bad2 = `Unknown_type_spec "FOO"
 
-let error_bad2 = `Escape_at_end
+let query_bad3 = "SELECT 'hello"
 
-let query_bad3 = "SELECT @FOO{id} FROM users"
+let error_bad3 = `Unterminated_string
 
-let error_bad3 = `Unknown_mysql_type "FOO"
+let query_bad4 = "SELECT \"hello"
 
-let query_bad4 = "SELECT id, name FROM users WHERE id = %FOO{id}"
+let error_bad4 = `Unterminated_string
 
-let error_bad4 = `Unknown_mysql_type "FOO"
+let query_bad5 = "SELECT true\\"
 
-let query_bad5 = "SELECT 'hello"
-
-let error_bad5 = `Unterminated_string
-
-let query_bad6 = "SELECT \"hello"
-
-let error_bad6 = `Unterminated_string
+let error_bad5 = `Escape_at_end
 
 let test_parse_query () =
   let run desc query expected =
@@ -337,7 +325,7 @@ let test_parse_query () =
         (result parsed_query_mod parse_error_mod)
         desc
         expected
-        (Ppx_mysql.parse_query query))
+        (Query.parse query))
   in
   run "query_0" query_0 (Ok parsed_query_0);
   run "query_out1" query_out1 (Ok parsed_query_out1);
@@ -356,15 +344,11 @@ let test_parse_query () =
   run "query_bad2" query_bad2 (Error error_bad2);
   run "query_bad3" query_bad3 (Error error_bad3);
   run "query_bad4" query_bad4 (Error error_bad4);
-  run "query_bad5" query_bad5 (Error error_bad5);
-  run "query_bad6" query_bad6 (Error error_bad6)
+  run "query_bad5" query_bad5 (Error error_bad5)
 
 
 let testset = ["parse_query", `Quick, test_parse_query]
 
-(********************************************************************************)
-(** {1 Main}                                                                    *)
+(** {1 Main} *)
 
-(********************************************************************************)
-
-let () = Alcotest.run "Ppx_mysql module" ["Ppx_mysql", testset]
+let () = Alcotest.run "Query module" ["Query", testset]

@@ -27,6 +27,9 @@ module Stdlib : sig
     type ('a, 'e) t = ('a, 'e) result =
       | Ok of 'a
       | Error of 'e
+
+    val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+    val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
 
   val ( = ) : 'a -> 'a -> bool
