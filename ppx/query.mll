@@ -69,13 +69,27 @@ rule main_parser buf acc_in acc_out = parse
     {Ok {query = Buffer.contents buf; in_params = List.rev acc_in; out_params = List.rev acc_out}}
 
 and quotation_parser buf acc_in acc_out delim = parse
-  | escape eof          {Error `Escape_at_end}
-  | escape _ as str     {Buffer.add_string buf str; quotation_parser buf acc_in acc_out delim lexbuf}
-  | squot squot as str  {Buffer.add_string buf str; quotation_parser buf acc_in acc_out delim lexbuf}
-  | dquot dquot as str  {Buffer.add_string buf str; quotation_parser buf acc_in acc_out delim lexbuf}
-  | quot as chr         {Buffer.add_char buf chr; if delim = chr then main_parser buf acc_in acc_out lexbuf else quotation_parser buf acc_in acc_out delim lexbuf}
-  | _ as chr            {Buffer.add_char buf chr; quotation_parser buf acc_in acc_out delim lexbuf}
-  | eof                 {Error `Unterminated_string}
+  | escape eof
+    {Error `Escape_at_end}
+  | escape _ as str
+    {Buffer.add_string buf str;
+    quotation_parser buf acc_in acc_out delim lexbuf}
+  | squot squot as str
+    {Buffer.add_string buf str;
+    quotation_parser buf acc_in acc_out delim lexbuf}
+  | dquot dquot as str
+    {Buffer.add_string buf str;
+    quotation_parser buf acc_in acc_out delim lexbuf}
+  | quot as chr
+    {Buffer.add_char buf chr;
+    if delim = chr
+    then main_parser buf acc_in acc_out lexbuf
+    else quotation_parser buf acc_in acc_out delim lexbuf}
+  | _ as chr
+    {Buffer.add_char buf chr;
+    quotation_parser buf acc_in acc_out delim lexbuf}
+  | eof
+    {Error `Unterminated_string}
 
 and check_ident name = parse
   | ident {Ok ()}
