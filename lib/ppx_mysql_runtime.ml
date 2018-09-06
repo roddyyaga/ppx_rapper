@@ -27,9 +27,13 @@ module Stdlib = struct
       | Ok of 'a
       | Error of 'e
 
-    let bind r f = match r with
-      | Ok x -> f x
-      | Error _ as e -> e
+    let bind r f =
+      match r with
+      | Ok x ->
+          f x
+      | Error _ as e ->
+          e
+
 
     let ( >>= ) = bind
   end

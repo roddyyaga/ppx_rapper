@@ -1,16 +1,16 @@
 open Ppxlib
-
-module Query = Query (* So the unit tests have access to the Query module *)
+module Query = Query
+(* So the unit tests have access to the Query module *)
 module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
 let rec build_fun_chain ~loc expr used_set = function
   | [] ->
       expr
-  | Query.{name; _} :: tl
+  | Query.({name; _}) :: tl
     when Used_set.mem name used_set ->
       build_fun_chain ~loc expr used_set tl
-  | Query.{typ; opt; name; _} :: tl ->
+  | Query.({typ; opt; name; _}) :: tl ->
       let open Buildef in
       let used_set = Used_set.add name used_set in
       let tl' = build_fun_chain ~loc expr used_set tl in

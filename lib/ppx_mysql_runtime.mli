@@ -29,6 +29,7 @@ module Stdlib : sig
       | Error of 'e
 
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
 

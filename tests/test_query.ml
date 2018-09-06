@@ -294,6 +294,7 @@ let parsed_query_quoted3 =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
+
 let query_bad0 = "SELECT true FROM users WHERE id = %int{ID}"
 
 let error_bad0 = `Bad_identifier "ID"
@@ -321,11 +322,7 @@ let error_bad5 = `Escape_at_end
 let test_parse_query () =
   let run desc query expected =
     Alcotest.(
-      check
-        (result parsed_query_mod parse_error_mod)
-        desc
-        expected
-        (Query.parse query))
+      check (result parsed_query_mod parse_error_mod) desc expected (Query.parse query))
   in
   run "query_0" query_0 (Ok parsed_query_0);
   run "query_out1" query_out1 (Ok parsed_query_out1);
