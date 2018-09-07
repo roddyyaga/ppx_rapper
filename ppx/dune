@@ -1,6 +1,8 @@
+(ocamllex query)
+
 (library
   (name ppx_mysql)
   (public_name ppx_mysql)
   (kind ppx_rewriter)
-  (libraries re ppxlib ppx_mysql.runtime)
+  (libraries ppxlib ppx_mysql.runtime)
   (preprocess (pps ppxlib.metaquot)))
