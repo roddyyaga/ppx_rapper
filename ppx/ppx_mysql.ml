@@ -1,6 +1,6 @@
 open Ppxlib
-module Query = Query
 (* So the unit tests have access to the Query module *)
+module Query = Query
 module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
