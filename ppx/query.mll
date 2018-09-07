@@ -22,9 +22,9 @@ type parse_error =
 let build_param spec opt name =
   let open Result in
   begin match spec with
-  | "int" -> Ok ("int", ("Pervasives", "int_of_string"), ("Pervasives", "string_of_int"))
-  | "int32" -> Ok ("int32", ("Int32", "of_string"), ("Int32", "to_string"))
-  | "int64" -> Ok ("int64", ("Int64", "of_string"), ("Int64", "to_string"))
+  | "int" -> Ok ("int", ("Ppx_mysql_runtime", "int_of_string_exn"), ("Pervasives", "string_of_int"))
+  | "int32" -> Ok ("int32", ("Ppx_mysql_runtime", "int32_of_string_exn"), ("Int32", "to_string"))
+  | "int64" -> Ok ("int64", ("Ppx_mysql_runtime", "int64_of_string_exn"), ("Int64", "to_string"))
   | "string" -> Ok ("string", ("Ppx_mysql_runtime", "identity"), ("Ppx_mysql_runtime", "identity"))
   | spec -> Error (`Unknown_type_spec spec)
   end >>= fun (typ, of_string, to_string) ->
