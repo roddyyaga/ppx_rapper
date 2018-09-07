@@ -1,4 +1,19 @@
+(executable
+    (name pp)
+    (modules pp)
+    (libraries ppx_mysql ppxlib))
+
+(rule
+    (targets test_ppx.result)
+    (deps test_ppx.ml)
+    (action (run ./pp.exe --impl %{deps} -o %{targets})))
+
+(alias
+    (name runtest)
+    (action (diff test_ppx.expected test_ppx.result)))
+
 (test
     (name test_query)
+    (modules test_query)
     (libraries alcotest ppx_mysql)
     (preprocess (pps ppx_deriving.show ppx_deriving.eq)))
