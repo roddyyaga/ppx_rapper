@@ -4,10 +4,10 @@
     (libraries ppx_mysql ppxlib))
 
 (rule
-    (targets test_ppx.result)
+    (targets test_ppx.result.ml)
     (deps test_ppx.ml)
     (action (run ./pp.exe --impl %{deps} -o %{targets})))
 
 (alias
     (name runtest)
-    (action (diff test_ppx.expected.ml test_ppx.result)))
+    (action (diff test_ppx.expected.ml test_ppx.result.ml)))
