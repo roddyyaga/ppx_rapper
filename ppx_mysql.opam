@@ -11,6 +11,7 @@ build-test: [["dune" "runtest" "-p" name]]
 depends: [
   "alcotest" {test & >= "0.8" & < "0.9"}
   "dune" {build}
+  "ocamlformat" {test}
   "ppxlib" {>= "0.2" & < "0.4"}
   "ppx_deriving" {test & >= "4.2" & < "5.0"}
 ]

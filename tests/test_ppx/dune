@@ -8,6 +8,11 @@
     (deps test_ppx.ml)
     (action (run ./pp.exe --impl %{deps} -o %{targets})))
 
+(rule
+    (targets test_ppx.result.reformatted.ml)
+    (deps test_ppx.result.ml)
+    (action (run ocamlformat %{deps} -o %{targets})))
+
 (alias
     (name runtest)
-    (action (diff test_ppx.expected.ml test_ppx.result.ml)))
+    (action (diff test_ppx.expected.ml test_ppx.result.reformatted.ml)))
