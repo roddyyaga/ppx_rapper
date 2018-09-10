@@ -1,0 +1,9 @@
+(executable
+    (name hello_world_with_async)
+    (libraries mysql ppx_mysql ppx_mysql_async)
+    (preprocess (pps ppx_mysql))
+)
+
+(alias
+  (name examples)
+  (deps hello_world_with_async.exe))

@@ -53,29 +53,38 @@ Setting up the environment
 --------------------------
 
 To minimise the amount of boilerplate, this syntax extension generates functions which expect
-the existence of two modules in the current context.  These modules must be called `IO` and
-`Prepared`, and must satisfy the following signatures, respectively:
+the existence of the following signature in the current context:
 
 ```ocaml
-module type IO =
-sig
+module type PPX_CONTEXT = sig
+  type dbh
+
+  module IO : sig
     type 'a t
     val return : 'a -> 'a t
     val bind : 'a t -> ('a -> 'b t) -> 'b t
-end
+  end
 
-module type PREPARED =
-sig
-    type dbh
+  module Prepared: sig
     type stmt
     type stmt_result
 
-    val create : dbh ‑> string ‑> stmt IO.t
-    val execute_null : stmt ‑> string option array ‑> stmt_result IO.t
-    val fetch : stmt_result ‑> string option array option IO.t
-    val close : stmt ‑> unit IO.t
+    val create : dbh -> string -> stmt IO.t
+    val execute_null : stmt -> string option array -> stmt_result IO.t
+    val fetch : stmt_result -> string option array option IO.t
+    val close : stmt -> unit IO.t
+  end
 end
 ```
+
+For your convenience, besides the main `ppx_mysql` package, you can also find in OPAM
+the packages `ppx_mysql_identity` / `ppx_mysql_async` / `ppx_mysql_lwt`, which define
+modules `Mysql_with_identity` / `Mysql_with_async` / `Mysql_with_lwt` (respectively)
+for using Mysql with various IO monads.
+
+As an example, to compile the samples in this document using Mysql and the identity
+monad for IO, just add package `ppx_mysql_identity` to your project dependencies and
+`open Mysql_with_identity` either globally or locally.
 
 
 Basic usage: selecting a single row

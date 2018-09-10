@@ -3,7 +3,7 @@ default: build
 
 .PHONY: build
 build: ## Build the source
-	dune build @install @examples
+	dune build @install
 
 .PHONY: examples
 examples: ## Build only examples

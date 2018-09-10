@@ -10,28 +10,7 @@
  *     );
  *)
 
-(********************************************************************************)
-(** {1 Required modules for the Ppx_syntax extension}                           *)
-
-(********************************************************************************)
-
-(* The Ppx_mysql syntax extension expects the existence of a module named 'IO'
- * where the IO monad is defined.  For this example we use the identity monad,
- * but normally you'd want to use Lwt or Async.
- *)
-module IO = struct
-  type 'a t = 'a
-
-  let return x = x
-
-  let bind x f = f x
-end
-
-(* The Ppx_mysql syntax extension also expects the existence of a module named
- * 'Prepared' where functions relating to prepared functions are defined. Mysql's
- * 'Prepared' module satisfies the expected interface and can be used directly.
- *)
-module Prepared = Mysql.Prepared
+open Mysql_with_identity
 
 (********************************************************************************)
 (** {1 Database queries using the Ppx_mysql syntax extension}                   *)

@@ -1,3 +1,24 @@
+module type PPX_CONTEXT =
+sig
+  type dbh
+
+  module IO : sig
+    type 'a t
+    val return : 'a -> 'a t
+    val bind : 'a t -> ('a -> 'b t) -> 'b t
+  end
+
+  module Prepared: sig
+    type stmt
+    type stmt_result
+
+    val create : dbh -> string -> stmt IO.t
+    val execute_null : stmt -> string option array -> stmt_result IO.t
+    val fetch : stmt_result -> string option array option IO.t
+    val close : stmt -> unit IO.t
+  end
+end
+
 module Stdlib : sig
   module Array : sig
     include module type of struct
