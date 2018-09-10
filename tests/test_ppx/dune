@@ -11,9 +11,3 @@
 (alias
     (name runtest)
     (action (diff test_ppx.expected.ml test_ppx.result)))
-
-(test
-    (name test_query)
-    (modules test_query)
-    (libraries alcotest ppx_mysql)
-    (preprocess (pps ppx_deriving.show ppx_deriving.eq)))
