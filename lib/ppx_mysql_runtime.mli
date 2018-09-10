@@ -1,5 +1,3 @@
-val identity : 'a -> 'a
-
 module Stdlib : sig
   module Array : sig
     include module type of struct
@@ -19,7 +17,6 @@ module Stdlib : sig
       | Some of 'a
 
     val map : ('a -> 'b) -> 'a t -> 'b t
-
     val get : 'a t -> 'a
   end
 
@@ -35,3 +32,11 @@ module Stdlib : sig
 
   val ( = ) : 'a -> 'a -> bool
 end
+
+exception Deserialization_error of string * string
+
+val identity : 'a -> 'a
+
+val int_of_string_exn : string -> int
+val int32_of_string_exn : string -> int32
+val int64_of_string_exn : string -> int64
