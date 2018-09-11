@@ -1,6 +1,6 @@
 (executable
     (name hello_world_with_async)
-    (libraries mysql ppx_mysql ppx_mysql_async)
+    (libraries mysql ppx_mysql.runtime ppx_mysql_async)
     (preprocess (pps ppx_mysql))
 )
 
