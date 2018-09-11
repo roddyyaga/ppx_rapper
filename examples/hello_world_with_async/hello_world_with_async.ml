@@ -78,7 +78,7 @@ let result =
   >>= fun user -> print_user user; Mysql.disconnect dbh; Deferred.return @@ Ok ()
 
 
-let run =
+let main () =
   Deferred.bind result ~f:(function
       | Ok () ->
           Deferred.return @@ Writer.writef stdout "All went well!"
@@ -86,4 +86,4 @@ let run =
           Deferred.return @@ Writer.writef stdout "An error occurred!" )
 
 
-let () = Core.never_returns @@ Scheduler.go ()
+let () = Command.(run @@ async ~summary:"Run Async example" @@ Param.return main)
