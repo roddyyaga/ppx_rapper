@@ -1,5 +1,3 @@
-MAKEFILE_DIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-
 .PHONY: default
 default: build
 
@@ -32,6 +30,7 @@ publish: ## Put the release on GitHub
 	dune-release publish distrib
 
 .PHONY: promote-ppx-output
+promote-ppx-output: MAKEFILE_DIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 promote-ppx-output: ## Promotes the current output of the ppx unit tests to be the new expected output.
 	dune runtest --force || true # Without the 'true' Make will abort.
 	cp $(MAKEFILE_DIR)_build/default/tests/test_ppx/test_ppx.result.reformatted.ml \
