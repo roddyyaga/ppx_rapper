@@ -1,8 +1,7 @@
 (executable
     (name hello_world_with_lwt)
     (libraries mysql ppx_mysql.runtime ppx_mysql_lwt)
-    (preprocess (pps ppx_mysql lwt_ppx))
-)
+    (preprocess (pps ppx_mysql lwt_ppx)))
 
 (alias
   (name examples)

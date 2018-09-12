@@ -82,7 +82,7 @@ let result dbh =
 
 
 let main dbh =
-  let open Lwt in
+  let open Lwt.Infix in
   result dbh
   >>= function
   | Ok () ->

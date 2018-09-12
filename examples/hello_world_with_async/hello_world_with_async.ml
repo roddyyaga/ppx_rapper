@@ -59,7 +59,7 @@ let print_user (id, name, phone) =
 
 
 let result =
-  let ( >>= ) = Deferred.Result.( >>= ) in
+  let open Deferred.Result.Let_syntax in
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
   insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456")
   >>= fun () ->
@@ -74,16 +74,16 @@ let result =
   List.iter print_user users;
   update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321")
   >>= fun () ->
-  get_user dbh ~id:2l
-  >>= fun user -> print_user user; Mysql.disconnect dbh; Deferred.return @@ Ok ()
+  get_user dbh ~id:2l >>= fun user -> print_user user; Mysql.disconnect dbh; return ()
 
 
 let main () =
-  Deferred.bind result ~f:(function
-      | Ok () ->
-          Deferred.return @@ Writer.writef stdout "All went well!"
-      | Error _ ->
-          Deferred.return @@ Writer.writef stdout "An error occurred!" )
+  result
+  >>= function
+  | Ok () ->
+      return @@ Writer.writef stdout "All went well!"
+  | Error _ ->
+      return @@ Writer.writef stdout "An error occurred!"
 
 
 let () = Command.(run @@ async ~summary:"Run Async example" @@ Param.return main)
