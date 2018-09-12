@@ -125,3 +125,4 @@ val int_of_string_exn : string -> int
 val int32_of_string_exn : string -> int32
 
 val int64_of_string_exn : string -> int64
+val bool_of_string_exn : string -> bool

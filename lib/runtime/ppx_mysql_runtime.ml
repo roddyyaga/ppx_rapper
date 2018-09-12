@@ -196,3 +196,8 @@ let int_of_string_exn = wrap_deserializer int_of_string
 let int32_of_string_exn = wrap_deserializer Int32.of_string
 
 let int64_of_string_exn = wrap_deserializer Int64.of_string
+
+let bool_of_string_exn = function
+  | "0" -> false
+  | "1" -> true
+  | str -> raise (Deserialization_error ("Ppx_mysql_runtime.bool_of_string_exn", str))
