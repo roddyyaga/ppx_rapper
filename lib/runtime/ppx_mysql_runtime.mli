@@ -30,8 +30,6 @@ sig
 
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
-    val return : 'a -> ('a, _) t
-    val error: 'e -> (_, 'e) t
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
@@ -48,7 +46,6 @@ sig
     val close : stmt -> (unit, [> error ]) result IO.t
     val with_stmt : dbh -> string -> (stmt -> ('a, [> error ] as 'e) result IO.t) -> ('a, 'e) result IO.t
   end
-
 end
 
 module Make_context : functor (M : PPX_CONTEXT_ARG) -> PPX_CONTEXT with type 'a IO.t = 'a M.IO.t and type Prepared.dbh = M.Prepared.dbh

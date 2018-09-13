@@ -30,8 +30,6 @@ sig
 
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
-    val return : 'a -> ('a, _) t
-    val error: 'e -> (_, 'e) t
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
@@ -55,15 +53,11 @@ module Make_context (M : PPX_CONTEXT_ARG) : PPX_CONTEXT with type 'a IO.t = 'a M
 struct
   module IO = struct
     include M.IO
-
     let ( >>= ) = bind
   end
 
   module IO_result = struct
     type ('a, 'e) t = ('a, 'e) result IO.t
-
-    let return x = IO.return @@ Ok x
-    let error e = IO.return @@ Error e
     let bind x f = IO.bind x (function Ok v -> f v | Error _ as e -> IO.return e)
     let ( >>= ) = bind
   end
