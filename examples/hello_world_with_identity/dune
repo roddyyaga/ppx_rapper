@@ -1,0 +1,8 @@
+(executable
+    (name hello_world_with_identity)
+    (libraries mysql ppx_mysql.runtime ppx_mysql_identity)
+    (preprocess (pps ppx_mysql)))
+
+(alias
+  (name examples)
+  (deps hello_world_with_identity.exe))

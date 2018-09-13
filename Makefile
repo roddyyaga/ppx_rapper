@@ -5,10 +5,6 @@ default: build
 build: ## Build the source
 	dune build @install @examples
 
-.PHONY: examples
-examples: ## Build only examples
-	dune build @examples
-
 .PHONY: test
 test: ## Run tests
 	dune runtest --force

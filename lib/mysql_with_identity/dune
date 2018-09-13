@@ -1,0 +1,4 @@
+(library
+  (name mysql_with_identity)
+  (libraries mysql ppx_mysql.runtime)
+  (public_name ppx_mysql_identity))

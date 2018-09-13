@@ -1,5 +1,5 @@
 let test_no_params dbh =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT TRUE" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -14,8 +14,8 @@ let test_no_params dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 0))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -38,11 +38,10 @@ let test_no_params dbh =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_single_output_params dbh =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT name FROM users WHERE id = 1" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -62,8 +61,8 @@ let test_single_output_params dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 1))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -86,11 +85,10 @@ let test_single_output_params dbh =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_pair_output_params dbh =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id = 1" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -113,8 +111,8 @@ let test_pair_output_params dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -137,11 +135,10 @@ let test_pair_output_params dbh =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_one_input_params dbh ~(id : int) =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT name FROM users WHERE id = ?" in
   let params = [|Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)|] in
   let[@warning "-26"] process_out_params row =
@@ -161,8 +158,8 @@ let test_one_input_params dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 1))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -185,11 +182,10 @@ let test_one_input_params dbh ~(id : int) =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id = ? OR name = ?" in
   let params =
     [| Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)
@@ -215,8 +211,8 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -239,11 +235,10 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_select_all dbh =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -266,8 +261,8 @@ let test_select_all dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -286,11 +281,10 @@ let test_select_all dbh =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_repeated_input_params dbh ~(id : int) =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id <> ? AND id <> ?" in
   let params =
     [| Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)
@@ -316,8 +310,8 @@ let test_repeated_input_params dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -336,11 +330,10 @@ let test_repeated_input_params dbh ~(id : int) =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_select_opt dbh ~(id : int) =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id = ?" in
   let params = [|Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)|] in
   let[@warning "-26"] process_out_params row =
@@ -363,8 +356,8 @@ let test_select_opt dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -390,11 +383,10 @@ let test_select_opt dbh ~(id : int) =
     in
     loop [] )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result
 
 
 let test_execute dbh ~(id : int) =
-  let ( >>= ) = IO.bind in
+  let open IO_result in
   let query = "DELETE FROM users WHERE id = ?" in
   let params = [|Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)|] in
   let[@warning "-26"] process_out_params row =
@@ -409,8 +401,8 @@ let test_execute dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
     else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 0))
   in
-  Prepared.create dbh query
-  >>= fun stmt ->
+  Prepared.with_stmt dbh query
+  @@ fun stmt ->
   Prepared.execute_null stmt params
   >>= fun stmt_result ->
   (fun () ->
@@ -421,4 +413,3 @@ let test_execute dbh ~(id : int) =
     | Ppx_mysql_runtime.Stdlib.Option.None ->
         IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ()) )
     ()
-  >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result

@@ -1,0 +1,4 @@
+(library
+  (name mysql_with_lwt)
+  (libraries lwt lwt.unix mysql ppx_mysql.runtime)
+  (public_name ppx_mysql_lwt))

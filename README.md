@@ -53,29 +53,58 @@ Setting up the environment
 --------------------------
 
 To minimise the amount of boilerplate, this syntax extension generates functions which expect
-the existence of two modules in the current context.  These modules must be called `IO` and
-`Prepared`, and must satisfy the following signatures, respectively:
+the existence of the following signature in the current context:
 
 ```ocaml
-module type IO =
 sig
+  module IO : sig
     type 'a t
+
     val return : 'a -> 'a t
     val bind : 'a t -> ('a -> 'b t) -> 'b t
-end
+    val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  end
 
-module type PREPARED =
-sig
+  module IO_result : sig
+    type ('a, 'e) t = ('a, 'e) result IO.t
+
+    val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+    val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+  end
+
+  module Prepared : sig
     type dbh
     type stmt
     type stmt_result
+    type error
+    type wrapped_error = [`Mysql_error of error]
 
-    val create : dbh ‑> string ‑> stmt IO.t
-    val execute_null : stmt ‑> string option array ‑> stmt_result IO.t
-    val fetch : stmt_result ‑> string option array option IO.t
-    val close : stmt ‑> unit IO.t
+    val create : dbh -> string -> (stmt, [> wrapped_error]) result IO.t
+    val execute_null : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
+    val fetch : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
+    val close : stmt -> (unit, [> wrapped_error]) result IO.t
+    val with_stmt : dbh -> string -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t) -> ('a, 'e) result IO.t
+  end
 end
 ```
+
+Note that you should **not** manually write the code that satisfies this
+signature. Instead, you should use the `Make_context` functor defined in the
+`Ppx_mysql_runtime` module, which will produce a module satisfying the above
+signature using as argument a module with a much simpler signature. (Please
+see the API documentation for details.)
+
+Note also that in most cases you don't have to even worry about calling the
+functor yourself.  For your convenience, besides the main `ppx_mysql` package,
+you can also find in OPAM the packages `ppx_mysql_identity` / `ppx_mysql_async`
+/ `ppx_mysql_lwt`, which define modules `Mysql_with_identity` / `Mysql_with_async`
+/ `Mysql_with_lwt` (respectively) for using Mysql with various IO monads, and
+which take of all the nitty-gritty of defining a base module and passing it
+to the `Make_context` functor.
+
+As an example, to compile the samples in this document using Mysql and the identity
+monad for IO, just add package `ppx_mysql_identity` to your project dependencies and
+`open Mysql_with_identity` either globally or locally.
 
 
 Basic usage: selecting a single row
