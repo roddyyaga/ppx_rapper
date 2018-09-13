@@ -56,22 +56,34 @@ let print_user (id, name, phone) =
 
 let result dbh =
   let open IO_result in
-  insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456") >>= fun () ->
-  insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None >>= fun () ->
-  insert_user dbh ~id:3l ~name:"Claire" ~phone:None >>= fun () ->
-  delete_user dbh ~id:3l >>= fun () ->
-  get_users dbh >>= fun users ->
+  insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456")
+  >>= fun () ->
+  insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None
+  >>= fun () ->
+  insert_user dbh ~id:3l ~name:"Claire" ~phone:None
+  >>= fun () ->
+  delete_user dbh ~id:3l
+  >>= fun () ->
+  get_users dbh
+  >>= fun users ->
   let%lwt () = Lwt_list.iter_s print_user users in
-  update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321") >>= fun () ->
-  get_user dbh ~id:2l >>= fun user ->
+  update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321")
+  >>= fun () ->
+  get_user dbh ~id:2l
+  >>= fun user ->
   let%lwt () = print_user user in
   Lwt.return_ok ()
 
+
 let main dbh =
   let open Lwt.Infix in
-  result dbh >>= function
-  | Ok () -> Lwt_io.printlf "All went well!"
-  | Error _ -> Lwt_io.printlf "An error occurred!"
+  result dbh
+  >>= function
+  | Ok () ->
+      Lwt_io.printlf "All went well!"
+  | Error _ ->
+      Lwt_io.printlf "An error occurred!"
+
 
 let () =
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in

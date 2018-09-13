@@ -1,64 +1,97 @@
-module type PPX_CONTEXT_ARG =
-sig
+module type PPX_CONTEXT_ARG = sig
   module IO : sig
     type 'a t
+
     val return : 'a -> 'a t
+
     val bind : 'a t -> ('a -> 'b t) -> 'b t
   end
 
   module Prepared : sig
     type dbh
-    type stmt
-    type stmt_result
-    type error = [ `Mysql_exception of exn ]
 
-    val create : dbh -> string -> (stmt, [> error ]) result IO.t
-    val execute_null : stmt -> string option array -> (stmt_result, [> error ]) result IO.t
-    val fetch : stmt_result -> (string option array option, [> error ]) result IO.t
-    val close : stmt -> (unit, [> error ]) result IO.t
+    type stmt
+
+    type stmt_result
+
+    type error = [`Mysql_exception of exn]
+
+    val create : dbh -> string -> (stmt, [> error]) result IO.t
+
+    val execute_null 
+      : stmt -> string option array -> (stmt_result, [> error]) result IO.t
+
+    val fetch : stmt_result -> (string option array option, [> error]) result IO.t
+
+    val close : stmt -> (unit, [> error]) result IO.t
   end
 end
 
-module type PPX_CONTEXT =
-sig
+module type PPX_CONTEXT = sig
   module IO : sig
     type 'a t
+
     val return : 'a -> 'a t
+
     val bind : 'a t -> ('a -> 'b t) -> 'b t
+
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   end
 
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
+
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
 
-  module Prepared: sig
+  module Prepared : sig
     type dbh
+
     type stmt
+
     type stmt_result
-    type error = [ `Mysql_exception of exn ]
 
-    val create : dbh -> string -> (stmt, [> error ]) result IO.t
-    val execute_null : stmt -> string option array -> (stmt_result, [> error ]) result IO.t
-    val fetch : stmt_result -> (string option array option, [> error ]) result IO.t
-    val close : stmt -> (unit, [> error ]) result IO.t
-    val with_stmt : dbh -> string -> (stmt -> ('a, [> error ] as 'e) result IO.t) -> ('a, 'e) result IO.t
+    type error = [`Mysql_exception of exn]
+
+    val create : dbh -> string -> (stmt, [> error]) result IO.t
+
+    val execute_null 
+      : stmt -> string option array -> (stmt_result, [> error]) result IO.t
+
+    val fetch : stmt_result -> (string option array option, [> error]) result IO.t
+
+    val close : stmt -> (unit, [> error]) result IO.t
+
+    val with_stmt 
+      :  dbh
+      -> string
+      -> (stmt -> ('a, ([> error] as 'e)) result IO.t)
+      -> ('a, 'e) result IO.t
   end
-
 end
 
-module Make_context (M : PPX_CONTEXT_ARG) : PPX_CONTEXT with type 'a IO.t = 'a M.IO.t and type Prepared.dbh = M.Prepared.dbh =
+module Make_context (M : PPX_CONTEXT_ARG) :
+  PPX_CONTEXT with type 'a IO.t = 'a M.IO.t and type Prepared.dbh = M.Prepared.dbh =
 struct
   module IO = struct
     include M.IO
+
     let ( >>= ) = bind
   end
 
   module IO_result = struct
     type ('a, 'e) t = ('a, 'e) result IO.t
-    let bind x f = IO.bind x (function Ok v -> f v | Error _ as e -> IO.return e)
+
+    let bind x f =
+      IO.bind x (function
+          | Ok v ->
+              f v
+          | Error _ as e ->
+              IO.return e )
+
+
     let ( >>= ) = bind
   end
 
@@ -66,11 +99,16 @@ struct
     include M.Prepared
 
     let with_stmt dbh sql f =
-      IO_result.bind (create dbh sql) @@ fun stmt ->
-      IO.bind (f stmt) @@ fun res ->
-      IO.bind (close stmt) @@ function
-        | Ok () -> IO.return res
-        | Error _ as e -> IO.return e
+      IO_result.bind (create dbh sql)
+      @@ fun stmt ->
+      IO.bind (f stmt)
+      @@ fun res ->
+      IO.bind (close stmt)
+      @@ function
+      | Ok () ->
+          IO.return res
+      | Error _ as e ->
+          IO.return e
   end
 end
 
