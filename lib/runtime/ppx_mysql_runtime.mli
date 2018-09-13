@@ -61,7 +61,7 @@ module type PPX_CONTEXT = sig
     val execute_null 
       : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
 
-    val fetch
+    val fetch 
       : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
 
     val close : stmt -> (unit, [> wrapped_error]) result IO.t
@@ -125,4 +125,5 @@ val int_of_string_exn : string -> int
 val int32_of_string_exn : string -> int32
 
 val int64_of_string_exn : string -> int64
+
 val bool_of_string_exn : string -> bool
