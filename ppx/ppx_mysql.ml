@@ -177,7 +177,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
          no output parameters. *)
       let expr =
         [%expr
-          let ( >>= ) = IO_result.bind in
+          let open IO_result in
           let query = [%e Buildef.estring ~loc query] in
           let params =
             [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params)]

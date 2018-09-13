@@ -1,5 +1,5 @@
 let test_no_params dbh =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT TRUE" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -41,7 +41,7 @@ let test_no_params dbh =
 
 
 let test_single_output_params dbh =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT name FROM users WHERE id = 1" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -88,7 +88,7 @@ let test_single_output_params dbh =
 
 
 let test_pair_output_params dbh =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id = 1" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -138,7 +138,7 @@ let test_pair_output_params dbh =
 
 
 let test_one_input_params dbh ~(id : int) =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT name FROM users WHERE id = ?" in
   let params = [|Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)|] in
   let[@warning "-26"] process_out_params row =
@@ -185,7 +185,7 @@ let test_one_input_params dbh ~(id : int) =
 
 
 let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id = ? OR name = ?" in
   let params =
     [| Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)
@@ -238,7 +238,7 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
 
 
 let test_select_all dbh =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users" in
   let params = [||] in
   let[@warning "-26"] process_out_params row =
@@ -284,7 +284,7 @@ let test_select_all dbh =
 
 
 let test_repeated_input_params dbh ~(id : int) =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id <> ? AND id <> ?" in
   let params =
     [| Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)
@@ -333,7 +333,7 @@ let test_repeated_input_params dbh ~(id : int) =
 
 
 let test_select_opt dbh ~(id : int) =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "SELECT id, name FROM users WHERE id = ?" in
   let params = [|Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)|] in
   let[@warning "-26"] process_out_params row =
@@ -386,7 +386,7 @@ let test_select_opt dbh ~(id : int) =
 
 
 let test_execute dbh ~(id : int) =
-  let ( >>= ) = IO_result.bind in
+  let open IO_result in
   let query = "DELETE FROM users WHERE id = ?" in
   let params = [|Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)|] in
   let[@warning "-26"] process_out_params row =
