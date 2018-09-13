@@ -14,9 +14,9 @@ include Ppx_mysql_runtime.Make_context (struct
 
     type stmt_result = Mysql.Prepared.stmt_result
 
-    type error = [`Mysql_exception of exn]
+    type error = exn
 
-    let wrap f x = try Ok (f x) with exn -> Error (`Mysql_exception exn)
+    let wrap f x = try Ok (f x) with exn -> Error exn
 
     let create dbd sql = wrap (Mysql.Prepared.create dbd) sql
 

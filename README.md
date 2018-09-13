@@ -59,6 +59,7 @@ the existence of the following signature in the current context:
 sig
   module IO : sig
     type 'a t
+
     val return : 'a -> 'a t
     val bind : 'a t -> ('a -> 'b t) -> 'b t
     val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
@@ -66,21 +67,23 @@ sig
 
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
+
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
 
-  module Prepared: sig
+  module Prepared : sig
     type dbh
     type stmt
     type stmt_result
-    type error = [ `Mysql_exception of exn ]
+    type error
+    type wrapped_error = [`Mysql_error of error]
 
-    val create : dbh -> string -> (stmt, [> error ]) result IO.t
-    val execute_null : stmt -> string option array -> (stmt_result, [> error ]) result IO.t
-    val fetch : stmt_result -> (string option array option, [> error ]) result IO.t
-    val close : stmt -> (unit, [> error ]) result IO.t
-    val with_stmt : dbh -> string -> (stmt -> ('a, [> error ] as 'e) result IO.t) -> ('a, 'e) result IO.t
+    val create : dbh -> string -> (stmt, [> wrapped_error]) result IO.t
+    val execute_null : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
+    val fetch : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
+    val close : stmt -> (unit, [> wrapped_error]) result IO.t
+    val with_stmt : dbh -> string -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t) -> ('a, 'e) result IO.t
   end
 end
 ```

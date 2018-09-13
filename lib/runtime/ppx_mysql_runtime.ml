@@ -14,16 +14,15 @@ module type PPX_CONTEXT_ARG = sig
 
     type stmt_result
 
-    type error = [`Mysql_exception of exn]
+    type error
 
-    val create : dbh -> string -> (stmt, [> error]) result IO.t
+    val create : dbh -> string -> (stmt, error) result IO.t
 
-    val execute_null 
-      : stmt -> string option array -> (stmt_result, [> error]) result IO.t
+    val execute_null : stmt -> string option array -> (stmt_result, error) result IO.t
 
-    val fetch : stmt_result -> (string option array option, [> error]) result IO.t
+    val fetch : stmt_result -> (string option array option, error) result IO.t
 
-    val close : stmt -> (unit, [> error]) result IO.t
+    val close : stmt -> (unit, error) result IO.t
   end
 end
 
@@ -53,28 +52,33 @@ module type PPX_CONTEXT = sig
 
     type stmt_result
 
-    type error = [`Mysql_exception of exn]
+    type error
 
-    val create : dbh -> string -> (stmt, [> error]) result IO.t
+    type wrapped_error = [`Mysql_error of error]
+
+    val create : dbh -> string -> (stmt, [> wrapped_error]) result IO.t
 
     val execute_null 
-      : stmt -> string option array -> (stmt_result, [> error]) result IO.t
+      : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
 
-    val fetch : stmt_result -> (string option array option, [> error]) result IO.t
+    val fetch 
+      : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
 
-    val close : stmt -> (unit, [> error]) result IO.t
+    val close : stmt -> (unit, [> wrapped_error]) result IO.t
 
     val with_stmt 
       :  dbh
       -> string
-      -> (stmt -> ('a, ([> error] as 'e)) result IO.t)
+      -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t)
       -> ('a, 'e) result IO.t
   end
 end
 
 module Make_context (M : PPX_CONTEXT_ARG) :
-  PPX_CONTEXT with type 'a IO.t = 'a M.IO.t and type Prepared.dbh = M.Prepared.dbh =
-struct
+  PPX_CONTEXT
+  with type 'a IO.t = 'a M.IO.t
+   and type Prepared.dbh = M.Prepared.dbh
+   and type Prepared.error = M.Prepared.error = struct
   module IO = struct
     include M.IO
 
@@ -96,7 +100,32 @@ struct
   end
 
   module Prepared = struct
-    include M.Prepared
+    type dbh = M.Prepared.dbh
+
+    type stmt = M.Prepared.stmt
+
+    type stmt_result = M.Prepared.stmt_result
+
+    type error = M.Prepared.error
+
+    type wrapped_error = [`Mysql_error of error]
+
+    let wrap f x =
+      IO.bind (f x)
+      @@ function
+      | Ok _ as ok ->
+          IO.return ok
+      | Error err ->
+          IO.return @@ Error (`Mysql_error err)
+
+
+    let create dbd sql = wrap (M.Prepared.create dbd) sql
+
+    let close stmt = wrap M.Prepared.close stmt
+
+    let execute_null stmt args = wrap (M.Prepared.execute_null stmt) args
+
+    let fetch stmt_res = wrap M.Prepared.fetch stmt_res
 
     let with_stmt dbh sql f =
       IO_result.bind (create dbh sql)

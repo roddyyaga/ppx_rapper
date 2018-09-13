@@ -8,13 +8,13 @@ include Ppx_mysql_runtime.Make_context (struct
 
     type stmt_result = Mysql.Prepared.stmt_result
 
-    type error = [`Mysql_exception of exn]
+    type error = exn
 
     let wrap f x =
       let open Lwt.Infix in
       Lwt.catch
         (fun () -> Lwt_preemptive.detach f x >>= fun v -> Lwt.return_ok v)
-        (fun exn -> Lwt.return_error @@ `Mysql_exception exn)
+        (fun exn -> Lwt.return_error exn)
 
 
     let create dbd sql = wrap (Mysql.Prepared.create dbd) sql
