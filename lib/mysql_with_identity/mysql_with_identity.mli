@@ -1,3 +1,3 @@
 include Ppx_mysql_runtime.PPX_CONTEXT with
-  type dbh = Mysql.dbd and
-  type 'a IO.t = 'a
+  type 'a IO.t = 'a and
+  type Prepared.dbh = Mysql.dbd

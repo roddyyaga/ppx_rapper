@@ -20,7 +20,6 @@ open Mysql_with_identity
 let get_users =
   [%mysql Select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
 
-
 let get_user =
   [%mysql
     Select_one
@@ -62,28 +61,18 @@ let print_user (id, name, phone) =
 
 let () =
   let result =
-    let ( >>= ) res f =
-      match res with
-      | Ok ok ->
-          f ok
-      | Error err ->
-          Error err
-    in
+    let open IO_result in
     let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-    insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456")
-    >>= fun () ->
-    insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None
-    >>= fun () ->
-    insert_user dbh ~id:3l ~name:"Claire" ~phone:None
-    >>= fun () ->
-    delete_user dbh ~id:3l
-    >>= fun () ->
-    get_users dbh
-    >>= fun users ->
+    insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456") >>= fun () ->
+    insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None >>= fun () ->
+    insert_user dbh ~id:3l ~name:"Claire" ~phone:None >>= fun () ->
+    delete_user dbh ~id:3l >>= fun () ->
+    get_users dbh >>= fun users ->
     List.iter print_user users;
-    update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321")
-    >>= fun () ->
-    get_user dbh ~id:2l >>= fun user -> print_user user; Mysql.disconnect dbh; Ok ()
+    update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321") >>= fun () ->
+    get_user dbh ~id:2l >>= fun user ->
+    print_user user;
+    Mysql.disconnect dbh; Ok ()
   in
   match result with
   | Ok () ->

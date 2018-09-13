@@ -89,8 +89,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
         [%expr
           fun () ->
             let rec loop acc =
-              Prepared.fetch stmt_result
-              >>= fun maybe_row ->
+              Prepared.fetch stmt_result >>= fun maybe_row ->
               match acc, maybe_row with
               | [], Ppx_mysql_runtime.Stdlib.Option.Some row -> (
                 match process_out_params row with
@@ -112,8 +111,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
         [%expr
           fun () ->
             let rec loop acc =
-              Prepared.fetch stmt_result
-              >>= fun maybe_row ->
+              Prepared.fetch stmt_result >>= fun maybe_row ->
               match acc, maybe_row with
               | [], Ppx_mysql_runtime.Stdlib.Option.Some row -> (
                 match process_out_params row with
@@ -138,8 +136,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
         [%expr
           fun () ->
             let rec loop acc =
-              Prepared.fetch stmt_result
-              >>= function
+              Prepared.fetch stmt_result >>= function
               | Ppx_mysql_runtime.Stdlib.Option.Some row -> (
                 match process_out_params row with
                 | Ppx_mysql_runtime.Stdlib.Result.Ok row' ->
@@ -155,8 +152,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
     | "Execute" -> (
         [%expr
           fun () ->
-            Prepared.fetch stmt_result
-            >>= function
+            Prepared.fetch stmt_result >>= function
             | Ppx_mysql_runtime.Stdlib.Option.Some _ ->
                 IO.return
                   (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_none_found_one)
@@ -177,20 +173,13 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
          no output parameters. *)
       let expr =
         [%expr
-          let ( >>= ) = IO.bind in
+          let ( >>= ) = IO_result.bind in
           let query = [%e Buildef.estring ~loc query] in
-          let params =
-            [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params)]
-          in
-          let[@warning "-26"] process_out_params =
-            [%e build_out_param_processor ~loc out_params]
-          in
-          Prepared.create dbh query
-          >>= fun stmt ->
-          Prepared.execute_null stmt params
-          >>= fun stmt_result ->
-          [%e process_rows] ()
-          >>= fun result -> Prepared.close stmt >>= fun () -> IO.return result]
+          let params = [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params)] in
+          let[@warning "-26"] process_out_params = [%e build_out_param_processor ~loc out_params] in
+          Prepared.with_stmt dbh query @@ fun stmt ->
+          Prepared.execute_null stmt params >>= fun stmt_result ->
+          [%e process_rows] ()]
       in
       let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
       let chain = build_fun_chain ~loc expr Used_set.empty in_params in
