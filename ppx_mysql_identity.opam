@@ -7,9 +7,8 @@ bug-reports: "https://github.com/issuu/ppx_mysql/issues"
 doc: "https://issuu.github.io/ppx_mysql/"
 available: [ ocaml-version >= "4.03.0" ]
 build: [["dune" "build" "-p" name "-j" jobs]]
-build-test: [["dune" "runtest" "-p" name]]
 depends: [
   "dune" {build}
   "mysql" {>= "1.2" & < "2.0"}
-  "ppx_mysql" {= "0.1"}
+  "ppx_mysql"
 ]
