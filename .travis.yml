@@ -6,9 +6,8 @@ env:
   global:
     - DEPOPTS="*"
     - TESTS=true
-    - EXTRA_REMOTES="https://github.com/issuu/opam-repository-micro.git"
   matrix:
     - OCAML_VERSION=4.06 PACKAGE="ppx_mysql"          PINS="ppx_mysql:."
     - OCAML_VERSION=4.06 PACKAGE="ppx_mysql_identity" PINS="ppx_mysql:. ppx_mysql_identity:."
     - OCAML_VERSION=4.06 PACKAGE="ppx_mysql_lwt"      PINS="ppx_mysql:. ppx_mysql_lwt:."
-    - OCAML_VERSION=4.06 PACKAGE="ppx_mysql_async"    PINS="ppx_mysql:. ppx_mysql_async:."
+    - OCAML_VERSION=4.06 PACKAGE="ppx_mysql_async"    PINS="ppx_mysql:. ppx_mysql_async:." EXTRA_REMOTES="https://github.com/issuu/opam-repository-micro.git"
