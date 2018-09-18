@@ -116,14 +116,12 @@ module Stdlib : sig
   val ( = ) : 'a -> 'a -> bool
 end
 
-exception Deserialization_error of string * string
-
 val identity : 'a -> 'a
 
-val int_of_string_exn : string -> int
+val int_of_string : string -> int
 
-val int32_of_string_exn : string -> int32
+val int32_of_string : string -> int32
 
-val int64_of_string_exn : string -> int64
+val int64_of_string : string -> int64
 
-val bool_of_string_exn : string -> bool
+val bool_of_string : string -> bool

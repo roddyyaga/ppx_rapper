@@ -33,12 +33,30 @@ let test_select_opt =
 
 let test_execute = [%mysql execute "DELETE FROM users WHERE id = %int{id}"]
 
-let test_int = [%mysql select_one "SELECT @int{a}, @int?{b} FROM users where a = %int{a} OR b = %int?{b}"]
+let test_int =
+  [%mysql
+    select_one "SELECT @int{a}, @int?{b} FROM users where a = %int{a} OR b = %int?{b}"]
 
-let test_int32 = [%mysql select_one "SELECT @int32{a}, @int32?{b} FROM users where a = %int32{a} OR b = %int32?{b}"]
 
-let test_int64 = [%mysql select_one "SELECT @int64{a}, @int64?{b} FROM users where a = %int64{a} OR b = %int64?{b}"]
+let test_int32 =
+  [%mysql
+    select_one
+      "SELECT @int32{a}, @int32?{b} FROM users where a = %int32{a} OR b = %int32?{b}"]
 
-let test_bool = [%mysql select_one "SELECT @bool{a}, @bool?{b} FROM users where a = %bool{a} OR b = %bool?{b}"]
 
-let test_string = [%mysql select_one "SELECT @string{a}, @string?{b} FROM users where a = %string{a} OR b = %string?{b}"]
+let test_int64 =
+  [%mysql
+    select_one
+      "SELECT @int64{a}, @int64?{b} FROM users where a = %int64{a} OR b = %int64?{b}"]
+
+
+let test_bool =
+  [%mysql
+    select_one
+      "SELECT @bool{a}, @bool?{b} FROM users where a = %bool{a} OR b = %bool?{b}"]
+
+
+let test_string =
+  [%mysql
+    select_one
+      "SELECT @string{a}, @string?{b} FROM users where a = %string{a} OR b = %string?{b}"]

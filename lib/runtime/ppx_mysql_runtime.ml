@@ -183,23 +183,12 @@ module Stdlib = struct
   let ( = ) = ( = )
 end
 
-exception Deserialization_error of string * string
-
-let wrap_deserializer f x =
-  try f x with Failure msg -> raise (Deserialization_error (msg, x))
-
-
 let identity x = x
 
-let int_of_string_exn = wrap_deserializer int_of_string
+let int_of_string = int_of_string
 
-let int32_of_string_exn = wrap_deserializer Int32.of_string
+let int32_of_string = Int32.of_string
 
-let int64_of_string_exn = wrap_deserializer Int64.of_string
+let int64_of_string = Int64.of_string
 
-let bool_of_string_exn str =
-  match int_of_string str <> 0 with
-  | v ->
-      v
-  | exception Failure _ ->
-      raise (Deserialization_error ("Ppx_mysql_runtime.bool_of_string_exn", str))
+let bool_of_string str = int_of_string str <> 0
