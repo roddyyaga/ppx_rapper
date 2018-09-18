@@ -1,4 +1,4 @@
-module type PPX_CONTEXT_ARG = sig
+module type PPX_MYSQL_CONTEXT_ARG = sig
   module IO : sig
     type 'a t
 
@@ -26,7 +26,7 @@ module type PPX_CONTEXT_ARG = sig
   end
 end
 
-module type PPX_CONTEXT = sig
+module type PPX_MYSQL_CONTEXT = sig
   module IO : sig
     type 'a t
 
@@ -74,8 +74,8 @@ module type PPX_CONTEXT = sig
   end
 end
 
-module Make_context (M : PPX_CONTEXT_ARG) :
-  PPX_CONTEXT
+module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
+  PPX_MYSQL_CONTEXT
   with type 'a IO.t = 'a M.IO.t
    and type Prepared.dbh = M.Prepared.dbh
    and type Prepared.error = M.Prepared.error = struct
