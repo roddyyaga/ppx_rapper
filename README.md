@@ -113,7 +113,7 @@ Writing a function to fetch one row from the DB is as simple as this:
 
 ```ocaml
 let get_employee dbh employee_id =
-    [%mysql Select_one
+    [%mysql select_one
     "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
     FROM employees
     WHERE id = %int32{employee_id}"] dbh ~employee_id >>| employee_of_tuple
@@ -137,7 +137,7 @@ let get_employee dbh employee_id =
         Prepared.dbh ->
         employee_id:int32 ->
         ((int32 * int32 option * string * string option), error) result IO.t =
-        [%mysql Select_one
+        [%mysql select_one
         "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE id = %int32{employee_id}"]  in
@@ -160,10 +160,12 @@ Things to note:
    by suffixing the type specification with the character `?`
    (Cf. the `supervisor_id` and `phone` columns in this example).
 
- - The `Select_one` variant immediately after `%mysql` tells the
-   extension that the function should return a single value.
+ - The `select_one` built-in function call immediately after `%mysql` tells
+   the extension that the function should return a single value.
    In this case, the value is of type `int32 * int32 option * string * string option`,
    which is wrapped inside a `result IO.t` because errors may occur.
+   There are other built-in special functions that may be used instead
+   of `select_one`, and these are described in a section below.
 
 
 Type specifications
@@ -186,9 +188,9 @@ Other select queries
 
 The query below is a variation on the one above, illustrating a case
 getting zero results is perfectly normal and should not be an error.
-Note the use of the `Select_opt` variant, which makes the function
-return an `option` (wrapped inside a `result IO.t`, because other
-errors may still occur).
+Note the use of the `select_opt` built-in function, which makes the
+function return an `option` (wrapped inside a `result IO.t`, because
+other errors may still occur).
 
 ```ocaml
 let get_supervisor dbh employee_id =
@@ -196,16 +198,16 @@ let get_supervisor dbh employee_id =
         Prepared.dbh ->
         employee_id:int32 ->
         ((int32 * int32 option * string * string option) option, error) result IO.t =
-        [%mysql Select_opt
+        [%mysql select_opt
         "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE supervisor_id = %int32{employee_id}"] in
     q dbh ~employee_id >>| maybe employee_of_tuple   (* val maybe: ('a -> 'b) -> 'a option -> 'b option *)
 ```
 
-For queries where multiple (or zero) rows are expected, use the `Select_all`
-variant.  The sample below illustrates its use.  Note that the function now
-returns a `list` (again wrapped inside a `result IO.t`, because other errors
+For queries where multiple (or zero) rows are expected, use the `select_all`
+built-in function.  The sample below illustrates its use.  Note that the function
+now returns a `list` (again wrapped inside a `result IO.t`, because other errors
 may occur).
 
 ```ocaml
@@ -214,7 +216,7 @@ let get_underlings dbh supervisor_id =
         Prepared.dbh ->
         supervisor_id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
-        [%mysql Select_all
+        [%mysql select_all
         "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE supervisor_id = %int32{supervisor_id}"] in
@@ -226,7 +228,7 @@ Insertions, updates, deletions
 
 We don't really expect a value returned from queries that modify the DB,
 such as those that use SQL's `INSERT`, `UPDATE`, and `DELETE` statements.
-We use the `Execute` variant for these cases, as the example below illustrates.
+We use the `execute` built-in for these cases, as the example below illustrates.
 Note the use of multiple input parameters, which show up in the function
 signature as named parameters in the same order they appear within
 the SQL statement (though these being named parameters, one does not
@@ -241,8 +243,8 @@ let insert_employee {id; supervisor_id; name; phone} =
         name:string ->
         phone:string option ->
         (unit, error) result IO.t =
-        [%mysql Execute
-        "INSERT LO employees (id, supervisor_id, name, phone)
+        [%mysql execute
+        "INSERT INTO employees (id, supervisor_id, name, phone)
         VALUES (%int32{id}, %int32?{supervisor_id}, %string{name}, %string?{phone}"] in
     q dbh ~id ~supervisor_id ~name ~phone
 ```
@@ -258,7 +260,7 @@ let get_unsupervised dbh =
     let q :
         Prepared.dbh ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
-        [%mysql Select_all
+        [%mysql select_all
         "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE supervisor_id IS NULL"] in
@@ -274,7 +276,7 @@ let is_related dbh id =
         Prepared.dbh ->
         id:int32 ->
         ((int32 * int32 option * string * string option) list, error) result IO.t =
-        [%mysql Select_all
+        [%mysql select_all
         "SELECT @int32{id}, @int32?{supervisor_id}, @string{name}, @string?{phone}
         FROM employees
         WHERE (id = %int32{id} OR supervisor_id = %int32{id}"] in
@@ -295,16 +297,16 @@ as `SELECT @d{count(*)} FROM employees` are supported just fine.
 Summary of the query variants
 -----------------------------
 
-Below is a summary of all available query variants.
+Below is a summary of all available built-in query functions:
 
- - `Select_one`: For queries that expect a single row to be returned,
+ - `select_one`: For queries that expect a single row to be returned,
    and where anything else (zero or multiple rows) is an error.
 
- - `Select_opt`: For queries that may return a single row or none at all.
+ - `select_opt`: For queries that may return a single row or none at all.
    Getting multiple rows from the DB is an error.
 
- - `Select_all`: For queries that expect any number of rows from the DB,
+ - `select_all`: For queries that expect any number of rows from the DB,
    including zero.
 
- - `Execute`: For queries that insert, update, or delete data from the DB,
+ - `execute`: For queries that insert, update, or delete data from the DB,
    and where no return value is expected.

@@ -18,30 +18,30 @@ open Mysql_with_identity
 (********************************************************************************)
 
 let get_users =
-  [%mysql Select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
+  [%mysql select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
 
 
 let get_user =
   [%mysql
-    Select_one
+    select_one
       "SELECT @int32{id}, @string{name}, @string?{phone} FROM users WHERE id = %int32{id}"]
 
 
 let insert_user =
   [%mysql
-    Execute
+    execute
       "INSERT INTO users (id, name, phone) VALUES (%int32{id}, %string{name}, \
        %string?{phone})"]
 
 
 let update_user =
   [%mysql
-    Execute
+    execute
       "UPDATE users SET name = %string{name}, phone = %string?{phone} WHERE id = \
        %int32{id}"]
 
 
-let delete_user = [%mysql Execute "DELETE FROM users WHERE id = %int32{id}"]
+let delete_user = [%mysql execute "DELETE FROM users WHERE id = %int32{id}"]
 
 (********************************************************************************)
 (** {1 Main functions and values}                                               *)
