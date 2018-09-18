@@ -85,7 +85,7 @@ let build_out_param_processor ~loc out_params =
 let expand ~loc ~path:_ (sql_variant : string) (query : string) =
   let process_rows =
     match sql_variant with
-    | "Select_one" ->
+    | "select_one" ->
         [%expr
           fun () ->
             let rec loop acc =
@@ -108,7 +108,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                   IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok hd)
             in
             loop []]
-    | "Select_opt" ->
+    | "select_opt" ->
         [%expr
           fun () ->
             let rec loop acc =
@@ -134,7 +134,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                        (Ppx_mysql_runtime.Stdlib.Option.Some hd))
             in
             loop []]
-    | "Select_all" ->
+    | "select_all" ->
         [%expr
           fun () ->
             let rec loop acc =
@@ -152,7 +152,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                        (Ppx_mysql_runtime.Stdlib.List.rev acc))
             in
             loop []]
-    | "Execute" -> (
+    | "execute" -> (
         [%expr
           fun () ->
             Prepared.fetch stmt_result
@@ -199,7 +199,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
            (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
 
 
-let pattern = Ast_pattern.(pexp_construct (lident __) (some (estring __)))
+let pattern = Ast_pattern.(pexp_apply (pexp_ident (lident __)) (pair nolabel (estring __) ^:: nil))
 
 let name = "mysql"
 
