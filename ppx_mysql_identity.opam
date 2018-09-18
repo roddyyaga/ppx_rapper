@@ -10,5 +10,5 @@ depends: [
   "dune" {build}
   "mysql" {>= "1.2" & < "2.0"}
   "ocaml" {>= "4.03.0"}
-  "ppx_mysql"
+  "ppx_mysql" {= version}
 ]
