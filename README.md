@@ -94,12 +94,11 @@ signature. Instead, you should use the `Make_context` functor defined in the
 signature using as argument a module with a much simpler signature. (Please
 see the API documentation for details.)
 
-Note also that in most cases you don't have to even worry about calling the
+Note also that in many cases you don't have to even worry about calling the
 functor yourself.  For your convenience, besides the main `ppx_mysql` package,
-you can also find in OPAM the packages `ppx_mysql_identity` / `ppx_mysql_async`
-/ `ppx_mysql_lwt`, which define modules `Mysql_with_identity` / `Mysql_with_async`
-/ `Mysql_with_lwt` (respectively) for using Mysql with various IO monads, and
-which take of all the nitty-gritty of defining a base module and passing it
+you can also find in OPAM the package `ppx_mysql_identity`, which defines module
+`Mysql_with_identity` for using Mysql with the identity monad for IO, and which
+takes care of all the nitty-gritty of defining a base module and passing it
 to the `Make_context` functor.
 
 As an example, to compile the samples in this document using Mysql and the identity

@@ -1,4 +1,0 @@
-(library
-  (name mysql_with_async)
-  (libraries async mysql ppx_mysql.runtime thread-pool-async)
-  (public_name ppx_mysql_async))
