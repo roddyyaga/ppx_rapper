@@ -4,7 +4,6 @@ install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.t
 script: bash -ex .travis-opam.sh
 env:
   global:
-    - DEPOPTS="*"
     - TESTS=true
   matrix:
     - OCAML_VERSION=4.06 PACKAGE="ppx_mysql"          PINS="ppx_mysql:."
