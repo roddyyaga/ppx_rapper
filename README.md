@@ -94,12 +94,12 @@ signature. Instead, you should use the `Make_context` functor defined in the
 signature using as argument a module with a much simpler signature. (Please
 see the API documentation for details.)
 
-Note also that in many cases you don't have to even worry about calling the
+Note also that in many cases you don't even have to worry about calling the
 functor yourself.  For your convenience, besides the main `ppx_mysql` package,
 you can also find in OPAM the package `ppx_mysql_identity`, which defines module
-`Mysql_with_identity` for using Mysql with the identity monad for IO, and which
-takes care of all the nitty-gritty of defining a base module and passing it
-to the `Make_context` functor.
+`Mysql_with_identity` for using Mysql (via the `mysql` package) with the identity
+monad for IO, and which takes care of all the nitty-gritty of defining a base
+module and passing it to the `Make_context` functor.
 
 As an example, to compile the samples in this document using Mysql and the identity
 monad for IO, just add package `ppx_mysql_identity` to your project dependencies and
@@ -160,7 +160,7 @@ Things to note:
    by suffixing the type specification with the character `?`
    (Cf. the `supervisor_id` and `phone` columns in this example).
 
- - The `select_one` built-in function call immediately after `%mysql` tells
+ - The `select_one` built-in function immediately after `%mysql` tells
    the extension that the function should return a single value.
    In this case, the value is of type `int32 * int32 option * string * string option`,
    which is wrapped inside a `result IO.t` because errors may occur.
@@ -171,16 +171,12 @@ Things to note:
 Type specifications
 -------------------
 
-Serialization of input parameters and deserialization of output paramters
-is done according to provided type specifications. The following list
-shows the mapping between the currently implemented type specifications
-and their OCaml counterparts. Note that you may always use the name of
-the OCaml type.
-
- - `string`, `TEXT`, `VARCHAR`\*: `string`
- - `int`, `INT`: `int`
- - `int32`: `int32`
- - `int64`: `int64`
+Serialization of input parameters and deserialization of output parameters
+is done according to provided type specifications.  These have the same
+name as the OCaml type you wish to (de)serialize to and from.  Presently,
+the supported types are `int`, `int32`, `int64`, `bool`, and `string`.
+Note that you will get a runtime error if there is a mismatch between
+the types in your database and the types you specify in your query.
 
 
 Other select queries
@@ -228,11 +224,11 @@ Insertions, updates, deletions
 
 We don't really expect a value returned from queries that modify the DB,
 such as those that use SQL's `INSERT`, `UPDATE`, and `DELETE` statements.
-We use the `execute` built-in for these cases, as the example below illustrates.
-Note the use of multiple input parameters, which show up in the function
-signature as named parameters in the same order they appear within
-the SQL statement (though these being named parameters, one does not
-usually need to worry about the order).
+We use the `execute` built-in function for these cases, as the example
+below illustrates.  Note the use of multiple input parameters, which
+show up in the function signature as named parameters in the same order
+they appear within the SQL statement (though these being named parameters,
+one does not usually need to worry about the order).
 
 ```ocaml
 let insert_employee {id; supervisor_id; name; phone} =
@@ -294,8 +290,8 @@ is unlikely to ever be a problem.  Moreover, note that queries such
 as `SELECT @d{count(*)} FROM employees` are supported just fine.
 
 
-Summary of the query variants
------------------------------
+Summary of the built-in query functions
+---------------------------------------
 
 Below is a summary of all available built-in query functions:
 
