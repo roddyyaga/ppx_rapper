@@ -79,7 +79,7 @@ let build_out_param_processor ~loc out_params =
             Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
       else
         Ppx_mysql_runtime.Stdlib.Result.Error
-          (`Unexpected_number_of_rows (len_row, [%e len_expected]))]
+          (`Unexpected_number_of_columns (len_row, [%e len_expected]))]
 
 
 let expand ~loc ~path:_ (sql_variant : string) (query : string) =

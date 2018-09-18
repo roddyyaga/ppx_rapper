@@ -12,7 +12,8 @@ let test_no_params dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 0))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 0))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -59,7 +60,8 @@ let test_single_output_params dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 1))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 1))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -109,7 +111,8 @@ let test_pair_output_params dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -156,7 +159,8 @@ let test_one_input_params dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 1))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 1))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -209,7 +213,8 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -259,7 +264,8 @@ let test_select_all dbh =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -308,7 +314,8 @@ let test_repeated_input_params dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -354,7 +361,8 @@ let test_select_opt dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -399,7 +407,8 @@ let test_execute dbh ~(id : int) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 0))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 0))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -439,7 +448,8 @@ let test_int dbh ~(a : int) ~(b : int option) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -491,7 +501,8 @@ let test_int32 dbh ~(a : int32) ~(b : int32 option) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -543,7 +554,8 @@ let test_int64 dbh ~(a : int64) ~(b : int64 option) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -595,7 +607,8 @@ let test_bool dbh ~(a : bool) ~(b : bool option) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
@@ -647,7 +660,8 @@ let test_string dbh ~(a : string) ~(b : string option) =
           Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
       | Invalid_argument _ ->
           Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
-    else Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_rows (len_row, 2))
+    else
+      Ppx_mysql_runtime.Stdlib.Result.Error (`Unexpected_number_of_columns (len_row, 2))
   in
   Prepared.with_stmt dbh query
   @@ fun stmt ->
