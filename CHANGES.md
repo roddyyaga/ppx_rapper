@@ -1,3 +1,8 @@
+0.3
+===
+
+* More useful error messages
+
 0.2
 ===
 
