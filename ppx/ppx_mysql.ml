@@ -48,13 +48,26 @@ let build_out_param_processor ~loc out_params =
         ~loc
         (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun)))
     in
+    let param_name = Buildef.estring ~loc Query.(param.name) in
+    let of_string_desc =
+      Buildef.estring ~loc @@ Printf.sprintf "%s.%s" of_string_mod of_string_fun
+    in
     let arg = [%expr Ppx_mysql_runtime.Stdlib.Array.get row [%e Buildef.eint ~loc i]] in
-    let appl = [%expr (Ppx_mysql_runtime.Stdlib.Option.map [%e of_string]) [%e arg]] in
+    let appl =
+      [%expr
+        let deserialize value =
+          try [%e of_string] value with Failure _ ->
+            raise (Deserialization_error ([%e param_name], [%e of_string_desc], value))
+        in
+        Ppx_mysql_runtime.Stdlib.Option.map deserialize [%e arg]]
+    in
     match param.opt with
     | true ->
         appl
-    | false ->
-        [%expr Ppx_mysql_runtime.Stdlib.Option.get [%e appl]]
+    | false -> (
+        [%expr
+          try Ppx_mysql_runtime.Stdlib.Option.get [%e appl] with Invalid_argument _ ->
+            raise (Expected_non_null_column [%e param_name])] )
   in
   let ret_expr =
     match out_params with
@@ -62,24 +75,27 @@ let build_out_param_processor ~loc out_params =
         [%expr ()]
     | [x] ->
         make_elem 0 x
-    | _ :: _ ->
+    | _ :: _ :: _ ->
         Buildef.pexp_tuple ~loc @@ List.mapi make_elem out_params
   in
   let len_expected = Buildef.eint ~loc (List.length out_params) in
   [%expr
     fun row ->
+      (let exception Deserialization_error of string * string * string in
+      (let exception Expected_non_null_column of string in
       let ( = ) = Ppx_mysql_runtime.Stdlib.( = ) in
       let len_row = Ppx_mysql_runtime.Stdlib.Array.length row in
       if len_row = [%e len_expected]
       then
         try Ppx_mysql_runtime.Stdlib.Result.Ok [%e ret_expr] with
-        | Ppx_mysql_runtime.Deserialization_error (f, v) ->
-            Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (f, v))
-        | Invalid_argument _ ->
-            Ppx_mysql_runtime.Stdlib.Result.Error `Expected_non_null_column
+        | Deserialization_error (col, f, v) ->
+          Ppx_mysql_runtime.Stdlib.Result.Error (`Column_errors [(col, `Deserialization_error (f, v))])
+        | Expected_non_null_column col ->
+          Ppx_mysql_runtime.Stdlib.Result.Error (`Column_errors [(col, `Expected_non_null_value)])
       else
         Ppx_mysql_runtime.Stdlib.Result.Error
-          (`Unexpected_number_of_rows (len_row, [%e len_expected]))]
+          (`Unexpected_number_of_columns (len_row, [%e len_expected]))) [@warning "-38"]) 
+      [@warning "-38"]]
 
 
 let expand ~loc ~path:_ (sql_variant : string) (query : string) =
@@ -199,7 +215,9 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
            (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
 
 
-let pattern = Ast_pattern.(pexp_apply (pexp_ident (lident __)) (pair nolabel (estring __) ^:: nil))
+let pattern =
+  Ast_pattern.(pexp_apply (pexp_ident (lident __)) (pair nolabel (estring __) ^:: nil))
+
 
 let name = "mysql"
 
