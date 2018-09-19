@@ -89,9 +89,9 @@ let build_out_param_processor ~loc out_params =
       then
         try Ppx_mysql_runtime.Stdlib.Result.Ok [%e ret_expr] with
         | Deserialization_error (col, f, v) ->
-            Ppx_mysql_runtime.Stdlib.Result.Error (`Deserialization_error (col, f, v))
+          Ppx_mysql_runtime.Stdlib.Result.Error (`Column_errors [(col, `Deserialization_error (f, v))])
         | Expected_non_null_column col ->
-            Ppx_mysql_runtime.Stdlib.Result.Error (`Expected_non_null_column col)
+          Ppx_mysql_runtime.Stdlib.Result.Error (`Column_errors [(col, `Expected_non_null_value)])
       else
         Ppx_mysql_runtime.Stdlib.Result.Error
           (`Unexpected_number_of_columns (len_row, [%e len_expected]))) [@warning "-38"]) 
