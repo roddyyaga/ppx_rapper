@@ -118,7 +118,6 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
       | Error err ->
           IO.return @@ Error (`Mysql_error err)
 
-
     let create dbd sql = wrap (M.Prepared.create dbd) sql
 
     let close stmt = wrap M.Prepared.close stmt
@@ -156,7 +155,6 @@ module Stdlib = struct
       | None ->
           None
 
-
     let get = function
       | Some x ->
           x
@@ -175,7 +173,6 @@ module Stdlib = struct
           f x
       | Error _ as e ->
           e
-
 
     let ( >>= ) = bind
   end

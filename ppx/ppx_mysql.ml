@@ -1,4 +1,5 @@
 open Ppxlib
+
 (* So the unit tests have access to the Query module *)
 module Query = Query
 module Used_set = Set.Make (String)
@@ -26,7 +27,6 @@ let rec build_fun_chain ~loc expr used_set = function
       let pat = ppat_constraint ~loc var fulltyp in
       pexp_fun ~loc (Labelled name) None pat tl'
 
-
 let build_in_param ~loc param =
   let to_string_mod, to_string_fun = Query.(param.to_string) in
   let to_string =
@@ -38,7 +38,6 @@ let build_in_param ~loc param =
       [%expr (Ppx_mysql_runtime.Stdlib.Option.map [%e to_string]) [%e arg]]
   | false ->
       [%expr Ppx_mysql_runtime.Stdlib.Option.Some ([%e to_string] [%e arg])]
-
 
 let build_out_param_processor ~loc out_params =
   let make_elem i param =
@@ -64,10 +63,10 @@ let build_out_param_processor ~loc out_params =
     match param.opt with
     | true ->
         appl
-    | false -> (
+    | false ->
         [%expr
           try Ppx_mysql_runtime.Stdlib.Option.get [%e appl] with Invalid_argument _ ->
-            raise (Expected_non_null_column [%e param_name])] )
+            raise (Expected_non_null_column [%e param_name])]
   in
   let ret_expr =
     match out_params with
@@ -89,14 +88,15 @@ let build_out_param_processor ~loc out_params =
       then
         try Ppx_mysql_runtime.Stdlib.Result.Ok [%e ret_expr] with
         | Deserialization_error (col, f, v) ->
-          Ppx_mysql_runtime.Stdlib.Result.Error (`Column_errors [(col, `Deserialization_error (f, v))])
+            Ppx_mysql_runtime.Stdlib.Result.Error
+              (`Column_errors [col, `Deserialization_error (f, v)])
         | Expected_non_null_column col ->
-          Ppx_mysql_runtime.Stdlib.Result.Error (`Column_errors [(col, `Expected_non_null_value)])
+            Ppx_mysql_runtime.Stdlib.Result.Error
+              (`Column_errors [col, `Expected_non_null_value])
       else
         Ppx_mysql_runtime.Stdlib.Result.Error
           (`Unexpected_number_of_columns (len_row, [%e len_expected]))) [@warning "-38"]) 
       [@warning "-38"]]
-
 
 let expand ~loc ~path:_ (sql_variant : string) (query : string) =
   let process_rows =
@@ -168,7 +168,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                        (Ppx_mysql_runtime.Stdlib.List.rev acc))
             in
             loop []]
-    | "execute" -> (
+    | "execute" ->
         [%expr
           fun () ->
             Prepared.fetch stmt_result
@@ -177,7 +177,7 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                 IO.return
                   (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_none_found_one)
             | Ppx_mysql_runtime.Stdlib.Option.None ->
-                IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ())] )
+                IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ())]
     | other ->
         raise
           (Location.Error
@@ -214,10 +214,8 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
         (Location.Error
            (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
 
-
 let pattern =
   Ast_pattern.(pexp_apply (pexp_ident (lident __)) (pair nolabel (estring __) ^:: nil))
-
 
 let name = "mysql"
 
@@ -227,6 +225,5 @@ let ext =
     Extension.Context.expression
     Ast_pattern.(single_expr_payload pattern)
     expand
-
 
 let () = Driver.register_transformation name ~extensions:[ext]

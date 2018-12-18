@@ -45,7 +45,6 @@ let test_no_params dbh =
     loop [] )
     ()
 
-
 let test_single_output_params dbh =
   let open IO_result in
   let query = "SELECT name FROM users WHERE id = 1" in
@@ -106,7 +105,6 @@ let test_single_output_params dbh =
     in
     loop [] )
     ()
-
 
 let test_pair_output_params dbh =
   let open IO_result in
@@ -181,7 +179,6 @@ let test_pair_output_params dbh =
     loop [] )
     ()
 
-
 let test_one_input_params dbh ~(id : int) =
   let open IO_result in
   let query = "SELECT name FROM users WHERE id = ?" in
@@ -242,7 +239,6 @@ let test_one_input_params dbh ~(id : int) =
     in
     loop [] )
     ()
-
 
 let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
   let open IO_result in
@@ -320,7 +316,6 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
     loop [] )
     ()
 
-
 let test_select_all dbh =
   let open IO_result in
   let query = "SELECT id, name FROM users" in
@@ -389,7 +384,6 @@ let test_select_all dbh =
     in
     loop [] )
     ()
-
 
 let test_repeated_input_params dbh ~(id : int) =
   let open IO_result in
@@ -462,7 +456,6 @@ let test_repeated_input_params dbh ~(id : int) =
     in
     loop [] )
     ()
-
 
 let test_select_opt dbh ~(id : int) =
   let open IO_result in
@@ -540,7 +533,6 @@ let test_select_opt dbh ~(id : int) =
     loop [] )
     ()
 
-
 let test_execute dbh ~(id : int) =
   let open IO_result in
   let query = "DELETE FROM users WHERE id = ?" in
@@ -575,7 +567,6 @@ let test_execute dbh ~(id : int) =
     | Ppx_mysql_runtime.Stdlib.Option.None ->
         IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ()) )
     ()
-
 
 let test_int dbh ~(a : int) ~(b : int option) =
   let open IO_result in
@@ -649,7 +640,6 @@ let test_int dbh ~(a : int) ~(b : int option) =
     loop [] )
     ()
 
-
 let test_int32 dbh ~(a : int32) ~(b : int32 option) =
   let open IO_result in
   let query = "SELECT a, b FROM users where a = ? OR b = ?" in
@@ -721,7 +711,6 @@ let test_int32 dbh ~(a : int32) ~(b : int32 option) =
     in
     loop [] )
     ()
-
 
 let test_int64 dbh ~(a : int64) ~(b : int64 option) =
   let open IO_result in
@@ -795,7 +784,6 @@ let test_int64 dbh ~(a : int64) ~(b : int64 option) =
     loop [] )
     ()
 
-
 let test_bool dbh ~(a : bool) ~(b : bool option) =
   let open IO_result in
   let query = "SELECT a, b FROM users where a = ? OR b = ?" in
@@ -867,7 +855,6 @@ let test_bool dbh ~(a : bool) ~(b : bool option) =
     in
     loop [] )
     ()
-
 
 let test_string dbh ~(a : string) ~(b : string option) =
   let open IO_result in
