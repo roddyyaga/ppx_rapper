@@ -9,6 +9,10 @@ build: ## Build the source
 test: ## Run tests
 	dune runtest --force
 
+.PHONY: format
+format: ## Run OCamlformat on the source
+	dune build @fmt --auto-promote
+
 .PHONY: clean
 clean: ## Clean the source tree
 	dune clean

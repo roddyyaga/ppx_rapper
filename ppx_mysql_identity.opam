@@ -1,6 +1,7 @@
 opam-version: "2.0"
 maintainer: "Dario Teixeira <dte@issuu.com>"
 author: "Team Raccoon"
+synopsis: "Convenience package for using ppx_mysql with Mysql and the identity monad for IO"
 homepage: "https://github.com/issuu/ppx_mysql"
 dev-repo: "git+https://github.com/issuu/ppx_mysql.git"
 bug-reports: "https://github.com/issuu/ppx_mysql/issues"

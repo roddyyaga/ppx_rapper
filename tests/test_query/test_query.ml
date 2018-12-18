@@ -49,7 +49,6 @@ let parsed_query_out1 =
         ; of_string = "Ppx_mysql_runtime", "int64_of_string"
         ; to_string = "Int64", "to_string" } ] }
 
-
 let query_out2 = "SELECT @int64{id}, @string{name} FROM users"
 
 let parsed_query_out2 =
@@ -66,7 +65,6 @@ let parsed_query_out2 =
         ; name = "name"
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
-
 
 let query_out3 = "SELECT @int64{id}, @string{name}, @string?{phone} FROM users"
 
@@ -90,7 +88,6 @@ let parsed_query_out3 =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
-
 let query_in1 = "INSERT LO users (id) VALUES (%int64{id})"
 
 let parsed_query_in1 =
@@ -102,7 +99,6 @@ let parsed_query_in1 =
         ; of_string = "Ppx_mysql_runtime", "int64_of_string"
         ; to_string = "Int64", "to_string" } ]
   ; out_params = [] }
-
 
 let query_in2 = "INSERT LO users (id, name) VALUES (%int64{id}, %string{name})"
 
@@ -121,10 +117,8 @@ let parsed_query_in2 =
         ; to_string = "Ppx_mysql_runtime", "identity" } ]
   ; out_params = [] }
 
-
 let query_in3 =
   "INSERT LO users (id, name, phone) VALUES (%int64{id}, %string{name}, %string?{phone})"
-
 
 let parsed_query_in3 =
   { query = "INSERT LO users (id, name, phone) VALUES (?, ?, ?)"
@@ -146,11 +140,9 @@ let parsed_query_in3 =
         ; to_string = "Ppx_mysql_runtime", "identity" } ]
   ; out_params = [] }
 
-
 let query_inout =
   "SELECT @int64{id}, @string{name}, @string?{phone} FROM users WHERE id = %int64{id} \
    OR name = %string{name} OR PHONE = %string?{phone}"
-
 
 let parsed_query_inout =
   { query = "SELECT id, name, phone FROM users WHERE id = ? OR name = ? OR PHONE = ?"
@@ -187,11 +179,9 @@ let parsed_query_inout =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
-
 let query_quoted0 =
   "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = 'Hello \
    @int64{name} world'"
-
 
 let parsed_query_quoted0 =
   { query = "SELECT id, name FROM users WHERE id = ? OR NAME = 'Hello @int64{name} world'"
@@ -213,11 +203,9 @@ let parsed_query_quoted0 =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
-
 let query_quoted1 =
   "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = \"Hello \
    @int64{name} world\""
-
 
 let parsed_query_quoted1 =
   { query =
@@ -240,11 +228,9 @@ let parsed_query_quoted1 =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
-
 let query_quoted2 =
   "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = 'Hello \
    ''@int64{name}'' world'"
-
 
 let parsed_query_quoted2 =
   { query =
@@ -267,11 +253,9 @@ let parsed_query_quoted2 =
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
 
-
 let query_quoted3 =
   "SELECT @int64{id}, @string{name} FROM users WHERE id = %int64{id} OR NAME = \"Hello \
    '@int64{name}' world\""
-
 
 let parsed_query_quoted3 =
   { query =
@@ -293,7 +277,6 @@ let parsed_query_quoted3 =
         ; name = "name"
         ; of_string = "Ppx_mysql_runtime", "identity"
         ; to_string = "Ppx_mysql_runtime", "identity" } ] }
-
 
 let query_bad0 = "SELECT true FROM users WHERE id = %int{ID}"
 
@@ -342,7 +325,6 @@ let test_parse_query () =
   run "query_bad3" query_bad3 (Error error_bad3);
   run "query_bad4" query_bad4 (Error error_bad4);
   run "query_bad5" query_bad5 (Error error_bad5)
-
 
 let testset = ["parse_query", `Quick, test_parse_query]
 

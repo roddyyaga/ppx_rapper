@@ -20,12 +20,10 @@ open Mysql_with_identity
 let get_users =
   [%mysql select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
 
-
 let get_user =
   [%mysql
     select_one
       "SELECT @int32{id}, @string{name}, @string?{phone} FROM users WHERE id = %int32{id}"]
-
 
 let insert_user =
   [%mysql
@@ -33,13 +31,11 @@ let insert_user =
       "INSERT INTO users (id, name, phone) VALUES (%int32{id}, %string{name}, \
        %string?{phone})"]
 
-
 let update_user =
   [%mysql
     execute
       "UPDATE users SET name = %string{name}, phone = %string?{phone} WHERE id = \
        %int32{id}"]
-
 
 let delete_user = [%mysql execute "DELETE FROM users WHERE id = %int32{id}"]
 
@@ -58,7 +54,6 @@ let print_user (id, name, phone) =
         p
     | None ->
         "--" )
-
 
 let () =
   let result =
