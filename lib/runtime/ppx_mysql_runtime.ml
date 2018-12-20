@@ -95,7 +95,6 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
           | Error _ as e ->
               IO.return e )
 
-
     let ( >>= ) = bind
   end
 

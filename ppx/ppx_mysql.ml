@@ -1,4 +1,5 @@
 open Ppxlib
+open Ppx_mysql_runtime.Stdlib
 
 (* So the unit tests have access to the Query module *)
 module Query = Query
@@ -98,10 +99,9 @@ let build_out_param_processor ~loc out_params =
           (`Unexpected_number_of_columns (len_row, [%e len_expected]))) [@warning "-38"]) 
       [@warning "-38"]]
 
-let expand ~loc ~path:_ (sql_variant : string) (query : string) =
-  let process_rows =
-    match sql_variant with
-    | "select_one" ->
+let build_process_rows ~loc = function
+  | "select_one" ->
+      Ok
         [%expr
           fun () ->
             let rec loop acc =
@@ -124,7 +124,8 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                   IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok hd)
             in
             loop []]
-    | "select_opt" ->
+  | "select_opt" ->
+      Ok
         [%expr
           fun () ->
             let rec loop acc =
@@ -150,7 +151,8 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                        (Ppx_mysql_runtime.Stdlib.Option.Some hd))
             in
             loop []]
-    | "select_all" ->
+  | "select_all" ->
+      Ok
         [%expr
           fun () ->
             let rec loop acc =
@@ -168,7 +170,8 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                        (Ppx_mysql_runtime.Stdlib.List.rev acc))
             in
             loop []]
-    | "execute" ->
+  | "execute" ->
+      Ok
         [%expr
           fun () ->
             Prepared.fetch stmt_result
@@ -178,38 +181,48 @@ let expand ~loc ~path:_ (sql_variant : string) (query : string) =
                   (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_none_found_one)
             | Ppx_mysql_runtime.Stdlib.Option.None ->
                 IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ())]
-    | other ->
-        raise
-          (Location.Error
-             (Location.Error.createf
-                ~loc
-                "Error in 'mysql' extension: I don't understand query variant '%s'"
-                other))
-  in
-  match Query.parse query with
-  | Ok {query; in_params; out_params} ->
-      (* Note that in the expr fragment below we disable warning 26 (about unused variables)
-         for the 'process_out_params' function, since it may indeed be unused if there are
-         no output parameters. *)
-      let expr =
-        [%expr
-          let open IO_result in
-          let query = [%e Buildef.estring ~loc query] in
-          let params =
-            [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params)]
-          in
-          let[@warning "-26"] process_out_params =
-            [%e build_out_param_processor ~loc out_params]
-          in
-          Prepared.with_stmt dbh query
-          @@ fun stmt ->
-          Prepared.execute_null stmt params >>= fun stmt_result -> [%e process_rows] ()]
+  | etc ->
+      Error (`Unknown_query_variant etc)
+
+let actually_expand ~loc sql_variant query =
+  let open Result in
+  build_process_rows ~loc sql_variant
+  >>= fun process_rows ->
+  Query.parse query
+  >>= fun {query; in_params; out_params} ->
+  (* Note that in the expr fragment below we disable warning 26 (about unused variables)
+     for the 'process_out_params' function, since it may indeed be unused if there are
+     no output parameters. *)
+  let expr =
+    [%expr
+      let open IO_result in
+      let query = [%e Buildef.estring ~loc query] in
+      let params =
+        [%e Buildef.(pexp_array ~loc @@ List.map (build_in_param ~loc) in_params)]
       in
-      let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
-      let chain = build_fun_chain ~loc expr Used_set.empty in_params in
-      Buildef.pexp_fun ~loc Nolabel None dbh_pat chain
+      let[@warning "-26"] process_out_params =
+        [%e build_out_param_processor ~loc out_params]
+      in
+      Prepared.with_stmt dbh query
+      @@ fun stmt ->
+      Prepared.execute_null stmt params >>= fun stmt_result -> [%e process_rows] ()]
+  in
+  let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
+  let chain = build_fun_chain ~loc expr Used_set.empty in_params in
+  Ok (Buildef.pexp_fun ~loc Nolabel None dbh_pat chain)
+
+let expand ~loc ~path:_ sql_variant query =
+  match actually_expand ~loc sql_variant query with
+  | Ok expr ->
+      expr
   | Error err ->
-      let msg = Query.explain_parse_error err in
+      let msg =
+        match err with
+        | #Query.parse_error as err ->
+            Query.explain_parse_error err
+        | `Unknown_query_variant variant ->
+            Printf.sprintf "I don't understand query variant '%s'" variant
+      in
       raise
         (Location.Error
            (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
