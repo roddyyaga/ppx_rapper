@@ -113,16 +113,16 @@ let remove_duplicates params =
   let rec loop dict accum = function
     | [] ->
         Ok (List.rev accum)
-    | hd :: tl ->
-        match Param_dict.find_opt hd.name dict with
+    | {name; typ; opt; _} as hd :: tl ->
+        match Param_dict.find_opt name dict with
         | None ->
-            let dict = Param_dict.add hd.name hd dict in
+            let dict = Param_dict.add name hd dict in
             let accum = hd :: accum in
             loop dict accum tl
-        | Some el when el.typ = hd.typ && el.opt = hd.opt ->
+        | Some el when el.typ = typ && el.opt = opt ->
             loop dict accum tl
         | Some _el ->
-            Error (`Conflicting_spec hd.name)
+            Error (`Conflicting_spec name)
   in
   loop Param_dict.empty [] params
 
