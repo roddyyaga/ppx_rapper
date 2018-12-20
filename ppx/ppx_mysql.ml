@@ -3,19 +3,14 @@ open Ppx_mysql_runtime.Stdlib
 
 (* So the unit tests have access to the Query module *)
 module Query = Query
-module Used_set = Set.Make (String)
 module Buildef = Ast_builder.Default
 
-let rec build_fun_chain ~loc expr used_set = function
+let rec build_fun_chain ~loc expr = function
   | [] ->
       expr
-  | Query.({name; _}) :: tl
-    when Used_set.mem name used_set ->
-      build_fun_chain ~loc expr used_set tl
   | Query.({typ; opt; name; _}) :: tl ->
       let open Buildef in
-      let used_set = Used_set.add name used_set in
-      let tl' = build_fun_chain ~loc expr used_set tl in
+      let tl' = build_fun_chain ~loc expr tl in
       let var = ppat_var ~loc (Loc.make ~loc name) in
       let basetyp = ptyp_constr ~loc (Loc.make ~loc (Lident typ)) [] in
       let fulltyp =
@@ -190,6 +185,8 @@ let actually_expand ~loc sql_variant query =
   >>= fun process_rows ->
   Query.parse query
   >>= fun {query; in_params; out_params} ->
+  Query.remove_duplicates in_params
+  >>= fun unique_in_params ->
   (* Note that in the expr fragment below we disable warning 26 (about unused variables)
      for the 'process_out_params' function, since it may indeed be unused if there are
      no output parameters. *)
@@ -208,7 +205,7 @@ let actually_expand ~loc sql_variant query =
       Prepared.execute_null stmt params >>= fun stmt_result -> [%e process_rows] ()]
   in
   let dbh_pat = Buildef.ppat_var ~loc (Loc.make ~loc "dbh") in
-  let chain = build_fun_chain ~loc expr Used_set.empty in_params in
+  let chain = build_fun_chain ~loc expr unique_in_params in
   Ok (Buildef.pexp_fun ~loc Nolabel None dbh_pat chain)
 
 let expand ~loc ~path:_ sql_variant query =
@@ -218,8 +215,8 @@ let expand ~loc ~path:_ sql_variant query =
   | Error err ->
       let msg =
         match err with
-        | #Query.parse_error as err ->
-            Query.explain_parse_error err
+        | #Query.error as err ->
+            Query.explain_error err
         | `Unknown_query_variant variant ->
             Printf.sprintf "I don't understand query variant '%s'" variant
       in

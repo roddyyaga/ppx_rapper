@@ -1,6 +1,8 @@
 {
 open Ppx_mysql_runtime.Stdlib
 
+module Param_dict = Map.Make (String)
+
 type param =
   { typ : string
   ; opt : bool
@@ -18,6 +20,11 @@ type parse_error =
   | `Unknown_type_spec of string
   | `Unterminated_string
   | `Escape_at_end ]
+
+type conflict_error =
+  [ `Conflicting_spec of string ]
+
+type error = [ parse_error | conflict_error ]
 
 let build_param spec opt name =
   let open Result in
@@ -102,7 +109,24 @@ let parse query =
   let buf = Buffer.create (String.length query) in
   main_parser buf [] [] lexbuf
 
-let explain_parse_error = function
+let remove_duplicates params =
+  let rec loop dict accum = function
+    | [] ->
+        Ok (List.rev accum)
+    | hd :: tl ->
+        match Param_dict.find_opt hd.name dict with
+        | None ->
+            let dict = Param_dict.add hd.name hd dict in
+            let accum = hd :: accum in
+            loop dict accum tl
+        | Some el when el.typ = hd.typ && el.opt = hd.opt ->
+            loop dict accum tl
+        | Some _el ->
+            Error (`Conflicting_spec hd.name)
+  in
+  loop Param_dict.empty [] params
+
+let explain_error = function
   | `Bad_identifier str ->
     Printf.sprintf "'%s' is not a valid OCaml variable identifier" str
   | `Unknown_type_spec spec ->
@@ -111,4 +135,6 @@ let explain_parse_error = function
     "The query contains an unterminated string"
   | `Escape_at_end ->
     "The last character of the query cannot be an escape character"
+  | `Conflicting_spec name ->
+    Printf.sprintf "Input parameter '%s' appears multiple times with conflicting specifications" name
 }
