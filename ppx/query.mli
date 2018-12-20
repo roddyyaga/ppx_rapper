@@ -20,6 +20,6 @@ type parse_error =
 
 (** {1 Public functions and values} *)
 
-val parse : string -> (parsed_query, parse_error) result
+val parse : string -> (parsed_query, [> parse_error]) result
 
-val explain_parse_error : parse_error -> string
+val explain_parse_error : [< parse_error] -> string
