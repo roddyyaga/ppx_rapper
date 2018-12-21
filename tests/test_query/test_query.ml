@@ -23,6 +23,8 @@ type parse_error =
   | `Escape_at_end ]
 [@@deriving eq, show]
 
+type conflicting_spec = [`Conflicting_spec of string] [@@deriving eq, show]
+
 (** {1 TESTABLE modules}  *)
 
 let param_mod = Alcotest.testable pp_param equal_param
@@ -31,7 +33,9 @@ let parsed_query_mod = Alcotest.testable pp_parsed_query equal_parsed_query
 
 let parse_error_mod = Alcotest.testable pp_parse_error equal_parse_error
 
-(** {1 Functions and values} *)
+let conflicting_spec_mod = Alcotest.testable pp_conflicting_spec equal_conflicting_spec
+
+(** {1 Functions and values for {!test_parse_query}} *)
 
 let query_0 = "SELECT true"
 
@@ -326,8 +330,63 @@ let test_parse_query () =
   run "query_bad4" query_bad4 (Error error_bad4);
   run "query_bad5" query_bad5 (Error error_bad5)
 
-let testset = ["parse_query", `Quick, test_parse_query]
+(** {1 Functions and values for {!test_remove_duplicates}} *)
+
+let param_foo32t =
+  { typ = "int32"
+  ; opt = true
+  ; name = "foo"
+  ; of_string = "Int32", "of_string"
+  ; to_string = "Int32", "to_string" }
+
+let param_foo64t =
+  { typ = "int64"
+  ; opt = true
+  ; name = "foo"
+  ; of_string = "Int64", "of_string"
+  ; to_string = "Int64", "to_string" }
+
+let param_foo32f =
+  { typ = "int32"
+  ; opt = false
+  ; name = "foo"
+  ; of_string = "Int32", "of_string"
+  ; to_string = "Int32", "to_string" }
+
+let param_bar32t =
+  { typ = "int32"
+  ; opt = true
+  ; name = "bar"
+  ; of_string = "Int32", "of_string"
+  ; to_string = "Int32", "to_string" }
+
+let test_remove_duplicates () =
+  let run desc params expected =
+    Alcotest.(
+      check
+        (result (list param_mod) conflicting_spec_mod)
+        desc
+        expected
+        (Query.remove_duplicates params))
+  in
+  run "Duplicate 'foo'" [param_foo32t; param_foo32t] (Ok [param_foo32t]);
+  run
+    "Duplicate 'foo' and 'bar'"
+    [param_foo32t; param_bar32t; param_foo32t; param_bar32t]
+    (Ok [param_foo32t; param_bar32t]);
+  run
+    "Redefined 'foo' with different type"
+    [param_foo32t; param_foo64t]
+    (Error (`Conflicting_spec "foo"));
+  run
+    "Redefined 'foo' with different opt"
+    [param_foo32t; param_foo32f]
+    (Error (`Conflicting_spec "foo"))
 
 (** {1 Main} *)
+
+let testset =
+  [ "parse_query", `Quick, test_parse_query
+  ; "remove_duplicates", `Quick, test_remove_duplicates ]
 
 let () = Alcotest.run "Query module" ["Query", testset]
