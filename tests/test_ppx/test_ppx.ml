@@ -50,3 +50,24 @@ let test_string =
   [%mysql
     select_one
       "SELECT @string{a}, @string?{b} FROM users where a = %string{a} OR b = %string?{b}"]
+
+let test_list0 =
+  [%mysql
+    select_all "SELECT @int{id}, @string{name} FROM users WHERE id IN (%list{%int{id}})"]
+
+let test_list1 =
+  [%mysql
+    execute
+      "INSERT INTO users (id, name, phone) VALUES %list{(%int{id}, %string{name}, NULL)}"]
+
+let test_list2 =
+  [%mysql
+    select_all
+      "SELECT @int{id}, @string{name} FROM users WHERE name = %string{name} OR id IN \
+       (%list{%int{id}}) OR age > %int{age}"]
+
+let test_list3 =
+  [%mysql
+    execute
+      "INSERT INTO users (id, name, real_name, age) VALUES %list{(%int{id}, \
+       %string{name}, %string{name}, %int{age})}"]

@@ -113,6 +113,14 @@ module Stdlib : sig
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
 
+  module String : sig
+    include module type of struct
+        include String
+    end
+
+    val append : string -> string -> string
+  end
+
   val ( = ) : 'a -> 'a -> bool
 end
 

@@ -7,15 +7,29 @@ type param =
   ; of_string : string * string
   ; to_string : string * string }
 
+type list_params =
+  { subsql : string
+  ; string_index : int
+  ; param_index : int
+  ; params : param list }
+
 type parsed_query =
-  { query : string
+  { sql : string
   ; in_params : param list
-  ; out_params : param list }
+  ; out_params : param list
+  ; list_params : list_params option }
 
 type parse_error =
   [ `Bad_identifier of string
   | `Unknown_type_spec of string
+  | `Empty_list_params
+  | `Multiple_lists_not_supported
+  | `Nested_list
+  | `Optional_list
+  | `Out_params_in_list
+  | `Unterminated_list
   | `Unterminated_string
+  | `Unterminated_bracket
   | `Escape_at_end ]
 
 type conflict_error = [`Conflicting_spec of string]

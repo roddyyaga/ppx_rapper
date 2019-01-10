@@ -1,3 +1,8 @@
+0.4
+===
+
+Support for lists of input parameters
+
 0.3
 ===
 

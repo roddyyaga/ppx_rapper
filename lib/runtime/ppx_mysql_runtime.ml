@@ -176,6 +176,12 @@ module Stdlib = struct
     let ( >>= ) = bind
   end
 
+  module String = struct
+    include String
+
+    let append = ( ^ )
+  end
+
   let ( = ) = ( = )
 end
 

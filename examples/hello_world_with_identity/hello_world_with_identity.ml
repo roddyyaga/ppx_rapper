@@ -17,8 +17,14 @@ open Mysql_with_identity
 
 (********************************************************************************)
 
-let get_users =
+let get_all_users =
   [%mysql select_all "SELECT @int32{id}, @string{name}, @string?{phone} FROM users"]
+
+let get_some_users =
+  [%mysql
+    select_all
+      "SELECT @int32{id}, @string{name}, @string?{phone} FROM users WHERE id IN \
+       (%list{%int32{id}})"]
 
 let get_user =
   [%mysql
@@ -30,6 +36,12 @@ let insert_user =
     execute
       "INSERT INTO users (id, name, phone) VALUES (%int32{id}, %string{name}, \
        %string?{phone})"]
+
+let insert_users =
+  [%mysql
+    execute
+      "INSERT INTO users (id, name, phone) VALUES %list{(%int32{id}, %string{name}, \
+       %string?{phone})}"]
 
 let update_user =
   [%mysql
@@ -46,7 +58,7 @@ let delete_user = [%mysql execute "DELETE FROM users WHERE id = %int32{id}"]
 
 let print_user (id, name, phone) =
   Printf.printf
-    "%ld -> %s (phone: %s)\n"
+    "\t%ld -> %s (phone: %s)\n"
     id
     name
     ( match phone with
@@ -59,20 +71,36 @@ let () =
   let result =
     let open IO_result in
     let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-    insert_user dbh ~id:1l ~name:"John Doe" ~phone:(Some "123456")
+    insert_user dbh ~id:1l ~name:"John" ~phone:(Some "123456")
     >>= fun () ->
-    insert_user dbh ~id:2l ~name:"Jane Doe" ~phone:None
+    insert_user dbh ~id:2l ~name:"Jane" ~phone:None
     >>= fun () ->
     insert_user dbh ~id:3l ~name:"Claire" ~phone:None
     >>= fun () ->
-    delete_user dbh ~id:3l
+    insert_users dbh [4l, "Mark", None; 5l, "Alice", Some "234567"]
     >>= fun () ->
-    get_users dbh
+    get_all_users dbh
     >>= fun users ->
+    Printf.printf "All users:\n";
+    List.iter print_user users;
+    get_some_users dbh [1l; 2l; 3l]
+    >>= fun users ->
+    Printf.printf "Users with ID in {1, 2, 3}:\n";
     List.iter print_user users;
     update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321")
     >>= fun () ->
-    get_user dbh ~id:2l >>= fun user -> print_user user; Mysql.disconnect dbh; Ok ()
+    get_user dbh ~id:2l
+    >>= fun user ->
+    Printf.printf "User with ID = 2 after update:\n";
+    print_user user;
+    delete_user dbh ~id:3l
+    >>= fun () ->
+    get_all_users dbh
+    >>= fun users ->
+    Printf.printf "All users after deleting one with ID = 3:\n";
+    List.iter print_user users;
+    Mysql.disconnect dbh;
+    Ok ()
   in
   match result with
   | Ok () ->
