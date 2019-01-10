@@ -1,7 +1,12 @@
 opam-version: "2.0"
 maintainer: "Dario Teixeira <dte@issuu.com>"
-author: "Team Raccoon"
+author: "Team Raccoons at Issuu"
 synopsis: "Syntax extension for facilitating usage of MySQL bindings"
+description: """
+This syntax extension aims to reduce the pain and boilerplate associated with
+using MySQL bindings from OCaml.  It is similar in spirit to PG'OCaml, but
+without the compile-time communication with the DB engine for type inference.
+"""
 homepage: "https://github.com/issuu/ppx_mysql"
 dev-repo: "git+https://github.com/issuu/ppx_mysql.git"
 bug-reports: "https://github.com/issuu/ppx_mysql/issues"

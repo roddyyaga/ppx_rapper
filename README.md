@@ -4,7 +4,8 @@ Ppx_mysql
 [![Build Status](https://travis-ci.org/issuu/ppx_mysql.svg?branch=master)](https://travis-ci.org/issuu/ppx_mysql)
 
 This syntax extension aims to reduce the pain and boilerplate associated with using
-MySQL bindings from OCaml.
+MySQL bindings from OCaml.  It is similar in spirit to [PG'OCaml](https://github.com/darioteixeira/pgocaml),
+but without the compile-time communication with the DB engine for type inference.
 
 
 Preliminaries
