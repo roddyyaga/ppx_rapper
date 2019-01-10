@@ -93,13 +93,14 @@ let test dbh =
   List.iter print_user users;
   Ok ()
 
-let main dbh =
-  match test dbh with
+let main () =
+  let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
+  let res = test dbh in
+  Mysql.disconnect dbh;
+  match res with
   | Ok () ->
       Printf.printf "All went well!\n"
   | Error _ ->
       Printf.printf "An error occurred!\n"
 
-let () =
-  let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  main dbh; Mysql.disconnect dbh
+let () = main ()

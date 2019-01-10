@@ -62,7 +62,7 @@ let print_user (id, name, phone) =
         "--" )
 
 let test dbh =
-  let open IO_result in
+  let open Lwt_result.Infix in
   insert_user dbh ~id:1l ~name:"John" ~phone:(Some "123456")
   >>= fun () ->
   insert_user dbh ~id:2l ~name:"Jane" ~phone:None
@@ -99,16 +99,16 @@ let test dbh =
   >>= fun () ->
   Lwt_result.ok @@ Lwt_list.iter_s print_user users >>= fun () -> Lwt_result.return ()
 
-let main dbh =
+let main () =
   let open Lwt.Infix in
+  let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
   test dbh
-  >>= function
+  >>= fun res ->
+  Mysql.disconnect dbh;
+  match res with
   | Ok () ->
       Lwt_io.printf "All went well!\n"
   | Error _ ->
       Lwt_io.printf "An error occurred!\n"
 
-let () =
-  let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  Lwt_main.run @@ main dbh;
-  Mysql.disconnect dbh
+let () = Lwt_main.run @@ main ()
