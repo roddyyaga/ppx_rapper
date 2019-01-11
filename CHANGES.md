@@ -1,7 +1,8 @@
 0.4
 ===
 
-Support for lists of input parameters
+* Support for lists of input parameters
+* Add examples for Lwt and Async
 
 0.3
 ===
