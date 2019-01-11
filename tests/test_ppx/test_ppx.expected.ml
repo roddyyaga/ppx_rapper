@@ -947,9 +947,9 @@ let test_list0 dbh elems =
           (Ppx_mysql_runtime.Stdlib.String.append patch ")")
       in
       let params_between =
-        Array.of_list
-          (List.concat
-             (List.map
+        Ppx_mysql_runtime.Stdlib.Array.of_list
+          (Ppx_mysql_runtime.Stdlib.List.concat
+             (Ppx_mysql_runtime.Stdlib.List.map
                 (fun id ->
                   [Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)] )
                 elems))
@@ -1036,9 +1036,9 @@ let test_list1 dbh elems =
           (Ppx_mysql_runtime.Stdlib.String.append patch "")
       in
       let params_between =
-        Array.of_list
-          (List.concat
-             (List.map
+        Ppx_mysql_runtime.Stdlib.Array.of_list
+          (Ppx_mysql_runtime.Stdlib.List.concat
+             (Ppx_mysql_runtime.Stdlib.List.map
                 (fun (id, name) ->
                   [ Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)
                   ; Ppx_mysql_runtime.Stdlib.Option.Some
@@ -1092,9 +1092,9 @@ let test_list2 dbh elems ~(name : string) ~(age : int) =
           (Ppx_mysql_runtime.Stdlib.String.append patch ") OR age > ?")
       in
       let params_between =
-        Array.of_list
-          (List.concat
-             (List.map
+        Ppx_mysql_runtime.Stdlib.Array.of_list
+          (Ppx_mysql_runtime.Stdlib.List.concat
+             (Ppx_mysql_runtime.Stdlib.List.map
                 (fun id ->
                   [Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)] )
                 elems))
@@ -1186,9 +1186,9 @@ let test_list3 dbh elems =
           (Ppx_mysql_runtime.Stdlib.String.append patch "")
       in
       let params_between =
-        Array.of_list
-          (List.concat
-             (List.map
+        Ppx_mysql_runtime.Stdlib.Array.of_list
+          (Ppx_mysql_runtime.Stdlib.List.concat
+             (Ppx_mysql_runtime.Stdlib.List.map
                 (fun (id, name, age) ->
                   [ Ppx_mysql_runtime.Stdlib.Option.Some (Pervasives.string_of_int id)
                   ; Ppx_mysql_runtime.Stdlib.Option.Some

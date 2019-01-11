@@ -276,9 +276,11 @@ let actually_expand ~loc sql_variant query =
                   (Ppx_mysql_runtime.Stdlib.String.append patch [%e sql_after])
               in
               let params_between =
-                Array.of_list
-                  (List.concat
-                     (List.map (fun [%p list_params_decl] -> [%e list_params_conv]) elems))
+                Ppx_mysql_runtime.Stdlib.Array.of_list
+                  (Ppx_mysql_runtime.Stdlib.List.concat
+                     (Ppx_mysql_runtime.Stdlib.List.map
+                        (fun [%p list_params_decl] -> [%e list_params_conv])
+                        elems))
               in
               let params =
                 Ppx_mysql_runtime.Stdlib.Array.concat

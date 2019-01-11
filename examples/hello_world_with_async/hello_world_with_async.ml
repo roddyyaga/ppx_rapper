@@ -1,6 +1,6 @@
 (* This example assumes that a Mysql database 'test' exists for user 'root'.
  * Moreover, a table 'users' defined as follows is also present in the DB:
- *
+ *  
  * CREATE TABLE users
  *     (
  *     id    INT NOT NULL,
@@ -10,7 +10,9 @@
  *     );
  *)
 
-open Mysql_with_identity
+open Core
+open Async
+open Mysql_with_async
 
 (** Database queries using the Ppx_mysql syntax extension. *)
 
@@ -50,9 +52,12 @@ let delete_user = [%mysql execute "DELETE FROM users WHERE id = %int32{id}"]
 
 (** Main functions and values. *)
 
+let stdout = Lazy.force Writer.stdout
+
 let print_user (id, name, phone) =
-  Printf.printf
-    "\t%ld -> %s (phone: %s)\n"
+  Writer.writef
+    stdout
+    "%ld -> %s (phone: %s)\n"
     id
     name
     ( match phone with
@@ -62,7 +67,7 @@ let print_user (id, name, phone) =
         "--" )
 
 let test dbh =
-  let open IO_result in
+  let open Deferred.Result.Let_syntax in
   insert_user dbh ~id:1l ~name:"John" ~phone:(Some "123456")
   >>= fun () ->
   insert_user dbh ~id:2l ~name:"Jane" ~phone:None
@@ -73,34 +78,38 @@ let test dbh =
   >>= fun () ->
   get_all_users dbh
   >>= fun users ->
-  Printf.printf "All users:\n";
-  List.iter print_user users;
+  Writer.writef stdout "All users:\n";
+  List.iter ~f:print_user users;
   get_some_users dbh [1l; 2l; 3l]
   >>= fun users ->
-  Printf.printf "Users with ID in {1, 2, 3}:\n";
-  List.iter print_user users;
+  Writer.writef stdout "Users with ID in {1, 2, 3}:\n";
+  List.iter ~f:print_user users;
   update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321")
   >>= fun () ->
   get_user dbh ~id:2l
   >>= fun user ->
-  Printf.printf "User with ID = 2 after update:\n";
+  Writer.writef stdout "User with ID = 2 after update:\n";
   print_user user;
   delete_user dbh ~id:3l
   >>= fun () ->
   get_all_users dbh
   >>= fun users ->
-  Printf.printf "All users after deleting one with ID = 3:\n";
-  List.iter print_user users;
-  Ok ()
+  Writer.writef stdout "All users after deleting one with ID = 3:\n";
+  List.iter ~f:print_user users;
+  return ()
 
 let main () =
+  let open Deferred.Let_syntax in
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  let res = test dbh in
+  test dbh
+  >>= fun res ->
   Mysql.disconnect dbh;
   match res with
   | Ok () ->
-      Printf.printf "All went well!\n"
+      Writer.writef stdout "All went well!\n";
+      return ()
   | Error _ ->
-      Printf.printf "An error occurred!\n"
+      Writer.writef stdout "An error occurred!\n";
+      return ()
 
-let () = main ()
+let () = Command.(run @@ async ~summary:"Run Async example" @@ Param.return main)

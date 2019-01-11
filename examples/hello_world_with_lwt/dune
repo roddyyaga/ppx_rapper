@@ -1,0 +1,8 @@
+(executable
+    (name hello_world_with_lwt)
+    (libraries lwt lwt.unix mysql ppx_mysql.runtime)
+    (preprocess (pps ppx_mysql)))
+
+(alias
+  (name examples)
+  (deps hello_world_with_lwt.exe))
