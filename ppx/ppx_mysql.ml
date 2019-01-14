@@ -70,9 +70,9 @@ let build_in_param ~loc param =
   let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
   match param.opt with
   | true ->
-      [%expr (Ppx_mysql_runtime.Stdlib.Option.map [%e to_string]) [%e arg]]
+      [%expr (Option.map [%e to_string]) [%e arg]]
   | false ->
-      [%expr Ppx_mysql_runtime.Stdlib.Option.Some ([%e to_string] [%e arg])]
+      [%expr Option.Some ([%e to_string] [%e arg])]
 
 let build_out_param_processor ~loc out_params =
   let make_elem i param =
@@ -86,21 +86,21 @@ let build_out_param_processor ~loc out_params =
     let of_string_desc =
       Buildef.estring ~loc @@ Printf.sprintf "%s.%s" of_string_mod of_string_fun
     in
-    let arg = [%expr Ppx_mysql_runtime.Stdlib.Array.get row [%e Buildef.eint ~loc i]] in
+    let arg = [%expr Array.get row [%e Buildef.eint ~loc i]] in
     let appl =
       [%expr
         let deserialize value =
           try [%e of_string] value with Failure _ ->
             raise (Deserialization_error ([%e param_name], [%e of_string_desc], value))
         in
-        Ppx_mysql_runtime.Stdlib.Option.map deserialize [%e arg]]
+        Option.map deserialize [%e arg]]
     in
     match param.opt with
     | true ->
         appl
     | false ->
         [%expr
-          try Ppx_mysql_runtime.Stdlib.Option.get [%e appl] with Invalid_argument _ ->
+          try Option.get [%e appl] with Invalid_argument _ ->
             raise (Expected_non_null_column [%e param_name])]
   in
   let ret_expr =
@@ -118,19 +118,16 @@ let build_out_param_processor ~loc out_params =
       (let exception Deserialization_error of string * string * string in
       (let exception Expected_non_null_column of string in
       let ( = ) = Ppx_mysql_runtime.Stdlib.( = ) in
-      let len_row = Ppx_mysql_runtime.Stdlib.Array.length row in
+      let len_row = Array.length row in
       if len_row = [%e len_expected]
       then
-        try Ppx_mysql_runtime.Stdlib.Result.Ok [%e ret_expr] with
+        try Result.Ok [%e ret_expr] with
         | Deserialization_error (col, f, v) ->
-            Ppx_mysql_runtime.Stdlib.Result.Error
-              (`Column_errors [col, `Deserialization_error (f, v)])
+            Result.Error (`Column_errors [col, `Deserialization_error (f, v)])
         | Expected_non_null_column col ->
-            Ppx_mysql_runtime.Stdlib.Result.Error
-              (`Column_errors [col, `Expected_non_null_value])
-      else
-        Ppx_mysql_runtime.Stdlib.Result.Error
-          (`Unexpected_number_of_columns (len_row, [%e len_expected]))) [@warning "-38"]) 
+            Result.Error (`Column_errors [col, `Expected_non_null_value])
+      else Result.Error (`Unexpected_number_of_columns (len_row, [%e len_expected]))) [@warning
+                                                                                        "-38"]) 
       [@warning "-38"]]
 
 let build_process_rows ~loc = function
@@ -142,20 +139,18 @@ let build_process_rows ~loc = function
               Prepared.fetch stmt_result
               >>= fun maybe_row ->
               match acc, maybe_row with
-              | [], Ppx_mysql_runtime.Stdlib.Option.Some row -> (
+              | [], Option.Some row -> (
                 match process_out_params row with
-                | Ppx_mysql_runtime.Stdlib.Result.Ok row' ->
+                | Result.Ok row' ->
                     loop [row']
-                | Ppx_mysql_runtime.Stdlib.Result.Error _ as err ->
+                | Result.Error _ as err ->
                     IO.return err )
-              | [], Ppx_mysql_runtime.Stdlib.Option.None ->
-                  IO.return
-                    (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_one_found_none)
-              | _ :: _, Ppx_mysql_runtime.Stdlib.Option.Some _ ->
-                  IO.return
-                    (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_one_found_many)
-              | hd :: _, Ppx_mysql_runtime.Stdlib.Option.None ->
-                  IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok hd)
+              | [], Option.None ->
+                  IO.return (Result.Error `Expected_one_found_none)
+              | _ :: _, Option.Some _ ->
+                  IO.return (Result.Error `Expected_one_found_many)
+              | hd :: _, Option.None ->
+                  IO.return (Result.Ok hd)
             in
             loop []]
   | "select_opt" ->
@@ -166,23 +161,18 @@ let build_process_rows ~loc = function
               Prepared.fetch stmt_result
               >>= fun maybe_row ->
               match acc, maybe_row with
-              | [], Ppx_mysql_runtime.Stdlib.Option.Some row -> (
+              | [], Option.Some row -> (
                 match process_out_params row with
-                | Ppx_mysql_runtime.Stdlib.Result.Ok row' ->
+                | Result.Ok row' ->
                     loop [row']
-                | Ppx_mysql_runtime.Stdlib.Result.Error _ as err ->
+                | Result.Error _ as err ->
                     IO.return err )
-              | [], Ppx_mysql_runtime.Stdlib.Option.None ->
-                  IO.return
-                    (Ppx_mysql_runtime.Stdlib.Result.Ok
-                       Ppx_mysql_runtime.Stdlib.Option.None)
-              | _ :: _, Ppx_mysql_runtime.Stdlib.Option.Some _ ->
-                  IO.return
-                    (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_maybe_one_found_many)
-              | hd :: _, Ppx_mysql_runtime.Stdlib.Option.None ->
-                  IO.return
-                    (Ppx_mysql_runtime.Stdlib.Result.Ok
-                       (Ppx_mysql_runtime.Stdlib.Option.Some hd))
+              | [], Option.None ->
+                  IO.return (Result.Ok Option.None)
+              | _ :: _, Option.Some _ ->
+                  IO.return (Result.Error `Expected_maybe_one_found_many)
+              | hd :: _, Option.None ->
+                  IO.return (Result.Ok (Option.Some hd))
             in
             loop []]
   | "select_all" ->
@@ -192,16 +182,14 @@ let build_process_rows ~loc = function
             let rec loop acc =
               Prepared.fetch stmt_result
               >>= function
-              | Ppx_mysql_runtime.Stdlib.Option.Some row -> (
+              | Option.Some row -> (
                 match process_out_params row with
-                | Ppx_mysql_runtime.Stdlib.Result.Ok row' ->
+                | Result.Ok row' ->
                     loop (row' :: acc)
-                | Ppx_mysql_runtime.Stdlib.Result.Error _ as err ->
+                | Result.Error _ as err ->
                     IO.return err )
-              | Ppx_mysql_runtime.Stdlib.Option.None ->
-                  IO.return
-                    (Ppx_mysql_runtime.Stdlib.Result.Ok
-                       (Ppx_mysql_runtime.Stdlib.List.rev acc))
+              | Option.None ->
+                  IO.return (Result.Ok (List.rev acc))
             in
             loop []]
   | "execute" ->
@@ -210,11 +198,10 @@ let build_process_rows ~loc = function
           fun () ->
             Prepared.fetch stmt_result
             >>= function
-            | Ppx_mysql_runtime.Stdlib.Option.Some _ ->
-                IO.return
-                  (Ppx_mysql_runtime.Stdlib.Result.Error `Expected_none_found_one)
-            | Ppx_mysql_runtime.Stdlib.Option.None ->
-                IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ())]
+            | Option.Some _ ->
+                IO.return (Result.Error `Expected_none_found_one)
+            | Option.None ->
+                IO.return (Result.Ok ())]
   | etc ->
       Error (`Unknown_query_variant etc)
 
@@ -234,9 +221,7 @@ let actually_expand ~loc sql_variant query =
       let param_expr =
         Buildef.pexp_array ~loc @@ List.map (build_in_param ~loc) in_params
       in
-      Ok
-        [%expr
-          IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok ([%e sql_expr], [%e param_expr]))]
+      Ok [%expr IO.return (Result.Ok ([%e sql_expr], [%e param_expr]))]
   | Some {subsql; string_index; param_index; params} ->
       Query.remove_duplicates params
       >>= fun unique_params ->
@@ -264,29 +249,22 @@ let actually_expand ~loc sql_variant query =
         [%expr
           match [%e elems_ident] with
           | [] ->
-              IO.return (Ppx_mysql_runtime.Stdlib.Result.Error `Empty_input_list)
+              IO.return (Result.Error `Empty_input_list)
           | elems ->
-              let subsqls =
-                Ppx_mysql_runtime.Stdlib.List.map (fun _ -> [%e subsql_expr]) elems
-              in
-              let patch = Ppx_mysql_runtime.Stdlib.String.concat ", " subsqls in
+              let subsqls = List.map (fun _ -> [%e subsql_expr]) elems in
+              let patch = String.concat ", " subsqls in
               let sql =
-                Ppx_mysql_runtime.Stdlib.String.append
-                  [%e sql_before]
-                  (Ppx_mysql_runtime.Stdlib.String.append patch [%e sql_after])
+                String.append [%e sql_before] (String.append patch [%e sql_after])
               in
               let params_between =
-                Ppx_mysql_runtime.Stdlib.Array.of_list
-                  (Ppx_mysql_runtime.Stdlib.List.concat
-                     (Ppx_mysql_runtime.Stdlib.List.map
-                        (fun [%p list_params_decl] -> [%e list_params_conv])
-                        elems))
+                Array.of_list
+                  (List.concat
+                     (List.map (fun [%p list_params_decl] -> [%e list_params_conv]) elems))
               in
               let params =
-                Ppx_mysql_runtime.Stdlib.Array.concat
-                  [[%e params_before]; params_between; [%e params_after]]
+                Array.concat [[%e params_before]; params_between; [%e params_after]]
               in
-              IO.return (Ppx_mysql_runtime.Stdlib.Result.Ok (sql, params))] )
+              IO.return (Result.Ok (sql, params))] )
   >>= fun setup_expr ->
   (* Note that in the expr fragment below we disable warning 26 (about unused variables)
      for the 'process_out_params' function, since it may indeed be unused if there are
@@ -294,6 +272,11 @@ let actually_expand ~loc sql_variant query =
   let expr =
     [%expr
       let open IO_result in
+      let module Array = Ppx_mysql_runtime.Stdlib.Array in
+      let module List = Ppx_mysql_runtime.Stdlib.List in
+      let module Option = Ppx_mysql_runtime.Stdlib.Option in
+      let module String = Ppx_mysql_runtime.Stdlib.String in
+      let module Result = Ppx_mysql_runtime.Stdlib.Result in
       [%e setup_expr]
       >>= fun (sql, params) ->
       let[@warning "-26"] process_out_params =
