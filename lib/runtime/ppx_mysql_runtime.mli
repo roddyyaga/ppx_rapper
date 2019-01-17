@@ -14,7 +14,7 @@ val int64_of_string : int64 deserializer
 
 val bool_of_string : bool deserializer
 
-val identity : 'a -> 'a
+external identity : 'a -> 'a = "%identity"
 
 val deserialize_non_nullable_column 
   :  int

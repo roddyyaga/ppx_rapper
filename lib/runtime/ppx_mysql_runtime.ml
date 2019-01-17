@@ -4,7 +4,8 @@ type column_error =
 
 type 'a deserializer = string -> ('a, [`Deserialization_error of string]) result
 
-let wrap_failure of_string s =
+let wrap_failure : (string -> 'a) -> 'a deserializer =
+ fun of_string s ->
   match of_string s with
   | v ->
       Ok v
@@ -26,7 +27,7 @@ let bool_of_string str =
   | exception Failure _ ->
       Error (`Deserialization_error "cannot parse boolean")
 
-let identity v = v
+external identity : 'a -> 'a = "%identity"
 
 let deserialize_non_nullable_column idx name of_string of_string_descr err_accum =
   function
