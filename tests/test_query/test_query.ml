@@ -111,6 +111,29 @@ let parsed_query_out3 =
         ; to_string = "Ppx_mysql_runtime", "identity" } ]
   ; list_params = None }
 
+let query_out4 = "SELECT @Id{id}, @Name{name}, @Phone?{phone} FROM users"
+
+let parsed_query_out4 =
+  { sql = "SELECT id, name, phone FROM users"
+  ; in_params = []
+  ; out_params =
+      [ { typ = "Id.t"
+        ; opt = false
+        ; name = "id"
+        ; of_string = "Id", "of_mysql"
+        ; to_string = "Id", "to_mysql" }
+      ; { typ = "Name.t"
+        ; opt = false
+        ; name = "name"
+        ; of_string = "Name", "of_mysql"
+        ; to_string = "Name", "to_mysql" }
+      ; { typ = "Phone.t"
+        ; opt = true
+        ; name = "phone"
+        ; of_string = "Phone", "of_mysql"
+        ; to_string = "Phone", "to_mysql" } ]
+  ; list_params = None }
+
 let query_in1 = "INSERT INTO users (id) VALUES (%int64{id})"
 
 let parsed_query_in1 =
@@ -164,6 +187,31 @@ let parsed_query_in3 =
         ; name = "phone"
         ; of_string = "Ppx_mysql_runtime", "string_of_string"
         ; to_string = "Ppx_mysql_runtime", "identity" } ]
+  ; out_params = []
+  ; list_params = None }
+
+let query_in4 =
+  "INSERT INTO users (id, name, phone) VALUES (%Id{id}, %Name{name}, \
+   %Phone?{phone})"
+
+let parsed_query_in4 =
+  { sql = "INSERT INTO users (id, name, phone) VALUES (?, ?, ?)"
+  ; in_params =
+      [ { typ = "Id.t"
+        ; opt = false
+        ; name = "id"
+        ; of_string = "Id", "of_mysql"
+        ; to_string = "Id", "to_mysql" }
+      ; { typ = "Name.t"
+        ; opt = false
+        ; name = "name"
+        ; of_string = "Name", "of_mysql"
+        ; to_string = "Name", "to_mysql" }
+      ; { typ = "Phone.t"
+        ; opt = true
+        ; name = "phone"
+        ; of_string = "Phone", "of_mysql"
+        ; to_string = "Phone", "to_mysql" } ]
   ; out_params = []
   ; list_params = None }
 
@@ -431,13 +479,13 @@ let query_bad0 = "SELECT true FROM users WHERE id = %int{ID}"
 
 let error_bad0 = `Bad_identifier "ID"
 
-let query_bad1 = "SELECT @FOO{id} FROM users"
+let query_bad1 = "SELECT @foo{id} FROM users"
 
-let error_bad1 = `Unknown_type_spec "FOO"
+let error_bad1 = `Unknown_type_spec "foo"
 
-let query_bad2 = "SELECT id, name FROM users WHERE id = %FOO{id}"
+let query_bad2 = "SELECT id, name FROM users WHERE id = %foo{id}"
 
-let error_bad2 = `Unknown_type_spec "FOO"
+let error_bad2 = `Unknown_type_spec "foo"
 
 let query_bad3 = "SELECT 'hello"
 
@@ -497,9 +545,11 @@ let test_parse_query () =
   run "query_out1" query_out1 (Ok parsed_query_out1);
   run "query_out2" query_out2 (Ok parsed_query_out2);
   run "query_out3" query_out3 (Ok parsed_query_out3);
+  run "query_out4" query_out4 (Ok parsed_query_out4);
   run "query_in1" query_in1 (Ok parsed_query_in1);
   run "query_in2" query_in2 (Ok parsed_query_in2);
   run "query_in3" query_in3 (Ok parsed_query_in3);
+  run "query_in4" query_in4 (Ok parsed_query_in4);
   run "query_inout" query_inout (Ok parsed_query_inout);
   run "query_quoted0" query_quoted0 (Ok parsed_query_quoted0);
   run "query_quoted1" query_quoted1 (Ok parsed_query_quoted1);
