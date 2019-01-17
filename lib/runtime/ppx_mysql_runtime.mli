@@ -1,3 +1,39 @@
+type column_error =
+  [ `Expected_non_null_column of int * string
+  | `Deserialization_error of int * string * string * string * string ]
+
+type 'a deserializer = string -> ('a, [`Deserialization_error of string]) result
+
+val string_of_string : string deserializer
+
+val int_of_string : int deserializer
+
+val int32_of_string : int32 deserializer
+
+val int64_of_string : int64 deserializer
+
+val bool_of_string : bool deserializer
+
+external identity : 'a -> 'a = "%identity"
+
+val deserialize_non_nullable_column 
+  :  int
+  -> string
+  -> 'a deserializer
+  -> string
+  -> column_error list
+  -> string option
+  -> 'a option * column_error list
+
+val deserialize_nullable_column 
+  :  int
+  -> string
+  -> 'a deserializer
+  -> string
+  -> column_error list
+  -> string option
+  -> 'a option option * column_error list
+
 module type PPX_MYSQL_CONTEXT_ARG = sig
   module IO : sig
     type 'a t
@@ -123,13 +159,3 @@ module Stdlib : sig
 
   val ( = ) : 'a -> 'a -> bool
 end
-
-val identity : 'a -> 'a
-
-val int_of_string : string -> int
-
-val int32_of_string : string -> int32
-
-val int64_of_string : string -> int64
-
-val bool_of_string : string -> bool
