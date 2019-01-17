@@ -824,6 +824,72 @@ let test_string dbh ~(a : string) ~(b : string option) =
         loop [] )
         () )
 
+let test_custom_type dbh ~(a : Id.t) ~(b : Phone.t option) =
+  let open IO_result in
+  let module Array = Ppx_mysql_runtime.Stdlib.Array in
+  let module List = Ppx_mysql_runtime.Stdlib.List in
+  let module Option = Ppx_mysql_runtime.Stdlib.Option in
+  let module String = Ppx_mysql_runtime.Stdlib.String in
+  let module Result = Ppx_mysql_runtime.Stdlib.Result in
+  IO.return
+    (Result.Ok
+       ( "SELECT a, b FROM users where a = ? OR b = ?"
+       , [|Option.Some (Id.to_mysql a); (Option.map Phone.to_mysql) b|] ))
+  >>= fun (sql, params) ->
+  let[@warning "-26"] process_out_params row =
+    let len_row = Array.length row in
+    if Ppx_mysql_runtime.Stdlib.( = ) len_row 2
+    then
+      let err_accum = [] in
+      let col0, err_accum =
+        Ppx_mysql_runtime.deserialize_non_nullable_column
+          0
+          "a"
+          Id.of_mysql
+          "Id.of_mysql"
+          err_accum
+          row.(0)
+      in
+      let col1, err_accum =
+        Ppx_mysql_runtime.deserialize_nullable_column
+          1
+          "b"
+          Phone.of_mysql
+          "Phone.of_mysql"
+          err_accum
+          row.(1)
+      in
+      match col0, col1 with
+      | Option.Some v0, Option.Some v1 ->
+          Result.Ok (v0, v1)
+      | _ ->
+          Result.Error (`Column_errors err_accum)
+    else Result.Error (`Unexpected_number_of_columns (len_row, 2))
+  in
+  Prepared.with_stmt dbh sql (fun stmt ->
+      Prepared.execute_null stmt params
+      >>= fun stmt_result ->
+      (fun () ->
+        let rec loop acc =
+          Prepared.fetch stmt_result
+          >>= fun maybe_row ->
+          match acc, maybe_row with
+          | [], Option.Some row -> (
+            match process_out_params row with
+            | Result.Ok row' ->
+                loop [row']
+            | Result.Error _ as err ->
+                IO.return err )
+          | [], Option.None ->
+              IO.return (Result.Error `Expected_one_found_none)
+          | _ :: _, Option.Some _ ->
+              IO.return (Result.Error `Expected_one_found_many)
+          | hd :: _, Option.None ->
+              IO.return (Result.Ok hd)
+        in
+        loop [] )
+        () )
+
 let test_list0 dbh elems =
   let open IO_result in
   let module Array = Ppx_mysql_runtime.Stdlib.Array in
