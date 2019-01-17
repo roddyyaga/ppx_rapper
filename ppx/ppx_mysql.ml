@@ -76,11 +76,15 @@ let build_in_param ~loc param =
 
 let make_column_expr ~loc i param =
   let of_string_mod, of_string_fun = Query.(param.of_string) in
-  let of_string = Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun))) in
+  let of_string =
+    Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident of_string_mod, of_string_fun)))
+  in
   let param_name = Buildef.estring ~loc Query.(param.name) in
-  let of_string_desc = Buildef.estring ~loc @@ Printf.sprintf "%s.%s" of_string_mod of_string_fun in
+  let of_string_desc =
+    Buildef.estring ~loc @@ Printf.sprintf "%s.%s" of_string_mod of_string_fun
+  in
   let idx = Buildef.eint ~loc i in
-  let arg = [%expr Array.get row [%e idx]] in
+  let arg = [%expr row.([%e idx])] in
   let processor =
     match param.opt with
     | true ->
@@ -88,7 +92,14 @@ let make_column_expr ~loc i param =
     | false ->
         [%expr Ppx_mysql_runtime.deserialize_non_nullable_column]
   in
-  [%expr [%e processor] [%e idx] [%e param_name] [%e of_string] [%e of_string_desc] err_accum [%e arg]]
+  [%expr
+    [%e processor]
+      [%e idx]
+      [%e param_name]
+      [%e of_string]
+      [%e of_string_desc]
+      err_accum
+      [%e arg]]
 
 let build_out_param_processor ~loc out_params =
   let len_out_params = List.length out_params in
@@ -97,15 +108,15 @@ let build_out_param_processor ~loc out_params =
     | [] ->
         [%expr Result.Ok ()]
     | [x] ->
-        [%expr 
-        let err_accum = [] in
-        match [%e make_column_expr ~loc 0 x] with
-        | (Option.Some res, _) -> Result.Ok res
-        | (Option.None, err) -> Result.Error (`Column_errors err)]
+        [%expr
+          let err_accum = [] in
+          match [%e make_column_expr ~loc 0 x] with
+          | Option.Some res, _ ->
+              Result.Ok res
+          | Option.None, err ->
+              Result.Error (`Column_errors err)]
     | _ ->
-        let make_ident_str name i =
-          String.append name @@ string_of_int i
-        in
+        let make_ident_str name i = String.append name @@ string_of_int i in
         let make_ident_expr name i =
           Buildef.pexp_ident ~loc (Loc.make ~loc (Lident (make_ident_str name i)))
         in
@@ -118,9 +129,14 @@ let build_out_param_processor ~loc out_params =
           in
           let ok_case =
             let lhs =
-              Buildef.ppat_tuple ~loc @@ List.init len_out_params (fun i -> [%pat? Option.Some [%p make_ident_pat "v" i]]) in
+              Buildef.ppat_tuple ~loc
+              @@ List.init len_out_params (fun i ->
+                     [%pat? Option.Some [%p make_ident_pat "v" i]] )
+            in
             let rhs =
-              let tuple = Buildef.pexp_tuple ~loc @@ List.init len_out_params (make_ident_expr "v") in
+              let tuple =
+                Buildef.pexp_tuple ~loc @@ List.init len_out_params (make_ident_expr "v")
+              in
               [%expr Result.Ok [%e tuple]]
             in
             Buildef.case ~lhs ~guard:None ~rhs
@@ -132,19 +148,19 @@ let build_out_param_processor ~loc out_params =
           in
           Buildef.pexp_match ~loc test_expr [ok_case; error_case]
         in
-        let (call_chain, _) =
+        let call_chain, _ =
           let err_accum_pat = Buildef.ppat_var ~loc (Loc.make ~loc "err_accum") in
           let make_call out_param (accum, i) =
             let pat = Buildef.ppat_tuple ~loc [make_ident_pat "col" i; err_accum_pat] in
             let expr = make_column_expr ~loc i out_param in
             let binding = Buildef.value_binding ~loc ~pat ~expr in
-            (Buildef.pexp_let ~loc Nonrecursive [binding] accum, i - 1)
+            Buildef.pexp_let ~loc Nonrecursive [binding] accum, i - 1
           in
           List.fold_right make_call out_params (match_expr, len_out_params - 1)
         in
         [%expr
-        let err_accum = [] in
-        [%e call_chain]]
+          let err_accum = [] in
+          [%e call_chain]]
   in
   let len_expected = Buildef.eint ~loc len_out_params in
   [%expr

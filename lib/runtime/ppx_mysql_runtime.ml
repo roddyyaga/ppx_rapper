@@ -1,14 +1,15 @@
 type column_error =
   [ `Expected_non_null_column of int * string
-  | `Deserialization_error of int * string * string * string * string
-  ]
+  | `Deserialization_error of int * string * string * string * string ]
 
-type 'a deserializer = string -> ('a, [ `Deserialization_error of string ]) result
+type 'a deserializer = string -> ('a, [`Deserialization_error of string]) result
 
 let wrap_failure of_string s =
   match of_string s with
-  | v -> Ok v
-  | exception Failure _ -> Error (`Deserialization_error "cannot parse number")
+  | v ->
+      Ok v
+  | exception Failure _ ->
+      Error (`Deserialization_error "cannot parse number")
 
 let string_of_string str = Ok str
 
@@ -20,33 +21,36 @@ let int64_of_string = wrap_failure Int64.of_string
 
 let bool_of_string str =
   match Pervasives.int_of_string str with
-  | v -> Ok (v <> 0)
-  | exception Failure _ -> Error (`Deserialization_error "cannot parse boolean")
+  | v ->
+      Ok (v <> 0)
+  | exception Failure _ ->
+      Error (`Deserialization_error "cannot parse boolean")
 
 let identity v = v
 
-let deserialize_non_nullable_column idx name of_string of_string_descr err_accum = function
+let deserialize_non_nullable_column idx name of_string of_string_descr err_accum =
+  function
   | None ->
-    let err = `Expected_non_null_column (idx, name) in
-    (None, err :: err_accum)
-  | Some value ->
-      match of_string value with
-      | Ok ok -> 
-          (Some ok, err_accum)
-      | Error `Deserialization_error msg ->
-          let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
-          (None, err :: err_accum)
+      let err = `Expected_non_null_column (idx, name) in
+      None, err :: err_accum
+  | Some value -> (
+    match of_string value with
+    | Ok ok ->
+        Some ok, err_accum
+    | Error (`Deserialization_error msg) ->
+        let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
+        None, err :: err_accum )
 
 let deserialize_nullable_column idx name of_string of_string_descr err_accum = function
   | None ->
-    (Some None, err_accum)
-  | Some value ->
-      match of_string value with
-      | Ok ok -> 
-          (Some (Some ok), err_accum)
-      | Error `Deserialization_error msg ->
-          let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
-          (None, err :: err_accum)
+      Some None, err_accum
+  | Some value -> (
+    match of_string value with
+    | Ok ok ->
+        Some (Some ok), err_accum
+    | Error (`Deserialization_error msg) ->
+        let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
+        None, err :: err_accum )
 
 module type PPX_MYSQL_CONTEXT_ARG = sig
   module IO : sig
@@ -234,4 +238,3 @@ module Stdlib = struct
 
   let ( = ) = ( = )
 end
-

@@ -1,9 +1,8 @@
 type column_error =
   [ `Expected_non_null_column of int * string
-  | `Deserialization_error of int * string * string * string * string
-  ]
+  | `Deserialization_error of int * string * string * string * string ]
 
-type 'a deserializer = string -> ('a, [ `Deserialization_error of string ]) result
+type 'a deserializer = string -> ('a, [`Deserialization_error of string]) result
 
 val string_of_string : string deserializer
 
@@ -17,23 +16,23 @@ val bool_of_string : bool deserializer
 
 val identity : 'a -> 'a
 
-val deserialize_non_nullable_column :
-  int ->
-  string ->
-  'a deserializer ->
-  string ->
-  column_error list ->
-  string option ->
-  'a option * column_error list
+val deserialize_non_nullable_column 
+  :  int
+  -> string
+  -> 'a deserializer
+  -> string
+  -> column_error list
+  -> string option
+  -> 'a option * column_error list
 
-val deserialize_nullable_column :
-  int ->
-  string ->
-  'a deserializer ->
-  string ->
-  column_error list ->
-  string option ->
-  'a option option * column_error list
+val deserialize_nullable_column 
+  :  int
+  -> string
+  -> 'a deserializer
+  -> string
+  -> column_error list
+  -> string option
+  -> 'a option option * column_error list
 
 module type PPX_MYSQL_CONTEXT_ARG = sig
   module IO : sig
