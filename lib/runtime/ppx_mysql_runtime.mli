@@ -84,6 +84,8 @@ module type PPX_MYSQL_CONTEXT = sig
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
 
+    val return : 'a -> ('a, 'e) t
+
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t

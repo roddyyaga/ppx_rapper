@@ -103,6 +103,8 @@ module type PPX_MYSQL_CONTEXT = sig
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
 
+    val return : 'a -> ('a, 'e) t
+
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
@@ -150,6 +152,8 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
 
   module IO_result = struct
     type ('a, 'e) t = ('a, 'e) result IO.t
+
+    let return x = IO.return @@ Ok x
 
     let bind x f =
       IO.bind x (function
