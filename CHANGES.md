@@ -1,3 +1,9 @@
+0.5
+===
+
+* Refactor code generation to eliminate internal use of exceptions
+* Support custom types wrapped under modules
+
 0.4
 ===
 
