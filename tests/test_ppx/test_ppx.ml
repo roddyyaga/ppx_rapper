@@ -51,6 +51,11 @@ let test_string =
     select_one
       "SELECT @string{a}, @string?{b} FROM users where a = %string{a} OR b = %string?{b}"]
 
+let test_custom_type =
+  [%mysql
+    select_one
+      "SELECT @Id{a}, @Phone?{b} FROM users where a = %Id{a} OR b = %Phone?{b}"]
+
 let test_list0 =
   [%mysql
     select_all "SELECT @int{id}, @string{name} FROM users WHERE id IN (%list{%int{id}})"]
