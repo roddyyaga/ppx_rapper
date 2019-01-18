@@ -53,8 +53,7 @@ let test_string =
 
 let test_custom_type =
   [%mysql
-    select_one
-      "SELECT @Id{a}, @Phone?{b} FROM users where a = %Id{a} OR b = %Phone?{b}"]
+    select_one "SELECT @Id{a}, @Phone?{b} FROM users where a = %Id{a} OR b = %Phone?{b}"]
 
 let test_list0 =
   [%mysql

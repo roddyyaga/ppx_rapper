@@ -191,8 +191,7 @@ let parsed_query_in3 =
   ; list_params = None }
 
 let query_in4 =
-  "INSERT INTO users (id, name, phone) VALUES (%Id{id}, %Name{name}, \
-   %Phone?{phone})"
+  "INSERT INTO users (id, name, phone) VALUES (%Id{id}, %Name{name}, %Phone?{phone})"
 
 let parsed_query_in4 =
   { sql = "INSERT INTO users (id, name, phone) VALUES (?, ?, ?)"
