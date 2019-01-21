@@ -53,8 +53,10 @@ let rec build_fun_chain ~loc expr = function
       let var = ppat_var ~loc (Loc.make ~loc name) in
       let basetyp =
         match typ with
-        | (None, typ) -> ptyp_constr ~loc (Loc.make ~loc (Lident typ)) []
-        | (Some module_name, typ) -> ptyp_constr ~loc (Loc.make ~loc (Ldot (Lident module_name, typ))) []
+        | None, typ ->
+            ptyp_constr ~loc (Loc.make ~loc (Lident typ)) []
+        | Some module_name, typ ->
+            ptyp_constr ~loc (Loc.make ~loc (Ldot (Lident module_name, typ))) []
       in
       let fulltyp =
         match opt with
