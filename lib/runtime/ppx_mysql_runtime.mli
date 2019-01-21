@@ -34,6 +34,14 @@ val deserialize_nullable_column
   -> string option
   -> 'a option option * column_error list
 
+module type SERIALIZABLE = sig
+  type t
+
+  val of_mysql : string -> (t, [`Deserialization_error of string]) result
+
+  val to_mysql : t -> string
+end
+
 module type PPX_MYSQL_CONTEXT_ARG = sig
   module IO : sig
     type 'a t
@@ -75,6 +83,8 @@ module type PPX_MYSQL_CONTEXT = sig
 
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
+
+    val return : 'a -> ('a, 'e) t
 
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 

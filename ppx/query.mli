@@ -1,7 +1,7 @@
 (** {1 Type definitions} *)
 
 type param =
-  { typ : string
+  { typ : string option * string
   ; opt : bool
   ; name : string
   ; of_string : string * string

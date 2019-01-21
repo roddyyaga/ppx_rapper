@@ -53,6 +53,14 @@ let deserialize_nullable_column idx name of_string of_string_descr err_accum = f
         let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
         None, err :: err_accum )
 
+module type SERIALIZABLE = sig
+  type t
+
+  val of_mysql : string -> (t, [`Deserialization_error of string]) result
+
+  val to_mysql : t -> string
+end
+
 module type PPX_MYSQL_CONTEXT_ARG = sig
   module IO : sig
     type 'a t
@@ -94,6 +102,8 @@ module type PPX_MYSQL_CONTEXT = sig
 
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
+
+    val return : 'a -> ('a, 'e) t
 
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 
@@ -142,6 +152,8 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
 
   module IO_result = struct
     type ('a, 'e) t = ('a, 'e) result IO.t
+
+    let return x = IO.return @@ Ok x
 
     let bind x f =
       IO.bind x (function
