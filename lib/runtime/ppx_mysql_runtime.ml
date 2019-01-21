@@ -1,6 +1,15 @@
+type deserialization_error =
+  {
+  idx : int;
+  name : string;
+  func : string;
+  value : string;
+  message : string
+  }
+
 type column_error =
   [ `Expected_non_null_column of int * string
-  | `Deserialization_error of int * string * string * string * string ]
+  | `Deserialization_error of deserialization_error ]
 
 type 'a deserializer = string -> ('a, string) result
 
@@ -29,7 +38,7 @@ let bool_of_string str =
 
 external identity : 'a -> 'a = "%identity"
 
-let deserialize_non_nullable_column idx name of_string of_string_descr err_accum =
+let deserialize_non_nullable_column idx name of_string func err_accum =
   function
   | None ->
       let err = `Expected_non_null_column (idx, name) in
@@ -38,19 +47,19 @@ let deserialize_non_nullable_column idx name of_string of_string_descr err_accum
     match of_string value with
     | Ok ok ->
         Some ok, err_accum
-    | Error msg ->
-        let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
+    | Error message ->
+        let err = `Deserialization_error {idx; name; func; value; message} in
         None, err :: err_accum )
 
-let deserialize_nullable_column idx name of_string of_string_descr err_accum = function
+let deserialize_nullable_column idx name of_string func err_accum = function
   | None ->
       Some None, err_accum
   | Some value -> (
     match of_string value with
     | Ok ok ->
         Some (Some ok), err_accum
-    | Error msg ->
-        let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
+    | Error message ->
+        let err = `Deserialization_error {idx; name; func; value; message} in
         None, err :: err_accum )
 
 module type SERIALIZABLE = sig

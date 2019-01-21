@@ -1,6 +1,15 @@
+type deserialization_error =
+  {
+  idx : int;
+  name : string;
+  func : string;
+  value : string;
+  message : string
+  }
+
 type column_error =
   [ `Expected_non_null_column of int * string
-  | `Deserialization_error of int * string * string * string * string ]
+  | `Deserialization_error of deserialization_error ]
 
 type 'a deserializer = string -> ('a, string) result
 
