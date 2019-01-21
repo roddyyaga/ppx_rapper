@@ -69,6 +69,7 @@ sig
   module IO_result : sig
     type ('a, 'e) t = ('a, 'e) result IO.t
 
+    val return : 'a -> ('a, 'e) t
     val bind : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
     val ( >>= ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
   end
@@ -174,11 +175,67 @@ Type specifications
 -------------------
 
 Serialization of input parameters and deserialization of output parameters
-is done according to provided type specifications.  These have the same
-name as the OCaml type you wish to (de)serialize to and from.  Presently,
-the supported types are `int`, `int32`, `int64`, `bool`, and `string`.
+is done according to provided type specifications.  A type specification
+can either begin with a lowercase or an uppercase letter.  In the former case,
+its name must either be the same as the base OCaml type you wish to (de)serialize
+to and from (presently, the supported types are `int`, `int32`, `int64`,
+`bool`, and `string`), or the special type specification `list` (please see
+the section on *List of values as input parameter* below for more details).
+In the latter case, the syntax extension assumes you are referencing a type
+with custom (de)serialization functions (please see the next section for
+a detailed explanation of this feature).
+
 Note that you will get a runtime error if there is a mismatch between
 the types in your database and the types you specify in your query.
+
+
+Custom types and (de)serialization functions
+--------------------------------------------
+
+The syntax extension has limited support for custom types with user-defined
+(de)serialization functions.  Consider the example below, noting in the particular
+the use of `Suit` as a type specification both for an input and an output parameter:
+
+```ocaml
+module Suit : Ppx_mysql_runtime.SERIALIZABLE = struct
+  type t = Clubs | Diamonds | Hearts | Spades
+
+  let of_mysql = function
+    | "c" -> Ok Clubs
+    | "d" -> Ok Diamonds
+    | "h" -> Ok Hearts
+    | "s" -> Ok Spades
+    | _   -> Error "invalid suit"
+
+  let to_mysql = function
+    | Clubs -> "c"
+    | Diamonds -> "d"
+    | Hearts -> "h"
+    | Spades -> "s"
+end
+
+let get_cards = [%mysql select_all "SELECT @int{id}, @Suit{suit} FROM cards WHERE suit <> %Suit{suit}"]
+```
+
+As you may have guessed, upon encountering a type specification whose first
+letter is uppercase -- `Suit` in this case -- the syntax extension assumes it
+refers to a module name that implements the `Ppx_mysql_runtime.SERIALIZABLE`
+signature listed below:
+
+```ocaml
+module type SERIALIZABLE = sig
+  type t
+
+  val of_mysql : string -> (t, string) result
+
+  val to_mysql : t -> string
+end
+```
+
+Besides defining a type `t`, the module must also implement the deserialization
+function `of_mysql` and the serialization function `to_mysql`. The MySQL wire
+protocol uses strings for serialization, which explains the signatures of these
+functions.
 
 
 Other select queries
