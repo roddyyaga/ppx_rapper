@@ -2,7 +2,7 @@ type column_error =
   [ `Expected_non_null_column of int * string
   | `Deserialization_error of int * string * string * string * string ]
 
-type 'a deserializer = string -> ('a, [`Deserialization_error of string]) result
+type 'a deserializer = string -> ('a, string) result
 
 let wrap_failure : (string -> 'a) -> 'a deserializer =
  fun of_string s ->
@@ -10,7 +10,7 @@ let wrap_failure : (string -> 'a) -> 'a deserializer =
   | v ->
       Ok v
   | exception Failure _ ->
-      Error (`Deserialization_error "cannot parse number")
+      Error "cannot parse number"
 
 let string_of_string str = Ok str
 
@@ -25,7 +25,7 @@ let bool_of_string str =
   | v ->
       Ok (v <> 0)
   | exception Failure _ ->
-      Error (`Deserialization_error "cannot parse boolean")
+      Error "cannot parse boolean"
 
 external identity : 'a -> 'a = "%identity"
 
@@ -38,7 +38,7 @@ let deserialize_non_nullable_column idx name of_string of_string_descr err_accum
     match of_string value with
     | Ok ok ->
         Some ok, err_accum
-    | Error (`Deserialization_error msg) ->
+    | Error msg ->
         let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
         None, err :: err_accum )
 
@@ -49,14 +49,14 @@ let deserialize_nullable_column idx name of_string of_string_descr err_accum = f
     match of_string value with
     | Ok ok ->
         Some (Some ok), err_accum
-    | Error (`Deserialization_error msg) ->
+    | Error msg ->
         let err = `Deserialization_error (idx, name, of_string_descr, value, msg) in
         None, err :: err_accum )
 
 module type SERIALIZABLE = sig
   type t
 
-  val of_mysql : string -> (t, [`Deserialization_error of string]) result
+  val of_mysql : string -> (t, string) result
 
   val to_mysql : t -> string
 end
