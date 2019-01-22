@@ -20,7 +20,7 @@ module Phone : Ppx_mysql_runtime.SERIALIZABLE with type t = string = struct
   let of_mysql str =
     if String.length str <= 9
     then Ok str
-    else Error (`Deserialization_error "string too long")
+    else Error "string too long"
 
   let to_mysql str = str
 end

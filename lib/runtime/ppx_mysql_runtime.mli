@@ -1,8 +1,17 @@
+type deserialization_error =
+  {
+  idx : int;
+  name : string;
+  func : string;
+  value : string;
+  message : string
+  }
+
 type column_error =
   [ `Expected_non_null_column of int * string
-  | `Deserialization_error of int * string * string * string * string ]
+  | `Deserialization_error of deserialization_error ]
 
-type 'a deserializer = string -> ('a, [`Deserialization_error of string]) result
+type 'a deserializer = string -> ('a, string) result
 
 val string_of_string : string deserializer
 
@@ -37,7 +46,7 @@ val deserialize_nullable_column
 module type SERIALIZABLE = sig
   type t
 
-  val of_mysql : string -> (t, [`Deserialization_error of string]) result
+  val of_mysql : string -> (t, string) result
 
   val to_mysql : t -> string
 end
