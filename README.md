@@ -422,7 +422,7 @@ All output columns must be specified explicitly, and queries such as
 `SELECT * FROM employees` are not supported.  However, since these
 queries are brittle and should not be used anyway, this limitation
 is unlikely to ever be a problem.  Moreover, note that queries such
-as `SELECT @d{count(*)} FROM employees` are supported just fine.
+as `SELECT @int{count(*)} FROM employees` are supported just fine.
 
 
 Summary of the built-in query functions
