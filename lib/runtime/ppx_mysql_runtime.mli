@@ -1,9 +1,10 @@
-type deserialization_error =
-  { idx : int
-  ; name : string
-  ; func : string
-  ; value : string
-  ; message : string }
+type deserialization_error = {
+  idx : int;
+  name : string;
+  func : string;
+  value : string;
+  message : string
+}
 
 type column_error =
   [ `Expected_non_null_column of int * string
@@ -23,23 +24,23 @@ val bool_of_string : bool deserializer
 
 external identity : 'a -> 'a = "%identity"
 
-val deserialize_non_nullable_column 
-  :  int
-  -> string
-  -> 'a deserializer
-  -> string
-  -> column_error list
-  -> string option
-  -> 'a option * column_error list
+val deserialize_non_nullable_column
+  :  int ->
+  string ->
+  'a deserializer ->
+  string ->
+  column_error list ->
+  string option ->
+  'a option * column_error list
 
-val deserialize_nullable_column 
-  :  int
-  -> string
-  -> 'a deserializer
-  -> string
-  -> column_error list
-  -> string option
-  -> 'a option option * column_error list
+val deserialize_nullable_column
+  :  int ->
+  string ->
+  'a deserializer ->
+  string ->
+  column_error list ->
+  string option ->
+  'a option option * column_error list
 
 module type SERIALIZABLE = sig
   type t
@@ -111,17 +112,20 @@ module type PPX_MYSQL_CONTEXT = sig
 
     val init : dbh -> caching_dbh
 
-    val execute_null 
-      : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
+    val execute_null
+      :  stmt ->
+      string option array ->
+      (stmt_result, [> wrapped_error]) result IO.t
 
-    val fetch 
-      : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
+    val fetch
+      :  stmt_result ->
+      (string option array option, [> wrapped_error]) result IO.t
 
-    val with_stmt 
-      :  caching_dbh
-      -> string
-      -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t)
-      -> ('a, 'e) result IO.t
+    val with_stmt
+      :  caching_dbh ->
+      string ->
+      (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t) ->
+      ('a, 'e) result IO.t
   end
 end
 

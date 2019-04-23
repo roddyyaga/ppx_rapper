@@ -11,13 +11,9 @@ module Buildef = Ast_builder.Default
 let split_n elems index =
   let rec loop accum leftovers index =
     match leftovers, index with
-    | _, x
-      when x <= 0 ->
-        List.rev accum, leftovers
-    | [], _ ->
-        List.rev accum, leftovers
-    | hd :: tl, i ->
-        loop (hd :: accum) tl (i - 1)
+    | _, x when x <= 0 -> List.rev accum, leftovers
+    | [], _ -> List.rev accum, leftovers
+    | hd :: tl, i -> loop (hd :: accum) tl (i - 1)
   in
   loop [] elems index
 
@@ -28,42 +24,34 @@ let create_unique_var ~loc params base =
   let rec add_suffix counter =
     let candidate = Printf.sprintf "%s_%d" base counter in
     match already_exists candidate with
-    | true ->
-        add_suffix (counter + 1)
-    | false ->
-        candidate
+    | true -> add_suffix (counter + 1)
+    | false -> candidate
   in
   let name =
     match already_exists base with
-    | true ->
-        add_suffix 0
-    | false ->
-        base
+    | true -> add_suffix 0
+    | false -> base
   in
   let pat = Buildef.ppat_var ~loc (Loc.make ~loc name) in
   let ident = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident name)) in
   pat, ident
 
 let rec build_fun_chain ~loc expr = function
-  | [] ->
-      expr
-  | Query.({typ; opt; name; _}) :: tl ->
+  | [] -> expr
+  | Query.{typ; opt; name; _} :: tl ->
       let open Buildef in
       let tl' = build_fun_chain ~loc expr tl in
       let var = ppat_var ~loc (Loc.make ~loc name) in
       let basetyp =
         match typ with
-        | None, typ ->
-            ptyp_constr ~loc (Loc.make ~loc (Lident typ)) []
+        | None, typ -> ptyp_constr ~loc (Loc.make ~loc (Lident typ)) []
         | Some module_name, typ ->
             ptyp_constr ~loc (Loc.make ~loc (Ldot (Lident module_name, typ))) []
       in
       let fulltyp =
         match opt with
-        | true ->
-            ptyp_constr ~loc (Loc.make ~loc (Lident "option")) [basetyp]
-        | false ->
-            basetyp
+        | true -> ptyp_constr ~loc (Loc.make ~loc (Lident "option")) [basetyp]
+        | false -> basetyp
       in
       let pat = ppat_constraint ~loc var fulltyp in
       pexp_fun ~loc (Labelled name) None pat tl'
@@ -75,10 +63,8 @@ let build_in_param ~loc param =
   in
   let arg = Buildef.pexp_ident ~loc (Loc.make ~loc (Lident param.name)) in
   match param.opt with
-  | true ->
-      [%expr (Option.map [%e to_string]) [%e arg]]
-  | false ->
-      [%expr Option.Some ([%e to_string] [%e arg])]
+  | true -> [%expr (Option.map [%e to_string]) [%e arg]]
+  | false -> [%expr Option.Some ([%e to_string] [%e arg])]
 
 let make_column_expr ~loc i param =
   let of_string_mod, of_string_fun = Query.(param.of_string) in
@@ -93,10 +79,8 @@ let make_column_expr ~loc i param =
   let arg = [%expr row.([%e idx])] in
   let processor =
     match param.opt with
-    | true ->
-        [%expr Ppx_mysql_runtime.deserialize_nullable_column]
-    | false ->
-        [%expr Ppx_mysql_runtime.deserialize_non_nullable_column]
+    | true -> [%expr Ppx_mysql_runtime.deserialize_nullable_column]
+    | false -> [%expr Ppx_mysql_runtime.deserialize_non_nullable_column]
   in
   [%expr
     [%e processor]
@@ -111,16 +95,13 @@ let build_out_param_processor ~loc out_params =
   let len_out_params = List.length out_params in
   let ret_expr =
     match out_params with
-    | [] ->
-        [%expr Result.Ok ()]
+    | [] -> [%expr Result.Ok ()]
     | [x] ->
         [%expr
           let err_accum = [] in
           match [%e make_column_expr ~loc 0 x] with
-          | Option.Some res, _ ->
-              Result.Ok res
-          | Option.None, err ->
-              Result.Error (`Column_errors err)]
+          | Option.Some res, _ -> Result.Ok res
+          | Option.None, err -> Result.Error (`Column_errors err)]
     | _ ->
         let make_ident_str name i = String.append name @@ string_of_int i in
         let make_ident_expr name i =
@@ -182,21 +163,16 @@ let build_process_rows ~loc = function
         [%expr
           fun () ->
             let rec loop acc =
-              Prepared.fetch stmt_result
-              >>= fun maybe_row ->
+              Prepared.fetch stmt_result >>= fun maybe_row ->
               match acc, maybe_row with
               | [], Option.Some row -> (
                 match process_out_params row with
-                | Result.Ok row' ->
-                    loop [row']
-                | Result.Error _ as err ->
-                    IO.return err )
-              | [], Option.None ->
-                  IO.return (Result.Error `Expected_one_found_none)
+                | Result.Ok row' -> loop [row']
+                | Result.Error _ as err -> IO.return err )
+              | [], Option.None -> IO.return (Result.Error `Expected_one_found_none)
               | _ :: _, Option.Some _ ->
                   IO.return (Result.Error `Expected_one_found_many)
-              | hd :: _, Option.None ->
-                  IO.return (Result.Ok hd)
+              | hd :: _, Option.None -> IO.return (Result.Ok hd)
             in
             loop []]
   | "select_opt" ->
@@ -204,21 +180,16 @@ let build_process_rows ~loc = function
         [%expr
           fun () ->
             let rec loop acc =
-              Prepared.fetch stmt_result
-              >>= fun maybe_row ->
+              Prepared.fetch stmt_result >>= fun maybe_row ->
               match acc, maybe_row with
               | [], Option.Some row -> (
                 match process_out_params row with
-                | Result.Ok row' ->
-                    loop [row']
-                | Result.Error _ as err ->
-                    IO.return err )
-              | [], Option.None ->
-                  IO.return (Result.Ok Option.None)
+                | Result.Ok row' -> loop [row']
+                | Result.Error _ as err -> IO.return err )
+              | [], Option.None -> IO.return (Result.Ok Option.None)
               | _ :: _, Option.Some _ ->
                   IO.return (Result.Error `Expected_maybe_one_found_many)
-              | hd :: _, Option.None ->
-                  IO.return (Result.Ok (Option.Some hd))
+              | hd :: _, Option.None -> IO.return (Result.Ok (Option.Some hd))
             in
             loop []]
   | "select_all" ->
@@ -226,39 +197,28 @@ let build_process_rows ~loc = function
         [%expr
           fun () ->
             let rec loop acc =
-              Prepared.fetch stmt_result
-              >>= function
+              Prepared.fetch stmt_result >>= function
               | Option.Some row -> (
                 match process_out_params row with
-                | Result.Ok row' ->
-                    loop (row' :: acc)
-                | Result.Error _ as err ->
-                    IO.return err )
-              | Option.None ->
-                  IO.return (Result.Ok (List.rev acc))
+                | Result.Ok row' -> loop (row' :: acc)
+                | Result.Error _ as err -> IO.return err )
+              | Option.None -> IO.return (Result.Ok (List.rev acc))
             in
             loop []]
   | "execute" ->
       Ok
         [%expr
           fun () ->
-            Prepared.fetch stmt_result
-            >>= function
-            | Option.Some _ ->
-                IO.return (Result.Error `Expected_none_found_one)
-            | Option.None ->
-                IO.return (Result.Ok ())]
-  | etc ->
-      Error (`Unknown_query_variant etc)
+            Prepared.fetch stmt_result >>= function
+            | Option.Some _ -> IO.return (Result.Error `Expected_none_found_one)
+            | Option.None -> IO.return (Result.Ok ())]
+  | etc -> Error (`Unknown_query_variant etc)
 
 let actually_expand ~loc sql_variant query =
   let open Result in
-  build_process_rows ~loc sql_variant
-  >>= fun process_rows ->
-  Query.parse query
-  >>= fun {sql; in_params; out_params; list_params} ->
-  Query.remove_duplicates in_params
-  >>= fun unique_in_params ->
+  build_process_rows ~loc sql_variant >>= fun process_rows ->
+  Query.parse query >>= fun {sql; in_params; out_params; list_params} ->
+  Query.remove_duplicates in_params >>= fun unique_in_params ->
   let dbh_pat, dbh_ident = create_unique_var ~loc unique_in_params "dbh" in
   let elems_pat, elems_ident = create_unique_var ~loc unique_in_params "elems" in
   ( match list_params with
@@ -269,8 +229,7 @@ let actually_expand ~loc sql_variant query =
       in
       Ok [%expr IO.return (Result.Ok ([%e sql_expr], [%e param_expr]))]
   | Some {subsql; string_index; param_index; params} ->
-      Query.remove_duplicates params
-      >>= fun unique_params ->
+      Query.remove_duplicates params >>= fun unique_params ->
       let subsql_expr = Buildef.estring ~loc subsql in
       let sql_before = Buildef.estring ~loc @@ String.sub sql 0 string_index in
       let sql_after =
@@ -294,8 +253,7 @@ let actually_expand ~loc sql_variant query =
       Ok
         [%expr
           match [%e elems_ident] with
-          | [] ->
-              IO.return (Result.Error `Empty_input_list)
+          | [] -> IO.return (Result.Error `Empty_input_list)
           | elems ->
               let subsqls = List.map (fun _ -> [%e subsql_expr]) elems in
               let patch = String.concat ", " subsqls in
@@ -323,8 +281,7 @@ let actually_expand ~loc sql_variant query =
       let module Option = Ppx_mysql_runtime.Stdlib.Option in
       let module String = Ppx_mysql_runtime.Stdlib.String in
       let module Result = Ppx_mysql_runtime.Stdlib.Result in
-      [%e setup_expr]
-      >>= fun (sql, params) ->
+      [%e setup_expr] >>= fun (sql, params) ->
       let[@warning "-26"] process_out_params =
         [%e build_out_param_processor ~loc out_params]
       in
@@ -335,22 +292,18 @@ let actually_expand ~loc sql_variant query =
   let chain = build_fun_chain ~loc expr unique_in_params in
   let chain =
     match list_params with
-    | None ->
-        chain
-    | Some _ ->
-        Buildef.pexp_fun ~loc Nolabel None elems_pat chain
+    | None -> chain
+    | Some _ -> Buildef.pexp_fun ~loc Nolabel None elems_pat chain
   in
   Ok (Buildef.pexp_fun ~loc Nolabel None dbh_pat chain)
 
 let expand ~loc ~path:_ sql_variant query =
   match actually_expand ~loc sql_variant query with
-  | Ok expr ->
-      expr
+  | Ok expr -> expr
   | Error err ->
       let msg =
         match err with
-        | #Query.error as err ->
-            Query.explain_error err
+        | #Query.error as err -> Query.explain_error err
         | `Unknown_query_variant variant ->
             Printf.sprintf "I don't understand query variant '%s'" variant
       in

@@ -1,23 +1,26 @@
 (** {1 Type definitions} *)
 
-type param =
-  { typ : string option * string
-  ; opt : bool
-  ; name : string
-  ; of_string : string * string
-  ; to_string : string * string }
+type param = {
+  typ : string option * string;
+  opt : bool;
+  name : string;
+  of_string : string * string;
+  to_string : string * string
+}
 
-type list_params =
-  { subsql : string
-  ; string_index : int
-  ; param_index : int
-  ; params : param list }
+type list_params = {
+  subsql : string;
+  string_index : int;
+  param_index : int;
+  params : param list
+}
 
-type parsed_query =
-  { sql : string
-  ; in_params : param list
-  ; out_params : param list
-  ; list_params : list_params option }
+type parsed_query = {
+  sql : string;
+  in_params : param list;
+  out_params : param list;
+  list_params : list_params option
+}
 
 type parse_error =
   [ `Bad_identifier of string

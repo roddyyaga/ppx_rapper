@@ -17,20 +17,18 @@ open Mysql_with_lwt
 module Phone : Ppx_mysql_runtime.SERIALIZABLE with type t = string = struct
   type t = string
 
-  let of_mysql str =
-    if String.length str <= 9
-    then Ok str
-    else Error "string too long"
+  let of_mysql str = if String.length str <= 9 then Ok str else Error "string too long"
 
   let to_mysql str = str
 end
 
 (** The user type used throughout this example. *)
 
-type user =
-  { id : int32
-  ; name : string
-  ; phone : Phone.t option }
+type user = {
+  id : int32;
+  name : string;
+  phone : Phone.t option
+}
 
 let user_of_tuple (id, name, phone) = {id; name; phone}
 
@@ -40,10 +38,8 @@ let print_user {id; name; phone} =
     id
     name
     ( match phone with
-    | Some p ->
-        p
-    | None ->
-        "--" )
+    | Some p -> p
+    | None -> "--" )
 
 (** Database queries using the Ppx_mysql syntax extension. *)
 
@@ -95,38 +91,22 @@ let delete_user = [%mysql execute "DELETE FROM users WHERE id = %int32{id}"]
 
 let test dbh =
   let open Lwt_result.Infix in
-  insert_user dbh ~id:1l ~name:"John" ~phone:(Some "123456")
-  >>= fun () ->
-  insert_user dbh ~id:2l ~name:"Jane" ~phone:None
-  >>= fun () ->
-  insert_user dbh ~id:3l ~name:"Claire" ~phone:None
-  >>= fun () ->
-  insert_users dbh [4l, "Mark", None; 5l, "Alice", Some "234567"]
-  >>= fun () ->
-  get_all_users dbh
-  >>= fun users ->
-  Lwt_result.ok @@ Lwt_io.printf "All users:\n"
-  >>= fun () ->
-  Lwt_result.ok @@ Lwt_list.iter_s print_user users
-  >>= fun () ->
-  get_some_users dbh [1l; 2l; 3l]
-  >>= fun users ->
-  Lwt_result.ok @@ Lwt_io.printf "Users with ID in {1, 2, 3}:\n"
-  >>= fun () ->
-  Lwt_result.ok @@ Lwt_list.iter_s print_user users
-  >>= fun () ->
-  update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321")
-  >>= fun () ->
-  get_user dbh ~id:2l
-  >>= fun user ->
-  Lwt_result.ok @@ Lwt_io.printf "User with ID = 2 after update:\n"
-  >>= fun () ->
-  Lwt_result.ok @@ print_user user
-  >>= fun () ->
-  delete_user dbh ~id:3l
-  >>= fun () ->
-  get_all_users dbh
-  >>= fun users ->
+  insert_user dbh ~id:1l ~name:"John" ~phone:(Some "123456") >>= fun () ->
+  insert_user dbh ~id:2l ~name:"Jane" ~phone:None >>= fun () ->
+  insert_user dbh ~id:3l ~name:"Claire" ~phone:None >>= fun () ->
+  insert_users dbh [4l, "Mark", None; 5l, "Alice", Some "234567"] >>= fun () ->
+  get_all_users dbh >>= fun users ->
+  Lwt_result.ok @@ Lwt_io.printf "All users:\n" >>= fun () ->
+  Lwt_result.ok @@ Lwt_list.iter_s print_user users >>= fun () ->
+  get_some_users dbh [1l; 2l; 3l] >>= fun users ->
+  Lwt_result.ok @@ Lwt_io.printf "Users with ID in {1, 2, 3}:\n" >>= fun () ->
+  Lwt_result.ok @@ Lwt_list.iter_s print_user users >>= fun () ->
+  update_user dbh ~id:2l ~name:"Mary" ~phone:(Some "654321") >>= fun () ->
+  get_user dbh ~id:2l >>= fun user ->
+  Lwt_result.ok @@ Lwt_io.printf "User with ID = 2 after update:\n" >>= fun () ->
+  Lwt_result.ok @@ print_user user >>= fun () ->
+  delete_user dbh ~id:3l >>= fun () ->
+  get_all_users dbh >>= fun users ->
   Lwt_result.ok @@ Lwt_io.printf "All users after deleting one with ID = 3:\n"
   >>= fun () ->
   Lwt_result.ok @@ Lwt_list.iter_s print_user users >>= fun () -> Lwt_result.return ()
@@ -135,13 +115,10 @@ let main () =
   let open Lwt.Infix in
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
   let caching_dbh = Prepared.init dbh in
-  test caching_dbh
-  >>= fun res ->
+  test caching_dbh >>= fun res ->
   Mysql.disconnect dbh;
   match res with
-  | Ok () ->
-      Lwt_io.printf "All went well!\n"
-  | Error _ ->
-      Lwt_io.printf "An error occurred!\n"
+  | Ok () -> Lwt_io.printf "All went well!\n"
+  | Error _ -> Lwt_io.printf "An error occurred!\n"
 
 let () = Lwt_main.run @@ main ()
