@@ -1,11 +1,9 @@
 type deserialization_error =
-  {
-  idx : int;
-  name : string;
-  func : string;
-  value : string;
-  message : string
-  }
+  { idx : int
+  ; name : string
+  ; func : string
+  ; value : string
+  ; message : string }
 
 type column_error =
   [ `Expected_non_null_column of int * string
@@ -74,8 +72,6 @@ module type PPX_MYSQL_CONTEXT_ARG = sig
     val execute_null : stmt -> string option array -> (stmt_result, error) result IO.t
 
     val fetch : stmt_result -> (string option array option, error) result IO.t
-
-    val close : stmt -> (unit, error) result IO.t
   end
 end
 
@@ -111,7 +107,9 @@ module type PPX_MYSQL_CONTEXT = sig
 
     type wrapped_error = [`Mysql_error of error]
 
-    val create : dbh -> string -> (stmt, [> wrapped_error]) result IO.t
+    type caching_dbh
+
+    val init : dbh -> caching_dbh
 
     val execute_null 
       : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
@@ -119,10 +117,8 @@ module type PPX_MYSQL_CONTEXT = sig
     val fetch 
       : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
 
-    val close : stmt -> (unit, [> wrapped_error]) result IO.t
-
     val with_stmt 
-      :  dbh
+      :  caching_dbh
       -> string
       -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t)
       -> ('a, 'e) result IO.t

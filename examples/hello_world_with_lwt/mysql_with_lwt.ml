@@ -18,8 +18,6 @@ include Ppx_mysql_runtime.Make_context (struct
 
     let create dbd sql = wrap (Mysql.Prepared.create dbd) sql
 
-    let close stmt = wrap Mysql.Prepared.close stmt
-
     let execute_null stmt args = wrap (Mysql.Prepared.execute_null stmt) args
 
     let fetch stmt_res = wrap Mysql.Prepared.fetch stmt_res

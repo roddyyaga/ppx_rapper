@@ -18,9 +18,7 @@ include Ppx_mysql_runtime.Make_context (struct
 
     let wrap f x = try Ok (f x) with exn -> Error exn
 
-    let create dbd sql = wrap (Mysql.Prepared.create dbd) sql
-
-    let close stmt = wrap Mysql.Prepared.close stmt
+    let create dbh sql = wrap (Mysql.Prepared.create dbh) sql
 
     let execute_null stmt args = wrap (Mysql.Prepared.execute_null stmt) args
 

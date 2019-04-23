@@ -1,11 +1,9 @@
 type deserialization_error =
-  {
-  idx : int;
-  name : string;
-  func : string;
-  value : string;
-  message : string
-  }
+  { idx : int
+  ; name : string
+  ; func : string
+  ; value : string
+  ; message : string }
 
 type column_error =
   [ `Expected_non_null_column of int * string
@@ -93,8 +91,6 @@ module type PPX_MYSQL_CONTEXT_ARG = sig
     val execute_null : stmt -> string option array -> (stmt_result, error) result IO.t
 
     val fetch : stmt_result -> (string option array option, error) result IO.t
-
-    val close : stmt -> (unit, error) result IO.t
   end
 end
 
@@ -130,7 +126,9 @@ module type PPX_MYSQL_CONTEXT = sig
 
     type wrapped_error = [`Mysql_error of error]
 
-    val create : dbh -> string -> (stmt, [> wrapped_error]) result IO.t
+    type caching_dbh
+
+    val init : dbh -> caching_dbh
 
     val execute_null 
       : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
@@ -138,10 +136,8 @@ module type PPX_MYSQL_CONTEXT = sig
     val fetch 
       : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
 
-    val close : stmt -> (unit, [> wrapped_error]) result IO.t
-
     val with_stmt 
-      :  dbh
+      :  caching_dbh
       -> string
       -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t)
       -> ('a, 'e) result IO.t
@@ -185,6 +181,10 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
 
     type wrapped_error = [`Mysql_error of error]
 
+    type caching_dbh =
+      { dbh : dbh
+      ; stmt_cache : (Digest.t, stmt) Hashtbl.t }
+
     let wrap f x =
       IO.bind (f x)
       @@ function
@@ -193,25 +193,27 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
       | Error err ->
           IO.return @@ Error (`Mysql_error err)
 
-    let create dbd sql = wrap (M.Prepared.create dbd) sql
+    let init dbh = {dbh; stmt_cache = Hashtbl.create 16}
 
-    let close stmt = wrap M.Prepared.close stmt
+    let create dbh sql = wrap (M.Prepared.create dbh) sql
+
+    let create_or_reuse {dbh; stmt_cache} sql =
+      let digest = Digest.string sql in
+      match Hashtbl.find_opt stmt_cache digest with
+      | Some stmt ->
+          IO_result.return stmt
+      | None ->
+          IO_result.bind (create dbh sql)
+          @@ fun stmt ->
+          Hashtbl.replace stmt_cache digest stmt;
+          IO_result.return stmt
 
     let execute_null stmt args = wrap (M.Prepared.execute_null stmt) args
 
     let fetch stmt_res = wrap M.Prepared.fetch stmt_res
 
-    let with_stmt dbh sql f =
-      IO_result.bind (create dbh sql)
-      @@ fun stmt ->
-      IO.bind (f stmt)
-      @@ fun res ->
-      IO.bind (close stmt)
-      @@ function
-      | Ok () ->
-          IO.return res
-      | Error _ as e ->
-          IO.return e
+    let with_stmt caching_dbh sql f =
+      IO_result.bind (create_or_reuse caching_dbh sql) @@ fun stmt -> f stmt
   end
 end
 

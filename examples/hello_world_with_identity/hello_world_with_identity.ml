@@ -128,7 +128,8 @@ let test dbh =
 
 let main () =
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  let res = test dbh in
+  let caching_dbh = Prepared.init dbh in
+  let res = test caching_dbh in
   Mysql.disconnect dbh;
   match res with
   | Ok () ->

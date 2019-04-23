@@ -133,7 +133,8 @@ let test dbh =
 let main () =
   let open Deferred.Infix in
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  test dbh
+  let caching_dbh = Prepared.init dbh in
+  test caching_dbh
   >>= fun res ->
   Mysql.disconnect dbh;
   match res with
