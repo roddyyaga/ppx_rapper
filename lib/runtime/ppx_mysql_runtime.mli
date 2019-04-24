@@ -70,6 +70,8 @@ module type PPX_MYSQL_CONTEXT_ARG = sig
 
     val create : dbh -> string -> (stmt, error) result IO.t
 
+    val close : stmt -> (unit, error) result IO.t
+
     val execute_null : stmt -> string option array -> (stmt_result, error) result IO.t
 
     val fetch : stmt_result -> (string option array option, error) result IO.t
@@ -106,11 +108,11 @@ module type PPX_MYSQL_CONTEXT = sig
 
     type error
 
+    type wrapped_dbh
+
     type wrapped_error = [`Mysql_error of error]
 
-    type caching_dbh
-
-    val init : dbh -> caching_dbh
+    val init : dbh -> wrapped_dbh
 
     val execute_null
       :  stmt ->
@@ -121,8 +123,14 @@ module type PPX_MYSQL_CONTEXT = sig
       :  stmt_result ->
       (string option array option, [> wrapped_error]) result IO.t
 
-    val with_stmt
-      :  caching_dbh ->
+    val with_stmt_cached
+      :  wrapped_dbh ->
+      string ->
+      (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t) ->
+      ('a, 'e) result IO.t
+
+    val with_stmt_uncached
+      :  wrapped_dbh ->
       string ->
       (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t) ->
       ('a, 'e) result IO.t

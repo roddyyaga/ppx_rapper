@@ -114,8 +114,8 @@ let test dbh =
 let main () =
   let open Lwt.Infix in
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  let caching_dbh = Prepared.init dbh in
-  test caching_dbh >>= fun res ->
+  let wrapped_dbh = Prepared.init dbh in
+  test wrapped_dbh >>= fun res ->
   Mysql.disconnect dbh;
   match res with
   | Ok () -> Lwt_io.printf "All went well!\n"

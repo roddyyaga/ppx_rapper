@@ -285,7 +285,7 @@ let actually_expand ~loc sql_variant query =
       let[@warning "-26"] process_out_params =
         [%e build_out_param_processor ~loc out_params]
       in
-      Prepared.with_stmt [%e dbh_ident] sql (fun stmt ->
+      Prepared.with_stmt_cached [%e dbh_ident] sql (fun stmt ->
           Prepared.execute_null stmt params >>= fun stmt_result -> [%e process_rows] ()
       )]
   in

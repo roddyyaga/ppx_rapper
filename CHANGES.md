@@ -1,3 +1,9 @@
+1.0
+===
+
+* All statements are now cached
+* First public release
+
 0.5
 ===
 
