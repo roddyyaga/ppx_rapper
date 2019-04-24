@@ -114,8 +114,8 @@ let test dbh =
 
 let main () =
   let dbh = Mysql.quick_connect ~database:"test" ~user:"root" () in
-  let caching_dbh = Prepared.init dbh in
-  let res = test caching_dbh in
+  let wrapped_dbh = Prepared.init dbh in
+  let res = test wrapped_dbh in
   Mysql.disconnect dbh;
   match res with
   | Ok () -> Printf.printf "All went well!\n"

@@ -13,7 +13,7 @@ let test_no_params dbh =
     else Result.Error (`Unexpected_number_of_columns (len_row, 0))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -58,7 +58,7 @@ let test_single_output_params dbh =
     else Result.Error (`Unexpected_number_of_columns (len_row, 1))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -113,7 +113,7 @@ let test_pair_output_params dbh =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -161,7 +161,7 @@ let test_one_input_params dbh ~(id : int) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 1))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -220,7 +220,7 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -274,7 +274,7 @@ let test_select_all dbh =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -330,7 +330,7 @@ let test_repeated_input_params dbh ~(id : int) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -385,7 +385,7 @@ let test_select_opt dbh ~(id : int) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -421,7 +421,7 @@ let test_execute dbh ~(id : int) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 0))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         Prepared.fetch stmt_result >>= function
@@ -471,7 +471,7 @@ let test_int dbh ~(a : int) ~(b : int option) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -529,7 +529,7 @@ let test_int32 dbh ~(a : int32) ~(b : int32 option) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -587,7 +587,7 @@ let test_int64 dbh ~(a : int64) ~(b : int64 option) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -646,7 +646,7 @@ let test_bool dbh ~(a : bool) ~(b : bool option) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -705,7 +705,7 @@ let test_string dbh ~(a : string) ~(b : string option) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -763,7 +763,7 @@ let test_custom_type dbh ~(a : Id.t) ~(b : Phone.t option) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -834,7 +834,7 @@ let test_list0 dbh elems =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -884,7 +884,7 @@ let test_list1 dbh elems =
     else Result.Error (`Unexpected_number_of_columns (len_row, 0))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         Prepared.fetch stmt_result >>= function
@@ -951,7 +951,7 @@ let test_list2 dbh elems ~(name : string) ~(age : int) =
     else Result.Error (`Unexpected_number_of_columns (len_row, 2))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         let rec loop acc =
@@ -1003,7 +1003,7 @@ let test_list3 dbh elems =
     else Result.Error (`Unexpected_number_of_columns (len_row, 0))
     [@@warning "-26"]
   in
-  Prepared.with_stmt dbh sql (fun stmt ->
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
       Prepared.execute_null stmt params >>= fun stmt_result ->
       (fun () ->
         Prepared.fetch stmt_result >>= function
