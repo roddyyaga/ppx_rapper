@@ -1,9 +1,10 @@
-type deserialization_error =
-  { idx : int
-  ; name : string
-  ; func : string
-  ; value : string
-  ; message : string }
+type deserialization_error = {
+  idx : int;
+  name : string;
+  func : string;
+  value : string;
+  message : string
+}
 
 type column_error =
   [ `Expected_non_null_column of int * string
@@ -14,10 +15,8 @@ type 'a deserializer = string -> ('a, string) result
 let wrap_failure : (string -> 'a) -> 'a deserializer =
  fun of_string s ->
   match of_string s with
-  | v ->
-      Ok v
-  | exception Failure _ ->
-      Error "cannot parse number"
+  | v -> Ok v
+  | exception Failure _ -> Error "cannot parse number"
 
 let string_of_string str = Ok str
 
@@ -29,33 +28,27 @@ let int64_of_string = wrap_failure Int64.of_string
 
 let bool_of_string str =
   match Pervasives.int_of_string str with
-  | v ->
-      Ok (v <> 0)
-  | exception Failure _ ->
-      Error "cannot parse boolean"
+  | v -> Ok (v <> 0)
+  | exception Failure _ -> Error "cannot parse boolean"
 
 external identity : 'a -> 'a = "%identity"
 
-let deserialize_non_nullable_column idx name of_string func err_accum =
-  function
+let deserialize_non_nullable_column idx name of_string func err_accum = function
   | None ->
       let err = `Expected_non_null_column (idx, name) in
       None, err :: err_accum
   | Some value -> (
     match of_string value with
-    | Ok ok ->
-        Some ok, err_accum
+    | Ok ok -> Some ok, err_accum
     | Error message ->
         let err = `Deserialization_error {idx; name; func; value; message} in
         None, err :: err_accum )
 
 let deserialize_nullable_column idx name of_string func err_accum = function
-  | None ->
-      Some None, err_accum
+  | None -> Some None, err_accum
   | Some value -> (
     match of_string value with
-    | Ok ok ->
-        Some (Some ok), err_accum
+    | Ok ok -> Some (Some ok), err_accum
     | Error message ->
         let err = `Deserialization_error {idx; name; func; value; message} in
         None, err :: err_accum )
@@ -130,17 +123,20 @@ module type PPX_MYSQL_CONTEXT = sig
 
     val init : dbh -> caching_dbh
 
-    val execute_null 
-      : stmt -> string option array -> (stmt_result, [> wrapped_error]) result IO.t
+    val execute_null
+      :  stmt ->
+      string option array ->
+      (stmt_result, [> wrapped_error]) result IO.t
 
-    val fetch 
-      : stmt_result -> (string option array option, [> wrapped_error]) result IO.t
+    val fetch
+      :  stmt_result ->
+      (string option array option, [> wrapped_error]) result IO.t
 
-    val with_stmt 
-      :  caching_dbh
-      -> string
-      -> (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t)
-      -> ('a, 'e) result IO.t
+    val with_stmt
+      :  caching_dbh ->
+      string ->
+      (stmt -> ('a, ([> wrapped_error] as 'e)) result IO.t) ->
+      ('a, 'e) result IO.t
   end
 end
 
@@ -162,10 +158,8 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
 
     let bind x f =
       IO.bind x (function
-          | Ok v ->
-              f v
-          | Error _ as e ->
-              IO.return e )
+          | Ok v -> f v
+          | Error _ as e -> IO.return e )
 
     let ( >>= ) = bind
   end
@@ -181,17 +175,15 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
 
     type wrapped_error = [`Mysql_error of error]
 
-    type caching_dbh =
-      { dbh : dbh
-      ; stmt_cache : (Digest.t, stmt) Hashtbl.t }
+    type caching_dbh = {
+      dbh : dbh;
+      stmt_cache : (Digest.t, stmt) Hashtbl.t
+    }
 
     let wrap f x =
-      IO.bind (f x)
-      @@ function
-      | Ok _ as ok ->
-          IO.return ok
-      | Error err ->
-          IO.return @@ Error (`Mysql_error err)
+      IO.bind (f x) @@ function
+      | Ok _ as ok -> IO.return ok
+      | Error err -> IO.return @@ Error (`Mysql_error err)
 
     let init dbh = {dbh; stmt_cache = Hashtbl.create 16}
 
@@ -200,11 +192,9 @@ module Make_context (M : PPX_MYSQL_CONTEXT_ARG) :
     let create_or_reuse {dbh; stmt_cache} sql =
       let digest = Digest.string sql in
       match Hashtbl.find_opt stmt_cache digest with
-      | Some stmt ->
-          IO_result.return stmt
+      | Some stmt -> IO_result.return stmt
       | None ->
-          IO_result.bind (create dbh sql)
-          @@ fun stmt ->
+          IO_result.bind (create dbh sql) @@ fun stmt ->
           Hashtbl.replace stmt_cache digest stmt;
           IO_result.return stmt
 
@@ -227,16 +217,12 @@ module Stdlib = struct
       | Some of 'a
 
     let map f = function
-      | Some x ->
-          Some (f x)
-      | None ->
-          None
+      | Some x -> Some (f x)
+      | None -> None
 
     let get = function
-      | Some x ->
-          x
-      | None ->
-          invalid_arg "Option.get"
+      | Some x -> x
+      | None -> invalid_arg "Option.get"
   end
 
   module Result = struct
@@ -246,10 +232,8 @@ module Stdlib = struct
 
     let bind r f =
       match r with
-      | Ok x ->
-          f x
-      | Error _ as e ->
-          e
+      | Ok x -> f x
+      | Error _ as e -> e
 
     let ( >>= ) = bind
   end
