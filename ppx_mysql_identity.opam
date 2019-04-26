@@ -15,6 +15,6 @@ build: [["dune" "build" "-p" name "-j" jobs]]
 depends: [
   "dune" {build}
   "mysql" {>= "1.2" & < "2.0"}
-  "ocaml" {>= "4.03.0"}
+  "ocaml" {>= "4.06.0"}
   "ppx_mysql" {= version}
 ]
