@@ -1010,3 +1010,139 @@ let test_list3 dbh elems =
         | Option.Some _ -> IO.return (Result.Error `Expected_none_found_one)
         | Option.None -> IO.return (Result.Ok ()) )
         () )
+
+let test_cached0 dbh elems =
+  let open IO_result in
+  let module Array = Ppx_mysql_runtime.Stdlib.Array in
+  let module List = Ppx_mysql_runtime.Stdlib.List in
+  let module Option = Ppx_mysql_runtime.Stdlib.Option in
+  let module String = Ppx_mysql_runtime.Stdlib.String in
+  let module Result = Ppx_mysql_runtime.Stdlib.Result in
+  ( match elems with
+  | [] -> IO.return (Result.Error `Empty_input_list)
+  | elems ->
+      let subsqls = List.map (fun _ -> "?") elems in
+      let patch = String.concat ", " subsqls in
+      let sql =
+        String.append
+          "SELECT id, name FROM users WHERE id IN ("
+          (String.append patch ")")
+      in
+      let params_between =
+        Array.of_list
+          (List.concat
+             (List.map (fun id -> [Option.Some (Pervasives.string_of_int id)]) elems))
+      in
+      let params = Array.concat [[||]; params_between; [||]] in
+      IO.return (Result.Ok (sql, params)) )
+  >>= fun (sql, params) ->
+  let process_out_params row =
+    let len_row = Array.length row in
+    if Ppx_mysql_runtime.Stdlib.( = ) len_row 2
+    then
+      let err_accum = [] in
+      let col0, err_accum =
+        Ppx_mysql_runtime.deserialize_non_nullable_column
+          0
+          "id"
+          Ppx_mysql_runtime.int_of_string
+          "Ppx_mysql_runtime.int_of_string"
+          err_accum
+          row.(0)
+      in
+      let col1, err_accum =
+        Ppx_mysql_runtime.deserialize_non_nullable_column
+          1
+          "name"
+          Ppx_mysql_runtime.string_of_string
+          "Ppx_mysql_runtime.string_of_string"
+          err_accum
+          row.(1)
+      in
+      match col0, col1 with
+      | Option.Some v0, Option.Some v1 -> Result.Ok (v0, v1)
+      | _ -> Result.Error (`Column_errors err_accum)
+    else Result.Error (`Unexpected_number_of_columns (len_row, 2))
+    [@@warning "-26"]
+  in
+  Prepared.with_stmt_cached dbh sql (fun stmt ->
+      Prepared.execute_null stmt params >>= fun stmt_result ->
+      (fun () ->
+        let rec loop acc =
+          Prepared.fetch stmt_result >>= function
+          | Option.Some row -> (
+            match process_out_params row with
+            | Result.Ok row' -> loop (row' :: acc)
+            | Result.Error _ as err -> IO.return err )
+          | Option.None -> IO.return (Result.Ok (List.rev acc))
+        in
+        loop [] )
+        () )
+
+let test_cached1 dbh elems =
+  let open IO_result in
+  let module Array = Ppx_mysql_runtime.Stdlib.Array in
+  let module List = Ppx_mysql_runtime.Stdlib.List in
+  let module Option = Ppx_mysql_runtime.Stdlib.Option in
+  let module String = Ppx_mysql_runtime.Stdlib.String in
+  let module Result = Ppx_mysql_runtime.Stdlib.Result in
+  ( match elems with
+  | [] -> IO.return (Result.Error `Empty_input_list)
+  | elems ->
+      let subsqls = List.map (fun _ -> "?") elems in
+      let patch = String.concat ", " subsqls in
+      let sql =
+        String.append
+          "SELECT id, name FROM users WHERE id IN ("
+          (String.append patch ")")
+      in
+      let params_between =
+        Array.of_list
+          (List.concat
+             (List.map (fun id -> [Option.Some (Pervasives.string_of_int id)]) elems))
+      in
+      let params = Array.concat [[||]; params_between; [||]] in
+      IO.return (Result.Ok (sql, params)) )
+  >>= fun (sql, params) ->
+  let process_out_params row =
+    let len_row = Array.length row in
+    if Ppx_mysql_runtime.Stdlib.( = ) len_row 2
+    then
+      let err_accum = [] in
+      let col0, err_accum =
+        Ppx_mysql_runtime.deserialize_non_nullable_column
+          0
+          "id"
+          Ppx_mysql_runtime.int_of_string
+          "Ppx_mysql_runtime.int_of_string"
+          err_accum
+          row.(0)
+      in
+      let col1, err_accum =
+        Ppx_mysql_runtime.deserialize_non_nullable_column
+          1
+          "name"
+          Ppx_mysql_runtime.string_of_string
+          "Ppx_mysql_runtime.string_of_string"
+          err_accum
+          row.(1)
+      in
+      match col0, col1 with
+      | Option.Some v0, Option.Some v1 -> Result.Ok (v0, v1)
+      | _ -> Result.Error (`Column_errors err_accum)
+    else Result.Error (`Unexpected_number_of_columns (len_row, 2))
+    [@@warning "-26"]
+  in
+  Prepared.with_stmt_uncached dbh sql (fun stmt ->
+      Prepared.execute_null stmt params >>= fun stmt_result ->
+      (fun () ->
+        let rec loop acc =
+          Prepared.fetch stmt_result >>= function
+          | Option.Some row -> (
+            match process_out_params row with
+            | Result.Ok row' -> loop (row' :: acc)
+            | Result.Error _ as err -> IO.return err )
+          | Option.None -> IO.return (Result.Ok (List.rev acc))
+        in
+        loop [] )
+        () )
