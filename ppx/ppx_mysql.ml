@@ -212,11 +212,15 @@ let build_process_rows ~loc = function
             Prepared.fetch stmt_result >>= function
             | Option.Some _ -> IO.return (Result.Error `Expected_none_found_one)
             | Option.None -> IO.return (Result.Ok ())]
-  | etc -> Error (`Unknown_query_variant etc)
+  | etc -> Error (`Unknown_query_action etc)
 
-let actually_expand ~loc sql_variant query =
+let actually_expand ~loc query_action cached query =
   let open Result in
-  build_process_rows ~loc sql_variant >>= fun process_rows ->
+  (match cached with
+    | None | Some "true" -> Ok [%expr Prepared.with_stmt_cached]
+    | Some "false" -> Ok [%expr Prepared.with_stmt_uncached]
+    | Some etc -> Error (`Invalid_cached_parameter etc)) >>= fun with_stmt ->
+  build_process_rows ~loc query_action >>= fun process_rows ->
   Query.parse query >>= fun {sql; in_params; out_params; list_params} ->
   Query.remove_duplicates in_params >>= fun unique_in_params ->
   let dbh_pat, dbh_ident = create_unique_var ~loc unique_in_params "dbh" in
@@ -285,7 +289,7 @@ let actually_expand ~loc sql_variant query =
       let[@warning "-26"] process_out_params =
         [%e build_out_param_processor ~loc out_params]
       in
-      Prepared.with_stmt_cached [%e dbh_ident] sql (fun stmt ->
+      [%e with_stmt] [%e dbh_ident] sql (fun stmt ->
           Prepared.execute_null stmt params >>= fun stmt_result -> [%e process_rows] ()
       )]
   in
@@ -297,22 +301,30 @@ let actually_expand ~loc sql_variant query =
   in
   Ok (Buildef.pexp_fun ~loc Nolabel None dbh_pat chain)
 
-let expand ~loc ~path:_ sql_variant query =
-  match actually_expand ~loc sql_variant query with
+let expand ~loc ~path:_ query_action cached query =
+  match actually_expand ~loc query_action cached query with
   | Ok expr -> expr
   | Error err ->
       let msg =
         match err with
         | #Query.error as err -> Query.explain_error err
-        | `Unknown_query_variant variant ->
-            Printf.sprintf "I don't understand query variant '%s'" variant
+        | `Unknown_query_action action ->
+            Printf.sprintf "I don't understand query action '%s'" action
+        | `Invalid_cached_parameter param ->
+            Printf.sprintf "Only values 'true' or 'false' are accepted, but got '%s' instead" param
       in
       raise
         (Location.Error
            (Location.Error.createf ~loc "Error in 'mysql' extension: %s" msg))
 
 let pattern =
-  Ast_pattern.(pexp_apply (pexp_ident (lident __)) (pair nolabel (estring __) ^:: nil))
+  let open Ast_pattern in
+  let query_action = pexp_ident (lident __) in
+  let query = pair nolabel (estring __) in
+  let cached = pair (labelled @@ string "cached") (pexp_construct (lident __) none) in
+  let without_cached = query ^:: nil in
+  let with_cached = cached ^:: without_cached in
+  Ast_pattern.(pexp_apply query_action @@ Ast_pattern.alt_option with_cached without_cached)
 
 let name = "mysql"
 
