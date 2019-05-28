@@ -75,3 +75,11 @@ let test_list3 =
     execute
       "INSERT INTO users (id, name, real_name, age) VALUES %list{(%int{id}, \
        %string{name}, %string{name}, %int{age})}"]
+
+let test_cached0 =
+  [%mysql
+    select_all ~cached:true "SELECT @int{id}, @string{name} FROM users WHERE id IN (%list{%int{id}})"]
+
+let test_cached1 =
+  [%mysql
+    select_all ~cached:false "SELECT @int{id}, @string{name} FROM users WHERE id IN (%list{%int{id}})"]
