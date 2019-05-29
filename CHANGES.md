@@ -1,3 +1,9 @@
+1.1
+===
+
+* Caching can be disabled on a per statement basis.
+  (Caching is enabled by default)
+
 1.0
 ===
 
