@@ -394,8 +394,33 @@ if you come across a situation where the expanded empty list would result in
 valid SQL and you would prefer if the syntax extension would not check for the
 list length.
 
+Another important caveat concerns caching.  Each list length results in a separate
+entry in the statement cache.  If you use lists with a wide range of lengths, you
+may end up consuming lots of resources on both the client and the server.  To avoid
+this problem, you should consider disabling caching for statements that use lists.
+Please consult the section on statement caching below.
+
 Finally, note that at the moment the `%list{...}` declaration may be used only
 once per statement.  We do intend to lift this limitation in the future.
+
+
+Statement caching
+-----------------
+
+By default, `ppx_mysql` uses a per connection statement cache.  Though this
+consumes some resources on both the client and the MySQL server, the performance
+benefits justify caching as the correct default.  It is however possible to
+disable caching on a per statement basis by setting to `false` the optional
+parameter `cached` on a query's action. This is particularly useful if the
+statement uses the `%list` parameter specification, since each list length
+would've created a new entry in the statement cache.  Example:
+
+```ocaml
+let insert_employees =
+    [%mysql execute ~cached:false
+    "INSERT INTO employees (id, supervisor_id, name, phone)
+    VALUES %list{(%int32{id}, %int32?{supervisor_id}, %string{name}, %string?{phone})}"]
+```
 
 
 Special cases
