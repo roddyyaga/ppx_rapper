@@ -20,14 +20,14 @@ let wrap_failure : (string -> 'a) -> 'a deserializer =
 
 let string_of_string str = Ok str
 
-let int_of_string = wrap_failure Pervasives.int_of_string
+let int_of_string = wrap_failure Stdlib.int_of_string
 
 let int32_of_string = wrap_failure Int32.of_string
 
 let int64_of_string = wrap_failure Int64.of_string
 
 let bool_of_string str =
-  match Pervasives.int_of_string str with
+  match Stdlib.int_of_string str with
   | v -> Ok (v <> 0)
   | exception Failure _ -> Error "cannot parse boolean"
 
