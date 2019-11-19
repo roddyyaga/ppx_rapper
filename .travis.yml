@@ -6,5 +6,5 @@ env:
   global:
     - TESTS=true
   matrix:
-    - OCAML_VERSION=4.07 PACKAGE="ppx_mysql"          PINS="ppx_mysql:."
-    - OCAML_VERSION=4.07 PACKAGE="ppx_mysql_identity" PINS="ppx_mysql:. ppx_mysql_identity:."
+    - OCAML_VERSION=4.06 PACKAGE="ppx_mysql"          PINS="ppx_mysql:."
+    - OCAML_VERSION=4.06 PACKAGE="ppx_mysql_identity" PINS="ppx_mysql:. ppx_mysql_identity:."
