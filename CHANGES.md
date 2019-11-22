@@ -1,3 +1,9 @@
+1.1.1
+=====
+
+* Fix dune dependency
+* Use `Stdlib` instead of `Pervasives` for forward-compatibility
+
 1.1
 ===
 
