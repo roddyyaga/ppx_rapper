@@ -1,3 +1,9 @@
+1.1.2
+=====
+
+* Fix the generated code to also emit `Stdlib` instead of `Pervasives`. This
+  means you need `stdlib-shims` if you're building on OCaml <4.07.
+
 1.1.1
 =====
 
