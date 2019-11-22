@@ -139,8 +139,7 @@ let test_one_input_params dbh ~(id : int) =
   let module Result = Ppx_mysql_runtime.Stdlib.Result in
   IO.return
     (Result.Ok
-       ( "SELECT name FROM users WHERE id = ?",
-         [|Option.Some (Pervasives.string_of_int id)|] ))
+       ("SELECT name FROM users WHERE id = ?", [|Option.Some (Stdlib.string_of_int id)|]))
   >>= fun (sql, params) ->
   let process_out_params row =
     let len_row = Array.length row in
@@ -188,7 +187,7 @@ let test_two_input_pair_output_params dbh ~(id : int) ~(name : string) =
   IO.return
     (Result.Ok
        ( "SELECT id, name FROM users WHERE id = ? OR name = ?",
-         [| Option.Some (Pervasives.string_of_int id);
+         [| Option.Some (Stdlib.string_of_int id);
             Option.Some (Ppx_mysql_runtime.identity name) |] ))
   >>= fun (sql, params) ->
   let process_out_params row =
@@ -298,8 +297,8 @@ let test_repeated_input_params dbh ~(id : int) =
   IO.return
     (Result.Ok
        ( "SELECT id, name FROM users WHERE id <> ? AND id <> ?",
-         [| Option.Some (Pervasives.string_of_int id);
-            Option.Some (Pervasives.string_of_int id) |] ))
+         [|Option.Some (Stdlib.string_of_int id); Option.Some (Stdlib.string_of_int id)|]
+       ))
   >>= fun (sql, params) ->
   let process_out_params row =
     let len_row = Array.length row in
@@ -354,7 +353,7 @@ let test_select_opt dbh ~(id : int) =
   IO.return
     (Result.Ok
        ( "SELECT id, name FROM users WHERE id = ?",
-         [|Option.Some (Pervasives.string_of_int id)|] ))
+         [|Option.Some (Stdlib.string_of_int id)|] ))
   >>= fun (sql, params) ->
   let process_out_params row =
     let len_row = Array.length row in
@@ -412,7 +411,7 @@ let test_execute dbh ~(id : int) =
   let module Result = Ppx_mysql_runtime.Stdlib.Result in
   IO.return
     (Result.Ok
-       ("DELETE FROM users WHERE id = ?", [|Option.Some (Pervasives.string_of_int id)|]))
+       ("DELETE FROM users WHERE id = ?", [|Option.Some (Stdlib.string_of_int id)|]))
   >>= fun (sql, params) ->
   let process_out_params row =
     let len_row = Array.length row in
@@ -439,8 +438,7 @@ let test_int dbh ~(a : int) ~(b : int option) =
   IO.return
     (Result.Ok
        ( "SELECT a, b FROM users where a = ? OR b = ?",
-         [| Option.Some (Pervasives.string_of_int a);
-            (Option.map Pervasives.string_of_int) b |] ))
+         [|Option.Some (Stdlib.string_of_int a); (Option.map Stdlib.string_of_int) b|] ))
   >>= fun (sql, params) ->
   let process_out_params row =
     let len_row = Array.length row in
@@ -614,8 +612,8 @@ let test_bool dbh ~(a : bool) ~(b : bool option) =
   IO.return
     (Result.Ok
        ( "SELECT a, b FROM users where a = ? OR b = ?",
-         [| Option.Some (Pervasives.string_of_bool a);
-            (Option.map Pervasives.string_of_bool) b |] ))
+         [|Option.Some (Stdlib.string_of_bool a); (Option.map Stdlib.string_of_bool) b|]
+       ))
   >>= fun (sql, params) ->
   let process_out_params row =
     let len_row = Array.length row in
@@ -800,7 +798,7 @@ let test_list0 dbh elems =
       let params_between =
         Array.of_list
           (List.concat
-             (List.map (fun id -> [Option.Some (Pervasives.string_of_int id)]) elems))
+             (List.map (fun id -> [Option.Some (Stdlib.string_of_int id)]) elems))
       in
       let params = Array.concat [[||]; params_between; [||]] in
       IO.return (Result.Ok (sql, params)) )
@@ -870,7 +868,7 @@ let test_list1 dbh elems =
           (List.concat
              (List.map
                 (fun (id, name) ->
-                  [ Option.Some (Pervasives.string_of_int id);
+                  [ Option.Some (Stdlib.string_of_int id);
                     Option.Some (Ppx_mysql_runtime.identity name) ] )
                 elems))
       in
@@ -912,13 +910,13 @@ let test_list2 dbh elems ~(name : string) ~(age : int) =
       let params_between =
         Array.of_list
           (List.concat
-             (List.map (fun id -> [Option.Some (Pervasives.string_of_int id)]) elems))
+             (List.map (fun id -> [Option.Some (Stdlib.string_of_int id)]) elems))
       in
       let params =
         Array.concat
           [ [|Option.Some (Ppx_mysql_runtime.identity name)|];
             params_between;
-            [|Option.Some (Pervasives.string_of_int age)|] ]
+            [|Option.Some (Stdlib.string_of_int age)|] ]
       in
       IO.return (Result.Ok (sql, params)) )
   >>= fun (sql, params) ->
@@ -987,10 +985,10 @@ let test_list3 dbh elems =
           (List.concat
              (List.map
                 (fun (id, name, age) ->
-                  [ Option.Some (Pervasives.string_of_int id);
+                  [ Option.Some (Stdlib.string_of_int id);
                     Option.Some (Ppx_mysql_runtime.identity name);
                     Option.Some (Ppx_mysql_runtime.identity name);
-                    Option.Some (Pervasives.string_of_int age) ] )
+                    Option.Some (Stdlib.string_of_int age) ] )
                 elems))
       in
       let params = Array.concat [[||]; params_between; [||]] in
@@ -1031,7 +1029,7 @@ let test_cached0 dbh elems =
       let params_between =
         Array.of_list
           (List.concat
-             (List.map (fun id -> [Option.Some (Pervasives.string_of_int id)]) elems))
+             (List.map (fun id -> [Option.Some (Stdlib.string_of_int id)]) elems))
       in
       let params = Array.concat [[||]; params_between; [||]] in
       IO.return (Result.Ok (sql, params)) )
@@ -1099,7 +1097,7 @@ let test_cached1 dbh elems =
       let params_between =
         Array.of_list
           (List.concat
-             (List.map (fun id -> [Option.Some (Pervasives.string_of_int id)]) elems))
+             (List.map (fun id -> [Option.Some (Stdlib.string_of_int id)]) elems))
       in
       let params = Array.concat [[||]; params_between; [||]] in
       IO.return (Result.Ok (sql, params)) )
