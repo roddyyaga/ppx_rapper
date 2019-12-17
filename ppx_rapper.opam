@@ -1,13 +1,13 @@
 opam-version: "2.0"
 maintainer: "Roddy MacSween"
 author: "Roddy MacSween"
-synopsis: "Syntax extension for Caqti SQL bindings"
-description: """Does stuff and things.
+synopsis: "Syntax extension that generates Caqti/PostgreSQL code"
+description: """Generates Caqti/PostgreQL in a similar way to ppx_mysql.
 """
-homepage: "https://github.com/issuu/ppx_mysql"
-dev-repo: "git+https://github.com/issuu/ppx_mysql.git"
-bug-reports: "https://github.com/issuu/ppx_mysql/issues"
-doc: "https://issuu.github.io/ppx_mysql/"
+homepage: "https://github.com/roddyyaga/ppx_rapper"
+dev-repo: "git+https://github.com/roddyyaga/ppx_rapper.git"
+bug-reports: "https://github.com/roddyyaga/ppx_rapper/issues"
+doc: "https://github.com/roddyyaga/ppx_rapper"
 build: [
   ["dune" "build" "-p" name "-j" jobs]
   ["dune" "runtest" "-p" name "-j" jobs] {with-test}
