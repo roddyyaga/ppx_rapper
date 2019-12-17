@@ -1,3 +1,5 @@
+open Core
+
 let many_arg_execute =
   [%rapper
     execute
@@ -26,7 +28,7 @@ let many_arg_get_one =
   [%rapper
     get_one
       {sql|
-      SELECT @int{id}, @string{username}
+      SELECT @int{id}, @string{username}, @string?{bio}, @bool{is_married}
       FROM users
       WHERE username = %string{username} AND id > %int{min_id}
       |sql}]
