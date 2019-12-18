@@ -1,5 +1,11 @@
 open Core
 
+type a = { username: string }
+
+type b = { id: int; username: string }
+
+type c = { id: int; username: string; email: string }
+
 let many_arg_execute =
   let query =
     Caqti_request.exec
@@ -79,7 +85,7 @@ let single_arg_get_one =
   in
   let wrapped (module Db : Caqti_lwt.CONNECTION) ~username =
     let f result =
-      Result.map ~f:(fun (id, username) -> (id, username)) result
+      Result.map ~f:(fun (id, username) -> { id; username }) result
     in
     Lwt.map f (Db.find query username)
   in
@@ -92,10 +98,17 @@ let no_arg_get_one =
       (let open Caqti_type in
       unit)
       (let open Caqti_type in
-      tup2 int string)
-      "\n      SELECT id, username\n      FROM users\n      "
+      tup2 int (tup2 string string))
+      "\n      SELECT id, username, email\n      FROM users\n      "
   in
-  let wrapped (module Db : Caqti_lwt.CONNECTION) () = Db.find query () in
+  let wrapped (module Db : Caqti_lwt.CONNECTION) () =
+    let f result =
+      Result.map
+        ~f:(fun (id, (username, email)) -> { id; username; email })
+        result
+    in
+    Lwt.map f (Db.find query ())
+  in
   wrapped
 
 let many_arg_get_one_repeated_arg =
@@ -105,17 +118,15 @@ let many_arg_get_one_repeated_arg =
       (let open Caqti_type in
       tup2 int (tup2 string int))
       (let open Caqti_type in
-      tup2 int string)
+      string)
       "\n\
-      \      SELECT id, username\n\
+      \      SELECT username\n\
       \      FROM users\n\
       \      WHERE id = ? OR username = ? OR id <> ?\n\
       \      "
   in
   let wrapped (module Db : Caqti_lwt.CONNECTION) ~id ~username =
-    let f result =
-      Result.map ~f:(fun (id, username) -> (id, username)) result
-    in
+    let f result = Result.map ~f:(fun username -> { username }) result in
     Lwt.map f (Db.find query (id, (username, id)))
   in
   wrapped
@@ -159,7 +170,7 @@ let single_arg_get_opt =
   in
   let wrapped (module Db : Caqti_lwt.CONNECTION) ~username =
     let f result =
-      let g (id, username) = (id, username) in
+      let g (id, username) = { id; username } in
       Result.map ~f:(Option.map ~f:g) result
     in
     Lwt.map f (Db.find_opt query username)
@@ -176,7 +187,13 @@ let no_arg_get_opt =
       tup2 int string)
       "\n      SELECT id, username\n      FROM users\n      "
   in
-  let wrapped (module Db : Caqti_lwt.CONNECTION) () = Db.find_opt query () in
+  let wrapped (module Db : Caqti_lwt.CONNECTION) () =
+    let f result =
+      let g (id, username) = (id, username) in
+      Result.map ~f:(Option.map ~f:g) result
+    in
+    Lwt.map f (Db.find_opt query ())
+  in
   wrapped
 
 let many_arg_get_many =
@@ -195,7 +212,7 @@ let many_arg_get_many =
   in
   let wrapped (module Db : Caqti_lwt.CONNECTION) ~username ~min_id =
     let f result =
-      let g (id, username) = (id, username) in
+      let g (id, username) = { id; username } in
       Result.map ~f:(List.map ~f:g) result
     in
     Lwt.map f (Db.collect_list query (username, min_id))
@@ -236,6 +253,10 @@ let no_arg_get_many =
       "\n      SELECT id, username\n      FROM users\n      "
   in
   let wrapped (module Db : Caqti_lwt.CONNECTION) () =
-    Db.collect_list query ()
+    let f result =
+      let g (id, username) = { id; username } in
+      Result.map ~f:(List.map ~f:g) result
+    in
+    Lwt.map f (Db.collect_list query ())
   in
   wrapped

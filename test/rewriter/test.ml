@@ -1,5 +1,11 @@
 open Core
 
+type a = { username: string }
+
+type b = { id: int; username: string }
+
+type c = { id: int; username: string; email: string }
+
 let many_arg_execute =
   [%rapper
     execute
@@ -40,24 +46,27 @@ let single_arg_get_one =
       SELECT @int{id}, @string{username}
       FROM users
       WHERE username = %string{username}
-      |sql}]
+      |sql}
+      record_out]
 
 let no_arg_get_one =
   [%rapper
     get_one
       {sql|
-      SELECT @int{id}, @string{username}
+      SELECT @int{id}, @string{username}, @string{email}
       FROM users
-      |sql}]
+      |sql}
+      record_out]
 
 let many_arg_get_one_repeated_arg =
   [%rapper
     get_one
       {sql|
-      SELECT @int{id}, @string{username}
+      SELECT @string{username}
       FROM users
       WHERE id = %int{id} OR username = %string{username} OR id <> %int{id}
-      |sql}]
+      |sql}
+      record_out]
 
 let many_arg_get_opt =
   [%rapper
@@ -75,7 +84,8 @@ let single_arg_get_opt =
       SELECT @int{id}, @string{username}
       FROM users
       WHERE username = %string{username}
-      |sql}]
+      |sql}
+      record_out]
 
 let no_arg_get_opt =
   [%rapper
@@ -92,7 +102,8 @@ let many_arg_get_many =
       SELECT @int{id}, @string{username}
       FROM users
       WHERE username = %string{username} AND id > %int{min_id}
-      |sql}]
+      |sql}
+      record_out]
 
 let single_arg_get_many =
   [%rapper
@@ -109,4 +120,5 @@ let no_arg_get_many =
       {sql|
       SELECT @int{id}, @string{username}
       FROM users
-      |sql}]
+      |sql}
+      record_out]

@@ -1,1 +1,1 @@
-let f x y = (x, (y, (x, y)))
+let x = {a; b; c; d}
