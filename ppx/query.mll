@@ -1,7 +1,17 @@
-(* From https://github.com/issuu/ppx_mysql
- * Under Apache 2.0 license *)
+(* A modified version of query.mll from https://github.com/issuu/ppx_mysql *)
 {
-open Ppx_mysql_runtime.Stdlib
+module Result = struct
+    type ('a, 'e) t = ('a, 'e) result =
+      | Ok of 'a
+      | Error of 'e
+
+    let bind r f =
+      match r with
+      | Ok x -> f x
+      | Error _ as e -> e
+
+    let ( >>= ) = bind
+end
 
 module Param_dict = Map.Make (String)
 
