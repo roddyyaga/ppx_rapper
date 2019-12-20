@@ -6,14 +6,14 @@ module Buildef = Ast_builder.Default
 let parse_args args =
   let allowed_args = [ "record_in"; "record_out"; "syntax_off" ] in
   match
-    List.find ~f:(fun a -> not (List.mem ~equal:( = ) allowed_args a)) args
+    List.find ~f:(fun a -> not (List.mem ~equal:String.equal allowed_args a)) args
   with
   | Some unknown ->
       Error (Printf.sprintf "Unknown rapper argument '%s'" unknown)
   | None ->
-      let record_in = List.mem args "record_in" ~equal:( = ) in
-      let record_out = List.mem args "record_out" ~equal:( = ) in
-      let syntax_off = List.mem args "syntax_off" ~equal:( = ) in
+      let record_in = List.mem args "record_in" ~equal:String.equal in
+      let record_out = List.mem args "record_out" ~equal:String.equal in
+      let syntax_off = List.mem args "syntax_off" ~equal:String.equal in
       Ok (record_in, record_out, syntax_off)
 
 (** Make some subexpressions to be used in generated code *)
