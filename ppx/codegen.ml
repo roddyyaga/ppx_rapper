@@ -5,6 +5,7 @@ module Buildef = Ast_builder.Default
 type extension_contents = {
   in_params: Query.param list;
   out_params: Query.param list;
+  record_in: bool;
   record_out: bool;
 }
 
@@ -43,6 +44,8 @@ let make_caqti_type_tup ~loc params =
 
 let lident_of_param ~loc param = Loc.make ~loc (Lident param.Query.name)
 
+let var_of_param ~loc param = Loc.make ~loc param.Query.name
+
 (** Maps parsed parameters to ident expressions of their names *)
 let pexp_idents_of_params ~loc params =
   List.map
@@ -52,7 +55,7 @@ let pexp_idents_of_params ~loc params =
 (** Maps parsed parameters to var patterns of their names *)
 let ppat_var_of_params ~loc params =
   List.map
-    ~f:(fun param -> Buildef.ppat_var ~loc (Loc.make ~loc param.Query.name))
+    ~f:(fun param -> Buildef.ppat_var ~loc (var_of_param ~loc param))
     params
 
 (** General function for producing ASTs for [(a, (b, (c, (d, e))))] as either expressions or patterns *)
@@ -88,6 +91,16 @@ let record_expression ~loc params =
   let pair_list = List.map params ~f in
   Buildef.pexp_record ~loc pair_list None
 
+(** Makes [{a; b; c; d; e}] pattern ASTs from parsed parameters *)
+let record_pattern ~loc params =
+  let f param =
+    let lident = lident_of_param ~loc param in
+    let var = var_of_param ~loc param in
+    (lident, Buildef.ppat_var ~loc var)
+  in
+  let pair_list = List.map params ~f in
+  Buildef.ppat_record ~loc pair_list Closed
+
 (** Generates the function body for an [exec] function ([execute] statement) *)
 let function_body_exec ~loc connection_function_expr
     { in_params; record_out; _ } =
@@ -96,7 +109,7 @@ let function_body_exec ~loc connection_function_expr
   [%expr [%e connection_function_expr] query [%e input_nested_tuples]]
 
 let function_body_general ~loc factory connection_function_expr
-    { in_params; out_params; record_out } =
+    { in_params; out_params; record_out; _ } =
   let input_nested_tuple_expression = nested_tuple_expression ~loc in_params in
   match (List.length out_params, record_out) with
   | 0, true ->
@@ -159,20 +172,30 @@ let query_function ~loc function_body_factory connection_function_expr
     function_body_factory ~loc connection_function_expr expression_contents
   in
   let in_params = expression_contents.in_params in
-  if List.is_empty in_params then [%expr fun () -> [%e body]]
-  else
-    let deduped_in_params =
-      match Query.remove_duplicates in_params with
-      | Ok deduplicated -> deduplicated
-      | Error _ ->
-          raise (Error "Duplicated input parameters with conflicting specs")
-    in
-    let f in_param body_so_far =
-      let name = in_param.Query.name in
-      let pattern = Buildef.ppat_var ~loc (Loc.make ~loc name) in
-      Buildef.pexp_fun ~loc (Labelled name) None pattern body_so_far
-    in
-    List.fold_right ~f ~init:body deduped_in_params
+  let deduped_in_params =
+    match Query.remove_duplicates in_params with
+    | Ok deduplicated -> deduplicated
+    | Error _ ->
+        raise (Error "Duplicated input parameters with conflicting specs")
+  in
+  match expression_contents.record_in with
+  | true ->
+      if List.is_empty in_params then
+        raise
+          (Error
+             "'record_in' should not be set when there are no input parameters")
+      else
+        let input_record_pattern = record_pattern ~loc deduped_in_params in
+        [%expr fun [%p input_record_pattern] -> [%e body]]
+  | false ->
+      if List.is_empty in_params then [%expr fun () -> [%e body]]
+      else
+        let f in_param body_so_far =
+          let name = in_param.Query.name in
+          let pattern = Buildef.ppat_var ~loc (Loc.make ~loc name) in
+          Buildef.pexp_fun ~loc (Labelled name) None pattern body_so_far
+        in
+        List.fold_right ~f ~init:body deduped_in_params
 
 let exec_function ~loc = query_function ~loc function_body_exec [%expr Db.exec]
 

@@ -1,3 +1,5 @@
+(* From https://github.com/issuu/ppx_mysql
+ * Under Apache 2.0 license *)
 (** {1 Type definitions} *)
 
 type param = {

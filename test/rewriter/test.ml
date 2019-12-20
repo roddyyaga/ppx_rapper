@@ -47,7 +47,7 @@ let single_arg_get_one =
       FROM users
       WHERE username = %string{username}
       |sql}
-      record_out test_arg and_another_one]
+      record_out]
 
 let no_arg_get_one =
   [%rapper
@@ -56,7 +56,7 @@ let no_arg_get_one =
       SELECT @int{id}, @string{username}, @string{email}
       FROM users
       |sql}
-      bites_the_dust record_out]
+      record_out]
 
 let many_arg_get_one_repeated_arg =
   [%rapper
