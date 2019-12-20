@@ -28,10 +28,10 @@ let my_query =
       (let open Caqti_type in
       tup2 int (tup2 string (tup2 bool (option string))))
       "\n\
-      \      SELECT id, username, following, bio\n\
-      \      FROM users\n\
-      \      WHERE username <> ? AND id > ?\n\
-      \      "
+      \\      SELECT id, username, following, bio\n\
+      \\      FROM users\n\
+      \\      WHERE username <> ? AND id > ?\n\
+      \\      "
   in
   let wrapped (module Db : Caqti_lwt.CONNECTION) ~wrong_user ~min_id =
     let f result =
