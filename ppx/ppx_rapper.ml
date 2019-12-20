@@ -2,75 +2,105 @@ open Core
 open Ppxlib
 module Buildef = Ast_builder.Default
 
-let expand ~loc ~path:_ action query first_arg =
-  let record_out =
-    match first_arg with
-    | Some "record_out" -> true
-    | Some _ -> false
-    | None -> false
+(** Handle 'record_in' etc. in [%rapper "SELECT * FROM USERS" record_in record_out] *)
+let parse_args args =
+  let allowed_args = [ "record_in"; "record_out"; "syntax_off" ] in
+  match List.find ~f:(List.mem ~equal:( = ) allowed_args) args with
+  | Some unknown ->
+      Error (Printf.sprintf "Unknown rapper argument '%s'" unknown)
+  | None ->
+      let record_in = List.mem args "record_in" ~equal:( = ) in
+      let record_out = List.mem args "record_out" ~equal:( = ) in
+      let syntax_off = List.mem args "syntax_off" ~equal:( = ) in
+      Ok (record_in, record_out, syntax_off)
+
+(** Make some subexpressions to be used in generated code *)
+let component_expressions ~loc parsed_query =
+  let open Query in
+  let inputs_caqti_type =
+    Codegen.make_caqti_type_tup ~loc parsed_query.in_params
   in
+  let outputs_caqti_type =
+    Codegen.make_caqti_type_tup ~loc parsed_query.out_params
+  in
+  let parsed_sql = Buildef.estring ~loc parsed_query.sql in
+  (inputs_caqti_type, outputs_caqti_type, parsed_sql)
+
+(** Make a function [expand_get] to produce the expressions for [get_one], [get_opt] and [get_many], and and expression [exec_expression] for [execute] *)
+let make_expand_get_and_exec_expression ~loc parsed_query record_out =
+  let inputs_caqti_type, outputs_caqti_type, parsed_sql =
+    component_expressions ~loc parsed_query
+  in
+  let expression_contents =
+    Codegen.
+      {
+        in_params = parsed_query.in_params;
+        out_params = parsed_query.out_params;
+        record_out;
+      }
+  in
+  let expand_get caqti_request_function_expr make_function =
+    try
+      Ok
+        [%expr
+          let query =
+            Caqti_request.([%e caqti_request_function_expr])
+              Caqti_type.([%e inputs_caqti_type])
+              Caqti_type.([%e outputs_caqti_type])
+              [%e parsed_sql]
+          in
+          let wrapped (module Db : Caqti_lwt.CONNECTION) =
+            [%e make_function ~loc expression_contents]
+          in
+          wrapped]
+    with Codegen.Error s -> Error s
+  in
+
+  let exec_expression =
+    try
+      Ok
+        [%expr
+          let query =
+            Caqti_request.exec
+              Caqti_type.([%e inputs_caqti_type])
+              [%e parsed_sql]
+          in
+          let wrapped (module Db : Caqti_lwt.CONNECTION) =
+            [%e Codegen.exec_function ~loc expression_contents]
+          in
+          wrapped]
+    with Codegen.Error s -> Error s
+  in
+  (expand_get, exec_expression)
+
+let expand ~loc ~path:_ action query args =
   let expression_result =
-    match Query.parse query with
-    | Error error -> Error (Query.explain_error error)
-    | Ok parsed_query ->
-        Ok
-          (let inputs_caqti_type =
-             Codegen.make_caqti_type_tup ~loc parsed_query.in_params
-           in
-           let outputs_caqti_type =
-             Codegen.make_caqti_type_tup ~loc parsed_query.out_params
-           in
-           let parsed_sql = Buildef.estring ~loc parsed_query.sql in
-           let expression_contents =
-             Codegen.
-               {
-                 in_params = parsed_query.in_params;
-                 out_params = parsed_query.out_params;
-                 record_out;
-               }
-           in
-           let expand_get caqti_request_function_expr make_function =
-             try
-               Ok
-                 [%expr
-                   let query =
-                     Caqti_request.([%e caqti_request_function_expr])
-                       Caqti_type.([%e inputs_caqti_type])
-                       Caqti_type.([%e outputs_caqti_type])
-                       [%e parsed_sql]
-                   in
-                   let wrapped (module Db : Caqti_lwt.CONNECTION) =
-                     [%e make_function ~loc expression_contents]
-                   in
-                   wrapped]
-             with Codegen.Error s -> Error s
-           in
-           match action with
-           (* execute is special case because there is no output Caqti_type *)
-           | "execute" -> (
-               if record_out then
-                 Error "record_out is not a valid argument for execute"
-               else
-                 try
-                   Ok
-                     [%expr
-                       let query =
-                         Caqti_request.exec
-                           Caqti_type.([%e inputs_caqti_type])
-                           [%e parsed_sql]
-                       in
-                       let wrapped (module Db : Caqti_lwt.CONNECTION) =
-                         [%e Codegen.exec_function ~loc expression_contents]
-                       in
-                       wrapped]
-                 with Codegen.Error s -> Error s )
-           | "get_one" -> expand_get [%expr find] Codegen.find_function
-           | "get_opt" -> expand_get [%expr find_opt] Codegen.find_opt_function
-           | "get_many" ->
-               expand_get [%expr collect] Codegen.collect_list_function
-           | _ ->
-               Error
-                 "Supported actions are execute, get_one, get_opt and get_many")
+    match parse_args args with
+    | Error err -> Error err
+    | Ok (_, record_out, _) -> (
+        match Query.parse query with
+        | Error error -> Error (Query.explain_error error)
+        | Ok parsed_query ->
+            Ok
+              (let expand_get, exec_expression =
+                 make_expand_get_and_exec_expression ~loc parsed_query
+                   record_out
+               in
+               match action with
+               (* execute is special case because there is no output Caqti_type *)
+               | "execute" ->
+                   if record_out then
+                     Error "record_out is not a valid argument for execute"
+                   else exec_expression
+               | "get_one" -> expand_get [%expr find] Codegen.find_function
+               | "get_opt" ->
+                   expand_get [%expr find_opt] Codegen.find_opt_function
+               | "get_many" ->
+                   expand_get [%expr collect] Codegen.collect_list_function
+               | _ ->
+                   Error
+                     "Supported actions are execute, get_one, get_opt and \
+                      get_many") )
   in
   match expression_result with
   | Ok (Ok expr) -> expr
@@ -84,9 +114,11 @@ let pattern =
   let open Ast_pattern in
   let query_action = pexp_ident (lident __) in
   let query = pair nolabel (estring __) in
-  let record_out = pair nolabel (pexp_ident (lident __)) in
-  let with_record_out = record_out ^:: nil in
-  let arguments = query ^:: alt_option with_record_out nil in
+  let arg = pair nolabel (pexp_ident (lident __)) in
+  (*   let arg_opt = alt_option (arg ^:: nil) nil in *)
+  (*   let arg2 = pair nolabel (pexp_ident (lident __)) in *)
+  (*   let arg2_opt = alt_option (arg2 ^:: nil) nil in *)
+  let arguments = query ^:: many arg in
   pexp_apply query_action arguments
 
 let name = "rapper"
