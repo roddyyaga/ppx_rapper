@@ -1,6 +1,6 @@
 (lang dune 2.0.1)
 (name ppx_rapper)
-(version 0.9.0)
+(version 0.9.2)
 (source (github roddyyaga/ppx_rapper))
 (documentation "https://github.com/roddyyaga/ppx_rapper")
 (license MIT)
