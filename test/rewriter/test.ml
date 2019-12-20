@@ -122,3 +122,12 @@ let no_arg_get_many =
       FROM users
       |sql}
       record_out]
+
+let my_query =
+  [%rapper
+    get_opt
+      {sql|
+      SELECT @int{id}, @string{username}, @bool{following}, @string?{bio}
+      FROM users
+      WHERE username <> %string{wrong_user} AND id > %int{min_id}
+      |sql}]

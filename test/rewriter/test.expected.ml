@@ -147,3 +147,18 @@ let no_arg_get_many =
       Result.map ~f:(List.map ~f:g) result in
     Lwt.map f (Db.collect_list query ()) in
   wrapped
+let my_query =
+  let query =
+    (let open Caqti_request in find_opt)
+      (let open Caqti_type in tup2 string int)
+      (let open Caqti_type in
+         tup2 int (tup2 string (tup2 bool (option string))))
+      "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE username <> ? AND id > ?\n      " in
+  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~wrong_user 
+    ~min_id  =
+    let f result =
+      let g (id, (username, (following, bio))) =
+        (id, username, following, bio) in
+      Result.map ~f:(Option.map ~f:g) result in
+    Lwt.map f (Db.find_opt query (wrong_user, min_id)) in
+  wrapped

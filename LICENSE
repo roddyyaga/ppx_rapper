@@ -1,4 +1,5 @@
 This license and copyright notice covers all material other than ppx/query.mll and ppx/query.mli
+Those are covered by the Apache 2.0 license and are taken unmodified from github.com/issuu/ppx_mysql
 
 Copyright 2019 Roddy MacSween
 
