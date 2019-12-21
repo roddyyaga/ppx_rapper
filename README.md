@@ -52,6 +52,8 @@ Query functions are
 - `get_opt` for queries that return 0 or 1 rows, represented as a tuple/record option
 - `get_many` for queries that many return any number of rows, represented as a list of tuples/records
 
+Since 1-tuples don't exist, single values are used instead for that case.
+
 These correspond to `exec`, `find`, `find_opt` and `collect` in `Caqti_request`.
 
 ### Parameters
