@@ -57,6 +57,7 @@ type list_status =
   | Ongoing
   | Complete of list_params
 
+(* TODO - factor to remove stuff that isn't needed *)
 let build_param spec opt name =
   let open Result in
   begin match spec with
@@ -70,6 +71,7 @@ let build_param spec opt name =
       Ok ((None, "bool"), ("Ppx_mysql_runtime", "bool_of_string"), ("Stdlib", "string_of_bool"))
   | "string" ->
       Ok ((None, "string"), ("Ppx_mysql_runtime", "string_of_string"), ("Ppx_mysql_runtime", "identity"))
+  | "float" -> Ok ((None, "float"), ("this", "is"), ("not", "used"))
   | module_name when String.length module_name > 0 && module_name.[0] >= 'A' && module_name.[0] <= 'Z' ->
       Ok ((Some module_name, "t"), (module_name, "of_mysql"), (module_name, "to_mysql"))
   | spec ->

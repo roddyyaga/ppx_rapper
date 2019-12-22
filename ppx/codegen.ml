@@ -21,7 +21,7 @@ let caqti_type_of_param ~loc Query.{ typ = _, base_type; opt; _ } =
     | "string" -> [%expr string]
     | "int" -> [%expr int]
     | "bool" -> [%expr bool]
-    (* TODO - support float *)
+    | "float" -> [%expr float]
     (* TODO - support custom types *)
     | other ->
         raise (Error (Printf.sprintf "Base type '%s' not supported" other))
