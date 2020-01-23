@@ -77,8 +77,11 @@ let my_query =
 then the input and/or output of the query will be records. For the example above, they would have type `{id: int; wrong_user: string}` and `{id: int; username: string; following: bool; bio: string option}` respectively. The default non-record methods are labelled arguments and tuples respectively.
 
 By default, queries are syntax checked using [pg_query-ocaml](https://github.com/roddyyaga/pg_query-ocaml) and the
-extension will error if syntax checking fails. If this gives a false positive error for a query it can be stopped using the `syntax_off` option.
+extension will error if syntax checking fails. If this gives a false positive error for a query it can be suppressed using the `syntax_off` option.
 
 
 ## Requirements
-The runtime requirements of Rapper are core, lwt, caqti, caqti-lwt and caqti-driver-postgresql.
+The runtime requirements of Rapper are core, lwt, caqti, caqti-lwt and caqti-driver-postgresql. Only a very small amount of code from core is used though; if you would like to use Rapper without core please let me know.
+
+## Contributions
+Any contributions would be very welcome!
