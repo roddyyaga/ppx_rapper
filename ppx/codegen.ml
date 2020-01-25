@@ -1,4 +1,4 @@
-open Core
+open Base
 open Ppxlib
 module Buildef = Ast_builder.Default
 
@@ -132,9 +132,9 @@ let find_body_factory ~loc input_nested_tuple_pattern output_expression
     connection_function_expr input_nested_tuple_expression =
   [%expr
     let f result =
-      Result.map
-        ~f:(fun [%p input_nested_tuple_pattern] -> [%e output_expression])
-        result
+      match result with
+      | Ok [%p input_nested_tuple_pattern] -> [%e output_expression]
+      | Error e -> e
     in
     Lwt.map f
       ([%e connection_function_expr] query [%e input_nested_tuple_expression])]
@@ -144,7 +144,10 @@ let find_map_factory ~loc map_expr input_nested_tuple_pattern output_expression
   [%expr
     let f result =
       let g [%p input_nested_tuple_pattern] = [%e output_expression] in
-      Result.map ~f:([%e map_expr] ~f:g) result
+      let f = [%e map_expr] g in
+      match result with
+      | Ok x -> Ok (f x)
+      | Error e -> Error e
     in
     Lwt.map f
       ([%e connection_function_expr] query [%e input_nested_tuple_expression])]
@@ -155,14 +158,23 @@ let function_body_find ~loc = function_body_general ~loc find_body_factory
 (** Generates the function body for cases where it has involves a map
 
  * These are [find_opt] and [collect_list] (for [get_opt] and [get_many] statements). *)
-let function_body_map map_expr ~loc =
+let function_body_map  ~loc map_expr =
   function_body_general ~loc (find_map_factory map_expr)
 
 (** Generates the function body for a [find_opt] function ([get_opt] statement) *)
-let function_body_find_opt ~loc = function_body_map [%expr Option.map] ~loc
+let function_body_find_opt ~loc =
+ function_body_map
+  ~loc
+  [%expr fun f x ->
+   match x with
+   | Some x -> Some (f x)
+   | None -> None]
 
 (** Generates the function body for a [collect_list] function ([get_many] statement) *)
-let function_body_collect ~loc = function_body_map [%expr List.map] ~loc
+let function_body_collect ~loc =
+ function_body_map
+  ~loc
+  [%expr List.map]
 
 (** Generates code like [fun ~x ~y ~z -> Db.some_function query (x, (y, z))]. *)
 let query_function ~loc function_body_factory connection_function_expr

@@ -13,6 +13,8 @@ depends: [
   "dune"
   "pg_query"
   "ppxlib"
+  "base"
+  "caqti"
 ]
 build: [
   ["dune" "subst"] {pinned}

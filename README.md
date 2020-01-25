@@ -81,7 +81,7 @@ extension will error if syntax checking fails. If this gives a false positive er
 
 
 ## Requirements
-The runtime requirements of Rapper are core, lwt, caqti, caqti-lwt and caqti-driver-postgresql. Only a very small amount of code from core is used though; if you would like to use Rapper without core please let me know.
+The runtime requirements of Rapper are base, lwt, caqti, caqti-lwt and caqti-driver-postgresql.
 
 ## Contributions
 Any contributions would be very welcome!

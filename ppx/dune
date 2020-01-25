@@ -4,5 +4,5 @@
 (name ppx_rapper)
 (public_name ppx_rapper)
 (kind ppx_rewriter)
-(libraries core ppxlib pg_query)
+(libraries ppxlib pg_query base)
 (preprocess (pps ppxlib.metaquot)))

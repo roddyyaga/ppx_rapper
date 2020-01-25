@@ -1,4 +1,4 @@
-open Core
+open Base
 open Ppxlib
 module Buildef = Ast_builder.Default
 

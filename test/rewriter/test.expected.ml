@@ -40,9 +40,10 @@ let many_arg_get_one =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username 
     ~min_id  =
     let f result =
-      Result.map
-        ~f:(fun (id, (username, (bio, is_married))) ->
-              (id, username, bio, is_married)) result in
+      match result with
+      | Ok (id, (username, (bio, is_married))) ->
+          (id, username, bio, is_married)
+      | Error e -> e in
     Lwt.map f (Db.find query (username, min_id)) in
   wrapped
 let single_arg_get_one =
@@ -52,7 +53,9 @@ let single_arg_get_one =
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
     let f result =
-      Result.map ~f:(fun (id, username) -> { id; username }) result in
+      match result with
+      | Ok (id, username) -> { id; username }
+      | Error e -> e in
     Lwt.map f (Db.find query username) in
   wrapped
 let no_arg_get_one =
@@ -62,8 +65,9 @@ let no_arg_get_one =
       "\n      SELECT id, username, email\n      FROM users\n      " in
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
     let f result =
-      Result.map ~f:(fun (id, (username, email)) -> { id; username; email })
-        result in
+      match result with
+      | Ok (id, (username, email)) -> { id; username; email }
+      | Error e -> e in
     Lwt.map f (Db.find query ()) in
   wrapped
 let many_arg_get_one_repeated_arg =
@@ -74,7 +78,8 @@ let many_arg_get_one_repeated_arg =
       "\n      SELECT username\n      FROM users\n      WHERE id = ? OR username = ? OR id <> ?\n      " in
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~id  ~username 
     =
-    let f result = Result.map ~f:(fun username -> { username }) result in
+    let f result =
+      match result with | Ok username -> { username } | Error e -> e in
     Lwt.map f (Db.find query (id, (username, id))) in
   wrapped
 let many_arg_get_opt =
@@ -87,7 +92,10 @@ let many_arg_get_opt =
     ~min_id  =
     let f result =
       let g (id, username) = (id, username) in
-      Result.map ~f:(Option.map ~f:g) result in
+      let f =
+        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
+          g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.find_opt query (username, min_id)) in
   wrapped
 let single_arg_get_opt =
@@ -98,7 +106,10 @@ let single_arg_get_opt =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
     let f result =
       let g (id, username) = { id; username } in
-      Result.map ~f:(Option.map ~f:g) result in
+      let f =
+        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
+          g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.find_opt query username) in
   wrapped
 let no_arg_get_opt =
@@ -109,7 +120,10 @@ let no_arg_get_opt =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
     let f result =
       let g (id, username) = (id, username) in
-      Result.map ~f:(Option.map ~f:g) result in
+      let f =
+        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
+          g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.find_opt query ()) in
   wrapped
 let many_arg_get_many =
@@ -122,7 +136,8 @@ let many_arg_get_many =
     ~min_id  =
     let f result =
       let g (id, username) = { id; username } in
-      Result.map ~f:(List.map ~f:g) result in
+      let f = List.map g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query (username, min_id)) in
   wrapped
 let single_arg_get_many =
@@ -133,7 +148,8 @@ let single_arg_get_many =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
     let f result =
       let g (id, username) = (id, username) in
-      Result.map ~f:(List.map ~f:g) result in
+      let f = List.map g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query username) in
   wrapped
 let no_arg_get_many =
@@ -144,7 +160,8 @@ let no_arg_get_many =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
     let f result =
       let g (id, username) = { id; username } in
-      Result.map ~f:(List.map ~f:g) result in
+      let f = List.map g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query ()) in
   wrapped
 let my_query =
@@ -159,6 +176,9 @@ let my_query =
     let f result =
       let g (id, (username, (following, bio))) =
         (id, username, following, bio) in
-      Result.map ~f:(Option.map ~f:g) result in
+      let f =
+        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
+          g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.find_opt query (wrong_user, min_id)) in
   wrapped
