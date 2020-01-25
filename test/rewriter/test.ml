@@ -131,3 +131,12 @@ let my_query =
       FROM users
       WHERE username <> %string{wrong_user} AND id > %int{min_id}
       |sql}]
+
+let list =
+  [%rapper
+    get_opt
+      {sql|
+      SELECT @int{id}, @string{username}, @bool{following}, @string?{bio}
+      FROM users
+      WHERE following is %bool{following} and username IN (%list{%int{ids}})
+      |sql} syntax_off]

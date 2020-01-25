@@ -52,10 +52,13 @@ let pexp_idents_of_params ~loc params =
     ~f:(fun param -> Buildef.pexp_ident ~loc (lident_of_param ~loc param))
     params
 
+let ppat_of_param ~loc param =
+  Buildef.ppat_var ~loc (var_of_param ~loc param)
+
 (** Maps parsed parameters to var patterns of their names *)
 let ppat_var_of_params ~loc params =
   List.map
-    ~f:(fun param -> Buildef.ppat_var ~loc (var_of_param ~loc param))
+    ~f:(ppat_of_param ~loc)
     params
 
 (** General function for producing ASTs for [(a, (b, (c, (d, e))))] as either expressions or patterns *)
@@ -177,11 +180,12 @@ let function_body_collect ~loc =
   [%expr List.map]
 
 (** Generates code like [fun ~x ~y ~z -> Db.some_function query (x, (y, z))]. *)
-let query_function ~loc function_body_factory connection_function_expr
+let query_function ~loc ?(body_fn=(fun x -> x)) function_body_factory connection_function_expr
     expression_contents =
   (* Tuples should have duplicates if they exist. *)
   let body =
     function_body_factory ~loc connection_function_expr expression_contents
+    |> body_fn
   in
   let in_params = expression_contents.in_params in
   let deduped_in_params =
@@ -209,12 +213,14 @@ let query_function ~loc function_body_factory connection_function_expr
         in
         List.fold_right ~f ~init:body deduped_in_params
 
-let exec_function ~loc = query_function ~loc function_body_exec [%expr Db.exec]
+let exec_function ~body_fn ~loc =
+ query_function ~loc ~body_fn function_body_exec [%expr Db.exec]
 
-let find_function ~loc = query_function ~loc function_body_find [%expr Db.find]
+let find_function ~body_fn ~loc =
+ query_function ~loc ~body_fn function_body_find [%expr Db.find]
 
-let find_opt_function ~loc =
-  query_function ~loc function_body_find_opt [%expr Db.find_opt]
+let find_opt_function ~body_fn ~loc =
+  query_function ~loc ~body_fn function_body_find_opt [%expr Db.find_opt]
 
-let collect_list_function ~loc =
-  query_function ~loc function_body_collect [%expr Db.collect_list]
+let collect_list_function ~body_fn ~loc =
+  query_function ~loc ~body_fn function_body_collect [%expr Db.collect_list]

@@ -30,51 +30,134 @@ let component_expressions ~loc parsed_query =
 
 (** Make a function [expand_get] to produce the expressions for [get_one], [get_opt] and [get_many], and a similar [expand_exec] for [execute] *)
 let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
-  let inputs_caqti_type, outputs_caqti_type, parsed_sql =
-    component_expressions ~loc parsed_query
-  in
-  let expression_contents =
-    Codegen.
-      {
-        in_params = parsed_query.in_params;
-        out_params = parsed_query.out_params;
-        record_in;
-        record_out;
+  let { Query.sql; in_params; out_params; list_params } = parsed_query in
+  match list_params with
+  | Some {subsql; string_index; param_index; params} ->
+    assert (List.length params = 1);
+    let subsql_expr = Buildef.estring ~loc subsql in
+    let sql_before = Buildef.estring ~loc @@ String.sub sql ~pos:0 ~len:string_index in
+    let sql_after =
+      Buildef.estring ~loc
+      @@ String.sub sql ~pos:string_index ~len:(String.length sql - string_index)
+    in
+    let params_before, params_after = List.split_n in_params param_index in
+    let expression_contents =
+      { Codegen
+      . in_params = params_before @ params @ params_after
+      ; out_params
+      ; record_in
+      ; record_out
       }
-  in
-  let expand_get caqti_request_function_expr make_function =
-    try
-      Ok
-        [%expr
-          let query =
-            Caqti_request.([%e caqti_request_function_expr])
-              Caqti_type.([%e inputs_caqti_type])
-              Caqti_type.([%e outputs_caqti_type])
-              [%e parsed_sql]
-          in
-          let wrapped (module Db : Caqti_lwt.CONNECTION) =
-            [%e make_function ~loc expression_contents]
-          in
-          wrapped]
-    with Codegen.Error s -> Error s
-  in
+    in
+    let caqti_input_type =
+      match List.is_empty params_before, List.is_empty params_after with
+      | true, true -> [%expr packed_list_type]
+      | true, false ->
+        let params_before = Codegen.make_caqti_type_tup ~loc params_before in
+        [%expr Caqti_type.(tup2 [%e params_before] packed_list_type)]
+      | false, true ->
+        let params_before = Codegen.make_caqti_type_tup ~loc params_before in
+        [%expr Caqti_type.(tup2 [%e params_before] packed_list_type)]
+      | false, false ->
+        let params_before = Codegen.make_caqti_type_tup ~loc params_before in
+        let params_after = Codegen.make_caqti_type_tup ~loc params_after in
+        [%expr Caqti_type.(tup3 [%e params_before] packed_list_type [%e params_after])]
+    in
+    let outputs_caqti_type = Codegen.make_caqti_type_tup ~loc out_params in
+    let list_param = List.hd_exn params in
+    let make_generic make_function query_expr =
+      let body_fn body =
+       [%expr
+         match [%e Buildef.pexp_ident ~loc (Codegen.lident_of_param ~loc list_param) ] with
+         | [] ->
+           Lwt_result.fail Caqti_error.(
+             encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit (Msg "Empty list"))
+         | elems ->
+             let subsqls = List.map (fun _ -> [%e subsql_expr]) elems in
+             let patch = String.concat ", " subsqls in
+             let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
+             let open Ppx_rapper_runtime in
+             let Dynparam.Pack (packed_list_type, [%p Codegen.ppat_of_param ~loc list_param]) =
+               List.fold_left
+                 (fun pack item ->
+                   Dynparam.add Caqti_type.([%e Codegen.make_caqti_type_tup ~loc [list_param]]) item pack)
+                 Dynparam.empty
+                 elems
+             in
+             let query = [%e query_expr] in
+             [%e body] ]
+      in
+      [%expr
+        let wrapped (module Db : Caqti_lwt.CONNECTION) =
+          [%e make_function ~body_fn ~loc expression_contents]
+        in
+        wrapped]
+    in
+    let expand_get caqti_request_function_expr make_function =
+      try
+        Ok (make_generic make_function
+             [%expr
+               Caqti_request.([%e caqti_request_function_expr])
+               ~oneshot:true
+               [%e caqti_input_type]
+               Caqti_type.([%e outputs_caqti_type])
+               sql ])
+      with Codegen.Error s -> Error s
+    in
 
-  let expand_exec caqti_request_function_expr make_function =
-    try
-      Ok
-        [%expr
-          let query =
-            Caqti_request.([%e caqti_request_function_expr])
-              Caqti_type.([%e inputs_caqti_type])
-              [%e parsed_sql]
-          in
-          let wrapped (module Db : Caqti_lwt.CONNECTION) =
-            [%e make_function ~loc expression_contents]
-          in
-          wrapped]
-    with Codegen.Error s -> Error s
-  in
-  (expand_get, expand_exec)
+    let expand_exec caqti_request_function_expr make_function =
+      try
+        Ok (make_generic make_function
+             [%expr
+               Caqti_request.([%e caqti_request_function_expr])
+               [%e caqti_input_type]
+               sql ])
+      with Codegen.Error s -> Error s
+    in
+    (expand_get, expand_exec)
+
+  | None ->
+    let inputs_caqti_type, outputs_caqti_type, parsed_sql =
+      component_expressions ~loc parsed_query
+    in
+    let expression_contents =
+      Codegen.
+        {
+          in_params = parsed_query.in_params;
+          out_params = parsed_query.out_params;
+          record_in;
+          record_out;
+        }
+    in
+    let make_generic make_function query_expr =
+      [%expr
+        let query = [%e query_expr] in
+        let wrapped (module Db : Caqti_lwt.CONNECTION) =
+          [%e make_function ~body_fn:(fun x -> x) ~loc expression_contents]
+        in
+        wrapped]
+    in
+    let expand_get caqti_request_function_expr make_function =
+      try
+        Ok (make_generic make_function
+            [%expr
+              Caqti_request.([%e caqti_request_function_expr])
+                Caqti_type.([%e inputs_caqti_type])
+                Caqti_type.([%e outputs_caqti_type])
+                [%e parsed_sql]])
+      with Codegen.Error s -> Error s
+    in
+
+    let expand_exec caqti_request_function_expr make_function =
+      try
+        Ok (make_generic make_function
+            [%expr
+              Caqti_request.([%e caqti_request_function_expr])
+                Caqti_type.([%e inputs_caqti_type])
+                [%e parsed_sql]])
+      with Codegen.Error s -> Error s
+    in
+    (expand_get, expand_exec)
 
 let expand ~loc ~path:_ action query args =
   let expression_result =

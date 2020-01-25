@@ -182,3 +182,36 @@ let my_query =
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.find_opt query (wrong_user, min_id)) in
   wrapped
+let list =
+  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~following  ~ids
+     =
+    match ids with
+    | [] -> Lwt_result.fail `Empty_input_list
+    | elems ->
+        let subsqls = List.map (fun _ -> "?") elems in
+        let patch = String.concat ", " subsqls in
+        let sql =
+          "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE following is ? and username IN ("
+            ^ (patch ^ ")\n      ") in
+        let open Ppx_rapper_runtime in
+          let Dynparam.Pack (packed_list_type, ids) =
+            List.fold_left
+              (fun pack ->
+                 fun item ->
+                   Dynparam.add (let open Caqti_type in int) item pack)
+              Dynparam.empty elems in
+          let query =
+            (let open Caqti_request in find_opt) ~oneshot:true
+              (let open Caqti_type in tup2 bool packed_list_type)
+              (let open Caqti_type in
+                 tup2 int (tup2 string (tup2 bool (option string)))) sql in
+          let f result =
+            let g (id, (username, (following, bio))) =
+              (id, username, following, bio) in
+            let f =
+              (fun f ->
+                 fun x -> match x with | Some x -> Some (f x) | None -> None)
+                g in
+            match result with | Ok x -> Ok (f x) | Error e -> Error e in
+          Lwt.map f (Db.find_opt query (following, ids)) in
+  wrapped
