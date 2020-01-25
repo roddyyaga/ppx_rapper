@@ -138,5 +138,10 @@ let list =
       {sql|
       SELECT @int{id}, @string{username}, @bool{following}, @string?{bio}
       FROM users
-      WHERE following is %bool{following} and username IN (%list{%int{ids}})
-      |sql} syntax_off]
+      WHERE following = %bool{following} and username IN (%list{%int{ids}})
+      |sql}]
+
+let collect_list =
+  [%rapper
+    get_many
+      {sql| SELECT @string{id} from schema_migrations where version in (%list{%int{versions}})|sql}]

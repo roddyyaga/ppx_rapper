@@ -186,12 +186,16 @@ let list =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~following  ~ids
      =
     match ids with
-    | [] -> Lwt_result.fail `Empty_input_list
+    | [] ->
+        Lwt_result.fail
+          (let open Caqti_error in
+             encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
+               (Msg "Empty list"))
     | elems ->
         let subsqls = List.map (fun _ -> "?") elems in
         let patch = String.concat ", " subsqls in
         let sql =
-          "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE following is ? and username IN ("
+          "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE following = ? and username IN ("
             ^ (patch ^ ")\n      ") in
         let open Ppx_rapper_runtime in
           let Dynparam.Pack (packed_list_type, ids) =
@@ -214,4 +218,30 @@ let list =
                 g in
             match result with | Ok x -> Ok (f x) | Error e -> Error e in
           Lwt.map f (Db.find_opt query (following, ids)) in
+  wrapped
+let collect_list =
+  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~versions  =
+    match versions with
+    | [] ->
+        Lwt_result.fail
+          (let open Caqti_error in
+             encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
+               (Msg "Empty list"))
+    | elems ->
+        let subsqls = List.map (fun _ -> "?") elems in
+        let patch = String.concat ", " subsqls in
+        let sql =
+          " SELECT id from schema_migrations where version in (" ^
+            (patch ^ ")") in
+        let open Ppx_rapper_runtime in
+          let Dynparam.Pack (packed_list_type, versions) =
+            List.fold_left
+              (fun pack ->
+                 fun item ->
+                   Dynparam.add (let open Caqti_type in int) item pack)
+              Dynparam.empty elems in
+          let query =
+            (let open Caqti_request in collect) ~oneshot:true
+              packed_list_type (let open Caqti_type in string) sql in
+          Db.collect_list query versions in
   wrapped

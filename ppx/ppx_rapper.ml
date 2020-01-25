@@ -169,8 +169,18 @@ let expand ~loc ~path:_ action query args =
         | Ok parsed_query -> (
             let syntax_result =
               match syntax_off with
-              | false -> (
-                  match Pg_query.parse parsed_query.sql with
+              | false ->
+                  let query_sql = match parsed_query.list_params with
+                  | Some { subsql; string_index; _ } ->
+                    let sql = parsed_query.sql in
+                    let sql_before = String.sub sql ~pos:0 ~len:(string_index) in
+                    let sql_after =
+                      String.sub sql ~pos:string_index ~len:(String.length sql - string_index)
+                    in
+                    sql_before ^ subsql ^ sql_after
+                  | None -> parsed_query.sql
+                  in
+                  (match Pg_query.parse query_sql with
                   | Ok _ -> Ok ()
                   | Error msg ->
                       Error (Printf.sprintf "Syntax error in SQL: '%s'" msg) )
