@@ -15,16 +15,26 @@ exception Error of string
 let up_to_last xs = List.take xs (List.length xs - 1)
 
 (** Produces individual Caqti types from parsed parameters *)
-let caqti_type_of_param ~loc Query.{ typ = _, base_type; opt; _ } =
+let caqti_type_of_param ~loc Query.{ typ; opt; _ } =
   let base_expr =
-    match base_type with
-    | "string" -> [%expr string]
-    | "int" -> [%expr int]
-    | "bool" -> [%expr bool]
-    | "float" -> [%expr float]
-    (* TODO - support custom types *)
-    | other ->
-        raise (Error (Printf.sprintf "Base type '%s' not supported" other))
+    match typ with
+    | None, base_type ->
+      begin match base_type with
+      | "string" -> [%expr string]
+      | "octets" -> [%expr octets]
+      | "int" -> [%expr int]
+      | "int32" -> [%expr int32]
+      | "int64" -> [%expr int64]
+      | "bool" -> [%expr bool]
+      | "float" -> [%expr float]
+      | "pdate" -> [%expr pdate]
+      | "ptime" -> [%expr ptime]
+      | "ptime_span" -> [%expr ptime_span]
+      | other ->
+          raise (Error (Printf.sprintf "Base type '%s' not supported" other))
+      end
+    | Some module_name, typ ->
+      Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident module_name, typ)))
   in
   match opt with
   | true -> Buildef.(pexp_apply ~loc [%expr option] [ (Nolabel, base_expr) ])

@@ -1,3 +1,8 @@
+module type CUSTOM = sig
+  type t
+
+  val t : t Caqti_type.t
+end
 
 module Dynparam = struct
   type t = Pack : 'a Caqti_type.t * 'a -> t

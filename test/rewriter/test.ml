@@ -145,3 +145,27 @@ let collect_list =
   [%rapper
     get_many
       {sql| SELECT @string{id} from schema_migrations where version in (%list{%int{versions}})|sql}]
+
+module Suit : Ppx_rapper_runtime.CUSTOM = struct
+  type t = Clubs | Diamonds | Hearts | Spades
+
+  let t =
+    let encode = function
+      | Clubs -> Ok "c"
+      | Diamonds -> Ok "d"
+      | Hearts -> Ok "h"
+      | Spades -> Ok "s"
+    in
+    let decode = function
+      | "c" -> Ok Clubs
+      | "d" -> Ok Diamonds
+      | "h" -> Ok Hearts
+      | "s" -> Ok Spades
+      | _   -> Error "invalid suit"
+    in
+    Caqti_type.(custom ~encode ~decode string)
+end
+
+let get_cards =
+  [%rapper get_many
+   {sql| SELECT @int{id}, @Suit{suit} FROM cards WHERE suit <> %Suit{suit} |sql}]
