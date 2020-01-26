@@ -57,9 +57,92 @@ These correspond to `exec`, `find`, `find_opt` and `collect` in `Caqti_request`.
 Since 1-tuples don't exist, single values are used instead for that case.
 
 ### Parameters
+
 Syntax for input/output parameters is the same as ppx\_mysql: `%type{name}` for
-inputs and `@type{name}` for outputs. Currently supported base types are `int`, `string`, `float` and `bool`, plus options of
-those specified with `type?`. Lists and custom types from ppx\_mysql are not implemented yet.
+inputs and `@type{name}` for outputs. The set of currently supported base types
+overlaps with `Caqti`'s: `int`,`int32`,`int64`, `string`, `octets`, `float`,
+`bool`, `pdate`, `ptime` and `ptime_span` are supported. Option types can be
+specified by appending a `?` to the type specification, e.g.`int?{id}`.
+
+Lists and custom types are described below.
+
+### Custom types
+
+In the style of `mysql_ppx`, `ppx_rapper` also provides (limited) support for
+custom types via user-provided encoding and decoding functions. Consider the
+following example, adapted from the `mysql_ppx`
+[section](mysql_ppx_custom_types) for the same feature:
+
+[mysql_ppx_custom_types]: https://github.com/issuu/ppx_mysql/blob/master/README.md#custom-types-and-deserialization-functions
+
+```ocaml
+module Suit : Ppx_rapper_runtime.CUSTOM = struct
+  type t = Clubs | Diamonds | Hearts | Spades
+
+  let t =
+    let encode = function
+      | Clubs -> Ok "c"
+      | Diamonds -> Ok "d"
+      | Hearts -> Ok "h"
+      | Spades -> Ok "s"
+    in
+    let decode = function
+      | "c" -> Ok Clubs
+      | "d" -> Ok Diamonds
+      | "h" -> Ok Hearts
+      | "s" -> Ok Spades
+      | _   -> Error "invalid suit"
+    in
+    Caqti_type.(custom ~encode ~decode string)
+end
+
+let get_cards =
+  [%rapper get_many
+   {sql| SELECT @int{id}, @Suit{suit} FROM cards WHERE suit <> %Suit{suit} |sql}]
+```
+
+The syntax extension will recognize type specifications that start with an
+uppercase letter  -- `Suit` in our example -- and assume they refer to a module
+(available in the scope where the extension is evaluated) that implements the
+`Ppx_rapper_runtime.CUSTOM` signature, as listed below:
+
+```ocaml
+module type CUSTOM = sig
+  type t
+
+  val t : t Caqti_type.t
+end
+```
+
+_Note_: custom type support in this syntax extension is fairly limited and not
+meant to be used for e.g. composite types in the output. If you intend to get
+the return values for your query in a record, there's support for that with
+the `record_out` option (described [below](#options)).
+
+### List support for input parameters
+
+`ppx_rapper` has limited support for queries that take a list of values as
+input, through the special `%list{}` construct. An example is shown below:
+
+```ocaml
+let users =
+  [%rapper
+    get_opt
+      {sql|
+      SELECT @int{id}, @string{username}, @bool{following}, @string?{bio}
+      FROM users
+      WHERE following = %bool{following} and username IN (%list{%int{ids}})
+      |sql}]
+```
+
+Current limitations for `list` include:
+
+- Only one `list` input parameter is supported at this time;
+- Generated Caqti queries are dynamically generated, and thus `oneshot` as per
+  the [documentation](caqti-oneshot-docs). Turning this off is not currently
+  supported, but please let us know if you have a use case for it.
+
+[caqti-oneshot-docs]: https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/index.html#how-to-dynamically-assemble-queries-and-parameters
 
 ### Options
 If `record_in` or `record_out` are given as options like so:
