@@ -6,8 +6,6 @@ type param = {
   typ : string option * string;
   opt : bool;
   name : string;
-  of_string : string * string;
-  to_string : string * string
 }
 
 type list_params = {

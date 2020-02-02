@@ -296,3 +296,31 @@ let get_cards =
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query suit) in
   wrapped
+let all_types =
+  let query =
+    (let open Caqti_request in collect) ((let open Caqti_type in unit)
+      [@ocaml.warning "-33"])
+      ((let open Caqti_type in
+          tup2 string
+            (tup2 octets
+               (tup2 int
+                  (tup2 int32
+                     (tup2 int64
+                        (tup2 bool
+                           (tup2 float (tup2 pdate (tup2 ptime ptime_span)))))))))
+      [@ocaml.warning "-33"])
+      " SELECT id, payload, version,\n                some_int32, some_int64, added,\n                fl, date, time, span\n         FROM some_table " in
+  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
+    let f result =
+      let g
+        (id,
+         (payload,
+          (version,
+           (some_int32, (some_int64, (added, (fl, (date, (time, span)))))))))
+        =
+        (id, payload, version, some_int32, some_int64, added, fl, date, time,
+          span) in
+      let f = List.map g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
+    Lwt.map f (Db.collect_list query ()) in
+  wrapped

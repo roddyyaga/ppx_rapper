@@ -169,3 +169,12 @@ end
 let get_cards =
   [%rapper get_many
    {sql| SELECT @int{id}, @Suit{suit} FROM cards WHERE suit <> %Suit{suit} |sql}]
+
+let all_types =
+  [%rapper get_many
+   {sql| SELECT @string{id}, @octets{payload}, @int{version},
+                @int32{some_int32}, @int64{some_int64}, @bool{added},
+                @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span}
+         FROM some_table |sql}]
+
+

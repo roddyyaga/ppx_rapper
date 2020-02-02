@@ -19,8 +19,7 @@ type param =
   { typ : string option * string
   ; opt : bool
   ; name : string
-  ; of_string : string * string
-  ; to_string : string * string }
+  }
 
 type list_params =
   { subsql : string
@@ -62,22 +61,31 @@ let build_param spec opt name =
   let open Result in
   begin match spec with
   | "int" ->
-      Ok ((None, "int"), ("Ppx_mysql_runtime", "int_of_string"), ("Stdlib", "string_of_int"))
+      Ok (None, "int")
   | "int32" ->
-      Ok ((None, "int32"), ("Ppx_mysql_runtime", "int32_of_string"), ("Int32", "to_string"))
+      Ok (None, "int32")
   | "int64" ->
-      Ok ((None, "int64"), ("Ppx_mysql_runtime", "int64_of_string"), ("Int64", "to_string"))
+      Ok (None, "int64")
   | "bool" ->
-      Ok ((None, "bool"), ("Ppx_mysql_runtime", "bool_of_string"), ("Stdlib", "string_of_bool"))
+      Ok (None, "bool")
   | "string" ->
-      Ok ((None, "string"), ("Ppx_mysql_runtime", "string_of_string"), ("Ppx_mysql_runtime", "identity"))
-  | "float" -> Ok ((None, "float"), ("this", "is"), ("not", "used"))
+      Ok (None, "string")
+  | "octets" ->
+      Ok (None, "octets")
+  | "pdate" ->
+      Ok (None, "pdate")
+  | "ptime" ->
+      Ok (None, "ptime")
+  | "ptime_span" ->
+      Ok (None, "ptime_span")
+  | "float" ->
+      Ok (None, "float")
   | module_name when String.length module_name > 0 && module_name.[0] >= 'A' && module_name.[0] <= 'Z' ->
-      Ok ((Some module_name, "t"), (module_name, "of_mysql"), (module_name, "to_mysql"))
+      Ok (Some module_name, "t")
   | spec ->
       Error (`Unknown_type_spec spec)
-  end >>= fun (typ, of_string, to_string) ->
-  Ok {typ; opt = (opt = "?"); name; of_string; to_string}
+  end >>= fun typ ->
+  Ok {typ; opt = (opt = "?"); name}
 }
 
 let escape = '\\'
