@@ -2,7 +2,7 @@
 
 (name ppx_rapper)
 
-(version 1.0.0)
+(version 1.0.1)
 
 (source
  (github roddyyaga/ppx_rapper))
@@ -27,4 +27,5 @@
   pg_query
   ppxlib
   base
-  caqti))
+  caqti
+  caqti-lwt))
