@@ -146,8 +146,8 @@ let find_body_factory ~loc input_nested_tuple_pattern output_expression
   [%expr
     let f result =
       match result with
-      | Ok [%p input_nested_tuple_pattern] -> [%e output_expression]
-      | Error e -> e
+      | Ok [%p input_nested_tuple_pattern] -> Ok [%e output_expression]
+      | Error e -> Error e
     in
     Lwt.map f
       ([%e connection_function_expr] query [%e input_nested_tuple_expression])]

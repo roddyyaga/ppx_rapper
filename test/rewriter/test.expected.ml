@@ -47,8 +47,8 @@ let many_arg_get_one =
     let f result =
       match result with
       | Ok (id, (username, (bio, is_married))) ->
-          (id, username, bio, is_married)
-      | Error e -> e in
+          Ok (id, username, bio, is_married)
+      | Error e -> Error e in
     Lwt.map f (Db.find query (username, min_id)) in
   wrapped
 let single_arg_get_one =
@@ -60,8 +60,8 @@ let single_arg_get_one =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
     let f result =
       match result with
-      | Ok (id, username) -> { id; username }
-      | Error e -> e in
+      | Ok (id, username) -> Ok { id; username }
+      | Error e -> Error e in
     Lwt.map f (Db.find query username) in
   wrapped
 let no_arg_get_one =
@@ -74,8 +74,8 @@ let no_arg_get_one =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
     let f result =
       match result with
-      | Ok (id, (username, email)) -> { id; username; email }
-      | Error e -> e in
+      | Ok (id, (username, email)) -> Ok { id; username; email }
+      | Error e -> Error e in
     Lwt.map f (Db.find query ()) in
   wrapped
 let many_arg_get_one_repeated_arg =
@@ -88,7 +88,7 @@ let many_arg_get_one_repeated_arg =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~id  ~username 
     =
     let f result =
-      match result with | Ok username -> { username } | Error e -> e in
+      match result with | Ok username -> Ok { username } | Error e -> Error e in
     Lwt.map f (Db.find query (id, (username, id))) in
   wrapped
 let many_arg_get_opt =
