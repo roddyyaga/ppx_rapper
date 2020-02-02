@@ -1,0 +1,11 @@
+(library
+(name test_compiles)
+(modules test_compiles)
+(libraries ppx_rapper.runtime)
+(preprocess (pps ppx_rapper)))
+
+(library
+(name test_compiles_base)
+(modules test_compiles_base)
+(libraries base ppx_rapper.runtime)
+(preprocess (pps ppx_rapper)))

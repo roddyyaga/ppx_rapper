@@ -73,12 +73,12 @@ let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
            Lwt_result.fail Caqti_error.(
              encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit (Msg "Empty list"))
          | elems ->
-             let subsqls = List.map (fun _ -> [%e subsql_expr]) elems in
-             let patch = String.concat ", " subsqls in
+             let subsqls = Stdlib.List.map (fun _ -> [%e subsql_expr]) elems in
+             let patch = Stdlib.String.concat ", " subsqls in
              let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
              let open Ppx_rapper_runtime in
              let Dynparam.Pack (packed_list_type, [%p Codegen.ppat_of_param ~loc list_param]) =
-               List.fold_left
+               Stdlib.List.fold_left
                  (fun pack item ->
                    Dynparam.add Caqti_type.([%e Codegen.make_caqti_type_tup ~loc [list_param]]) item pack)
                  Dynparam.empty

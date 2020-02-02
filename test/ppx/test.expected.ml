@@ -146,7 +146,7 @@ let many_arg_get_many =
     ~min_id  =
     let f result =
       let g (id, username) = { id; username } in
-      let f = List.map g in
+      let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query (username, min_id)) in
   wrapped
@@ -159,7 +159,7 @@ let single_arg_get_many =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
     let f result =
       let g (id, username) = (id, username) in
-      let f = List.map g in
+      let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query username) in
   wrapped
@@ -172,7 +172,7 @@ let no_arg_get_many =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
     let f result =
       let g (id, username) = { id; username } in
-      let f = List.map g in
+      let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query ()) in
   wrapped
@@ -205,14 +205,14 @@ let list =
              encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
                (Msg "Empty list"))
     | elems ->
-        let subsqls = List.map (fun _ -> "?") elems in
-        let patch = String.concat ", " subsqls in
+        let subsqls = Stdlib.List.map (fun _ -> "?") elems in
+        let patch = Stdlib.String.concat ", " subsqls in
         let sql =
           "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE following = ? and username IN ("
             ^ (patch ^ ")\n      ") in
         let open Ppx_rapper_runtime in
           let Dynparam.Pack (packed_list_type, ids) =
-            List.fold_left
+            Stdlib.List.fold_left
               (fun pack ->
                  fun item ->
                    Dynparam.add (let open Caqti_type in int) item pack)
@@ -242,14 +242,14 @@ let collect_list =
              encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
                (Msg "Empty list"))
     | elems ->
-        let subsqls = List.map (fun _ -> "?") elems in
-        let patch = String.concat ", " subsqls in
+        let subsqls = Stdlib.List.map (fun _ -> "?") elems in
+        let patch = Stdlib.String.concat ", " subsqls in
         let sql =
           " SELECT id from schema_migrations where version in (" ^
             (patch ^ ")") in
         let open Ppx_rapper_runtime in
           let Dynparam.Pack (packed_list_type, versions) =
-            List.fold_left
+            Stdlib.List.fold_left
               (fun pack ->
                  fun item ->
                    Dynparam.add (let open Caqti_type in int) item pack)
@@ -291,7 +291,7 @@ let get_cards =
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~suit  =
     let f result =
       let g (id, suit) = (id, suit) in
-      let f = List.map g in
+      let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query suit) in
   wrapped
@@ -319,7 +319,7 @@ let all_types =
         =
         (id, payload, version, some_int32, some_int64, added, fl, date, time,
           span) in
-      let f = List.map g in
+      let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query ()) in
   wrapped

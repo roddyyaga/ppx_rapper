@@ -174,7 +174,7 @@ let function_body_find_opt ~loc =
     [%expr fun f x -> match x with Some x -> Some (f x) | None -> None]
 
 (** Generates the function body for a [collect_list] function ([get_many] statement) *)
-let function_body_collect ~loc = function_body_map ~loc [%expr List.map]
+let function_body_collect ~loc = function_body_map ~loc [%expr Stdlib.List.map]
 
 (** Generates code like [fun ~x ~y ~z -> Db.some_function query (x, (y, z))]. *)
 let query_function ~loc ?(body_fn = fun x -> x) function_body_factory
