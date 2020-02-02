@@ -1,3 +1,6 @@
+# 1.0.2
+- Bugfix to allow use when Base is open
+
 # 1.0.1
 - Corrected dependencies
 
