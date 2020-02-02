@@ -1,4 +1,3 @@
-open Core
 type a = {
   username: string }
 type b = {
