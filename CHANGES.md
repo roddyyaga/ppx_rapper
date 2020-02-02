@@ -1,3 +1,6 @@
+# 1.0.1
+- Corrected dependencies
+
 # 1.0.0
 - Added support for lists, new types (octets, int32, int64, pdate, ptime, ptime\_span); added runtime library (#1, @anmonteiro)
 - Added examples
