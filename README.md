@@ -1,11 +1,20 @@
 # ppx_rapper
-
 An extension that allows named parameters in SQL with types inferred, and syntax checking of SQL as a preprocessing
 step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti/PostgreSQL/Lwt. The name comes the idea of
 [Dapper](https://github.com/StackExchange/Dapper) but with Records.
 
-## Usage
-### Example
+## Installation
+You can install `ppx_rapper` with opam:
+```
+$ opam install ppx_rapper
+```
+To use in a project built with dune, add these lines to the relevant stanzas:
+```
+(libraries ppx_rapper.runtime)
+(preprocess (pps ppx_rapper))
+```
+
+## Example usage
 ```ocaml
 let my_query =
   [%rapper
@@ -45,7 +54,9 @@ let my_query =
   wrapped
 ```
 
-### Query functions
+For further examples, see the `examples` directory.
+
+## Query functions
 Query functions are
 - `execute` for queries that return 0 rows, represented as `()`
 - `get_one` for queries that return 1 rows, represented as a tuple/record
@@ -56,7 +67,7 @@ These correspond to `exec`, `find`, `find_opt` and `collect` in `Caqti_request`.
 
 Since 1-tuples don't exist, single values are used instead for that case.
 
-### Parameters
+## Parameters
 
 Syntax for input/output parameters is the same as ppx\_mysql: `%type{name}` for
 inputs and `@type{name}` for outputs. The set of currently supported base types
@@ -64,16 +75,14 @@ overlaps with `Caqti`'s: `int`,`int32`,`int64`, `string`, `octets`, `float`,
 `bool`, `pdate`, `ptime` and `ptime_span` are supported. Option types can be
 specified by appending a `?` to the type specification, e.g.`int?{id}`.
 
-Lists and custom types are described below.
-
 ### Custom types
 
-In the style of `mysql_ppx`, `ppx_rapper` also provides (limited) support for
+In the style of `ppx_mysql`, `ppx_rapper` also provides (limited) support for
 custom types via user-provided encoding and decoding functions. Consider the
 following example, adapted from the `mysql_ppx`
-[section](mysql_ppx_custom_types) for the same feature:
+[section](ppx_mysql_custom_types) for the same feature:
 
-[mysql_ppx_custom_types]: https://github.com/issuu/ppx_mysql/blob/master/README.md#custom-types-and-deserialization-functions
+[ppx_mysql_custom_types]: https://github.com/issuu/ppx_mysql/blob/master/README.md#custom-types-and-deserialization-functions
 
 ```ocaml
 module Suit : Ppx_rapper_runtime.CUSTOM = struct
@@ -144,7 +153,7 @@ Current limitations for `list` include:
 
 [caqti-oneshot-docs]: https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/index.html#how-to-dynamically-assemble-queries-and-parameters
 
-### Options
+## Extension options
 If `record_in` or `record_out` are given as options like so:
 ```ocaml
 let my_query =
@@ -162,9 +171,5 @@ then the input and/or output of the query will be records. For the example above
 By default, queries are syntax checked using [pg_query-ocaml](https://github.com/roddyyaga/pg_query-ocaml) and the
 extension will error if syntax checking fails. If this gives a false positive error for a query it can be suppressed using the `syntax_off` option.
 
-
-## Requirements
-The runtime requirements of Rapper are base, lwt, caqti, caqti-lwt and caqti-driver-postgresql.
-
 ## Contributions
-Any contributions would be very welcome!
+Contributions are very welcome!
