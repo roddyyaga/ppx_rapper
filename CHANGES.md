@@ -1,3 +1,6 @@
+# 1.1.0
+- Bugfixes to make lists work with other parameters
+
 # 1.0.2
 - Bugfix to allow use when Base is open
 
