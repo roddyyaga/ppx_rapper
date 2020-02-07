@@ -40,17 +40,24 @@ let caqti_type_of_param ~loc Query.{ typ; opt; _ } =
   | true -> Buildef.(pexp_apply ~loc [%expr option] [ (Nolabel, base_expr) ])
   | false -> base_expr
 
+let caqti_type_tup_of_expressions ~loc expressions =
+  match List.length expressions with
+  | 0 -> [%expr unit]
+  | _ ->
+      let f elem_type_expr apply_expr =
+        [%expr tup2 [%e elem_type_expr] [%e apply_expr]]
+      in
+      List.fold_right ~f
+        ~init:(List.last_exn expressions)
+        (up_to_last expressions)
+
 (** Makes Caqti type specifications like [string & option int & bool] *)
 let make_caqti_type_tup ~loc params =
   match List.length params with
   | 0 -> [%expr unit]
   | _ ->
       let type_exprs = List.map ~f:(caqti_type_of_param ~loc) params in
-      let f elem_type_expr apply_expr =
-        [%expr tup2 [%e elem_type_expr] [%e apply_expr]]
-      in
-      List.fold_right ~f ~init:(List.last_exn type_exprs)
-        (up_to_last type_exprs)
+      caqti_type_tup_of_expressions ~loc type_exprs
 
 let lident_of_param ~loc param = Loc.make ~loc (Lident param.Query.name)
 

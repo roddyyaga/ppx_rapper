@@ -50,18 +50,19 @@ let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
       }
     in
     let caqti_input_type =
+      let exprs_before = List.map ~f:(Codegen.caqti_type_of_param ~loc) params_before in
+      let exprs_after = List.map ~f:(Codegen.caqti_type_of_param ~loc) params_after in
       match List.is_empty params_before, List.is_empty params_after with
       | true, true -> [%expr packed_list_type]
       | true, false ->
-        let params_before = Codegen.make_caqti_type_tup ~loc params_before in
-        [%expr Caqti_type.(tup2 [%e params_before] packed_list_type)]
+        let expression = Codegen.caqti_type_tup_of_expressions ~loc ([%expr packed_list_type] :: exprs_after) in
+        [%expr Caqti_type.([%e expression])]
       | false, true ->
-        let params_before = Codegen.make_caqti_type_tup ~loc params_before in
-        [%expr Caqti_type.(tup2 [%e params_before] packed_list_type)]
+        let expression = Codegen.caqti_type_tup_of_expressions ~loc (exprs_before @ [[%expr packed_list_type]]) in
+        [%expr Caqti_type.([%e expression])]
       | false, false ->
-        let params_before = Codegen.make_caqti_type_tup ~loc params_before in
-        let params_after = Codegen.make_caqti_type_tup ~loc params_after in
-        [%expr Caqti_type.(tup3 [%e params_before] packed_list_type [%e params_after])]
+        let expression = Codegen.caqti_type_tup_of_expressions ~loc (exprs_before @ [[%expr packed_list_type]] @ exprs_after) in
+        [%expr Caqti_type.([%e expression])]
     in
     let outputs_caqti_type = Codegen.make_caqti_type_tup ~loc out_params in
     let list_param = List.hd_exn params in
@@ -80,7 +81,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
              let Dynparam.Pack (packed_list_type, [%p Codegen.ppat_of_param ~loc list_param]) =
                Stdlib.List.fold_left
                  (fun pack item ->
-                   Dynparam.add Caqti_type.([%e Codegen.make_caqti_type_tup ~loc [list_param]]) item pack)
+                     Dynparam.add (Caqti_type.([%e Codegen.make_caqti_type_tup ~loc [list_param]]) [@ocaml.warning "-33"]) item pack)
                  Dynparam.empty
                  elems
              in

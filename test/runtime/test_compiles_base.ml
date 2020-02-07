@@ -90,3 +90,45 @@ let all_types =
                 @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span}
          FROM some_table |sql}
       record_out]
+
+let e =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{id}
+      FROM users
+      WHERE id <> %int{id}
+        AND blah IN (%list{%Suit{blahs}})
+      |sql}]
+
+let f =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{id}
+      FROM users
+      WHERE id <> %int{id}
+        AND %int{seriousness} = 5
+        AND blah IN (%list{%int{blahs}})
+        AND %string{x} = 'x'
+      |sql}]
+
+let h =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{id}
+      FROM users
+      WHERE blah in (%list{%int{blahs}})
+      |sql}]
+
+let i =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{id}
+      FROM users
+      WHERE blah in (%list{%int{blahs}})
+        AND %int{x} = x
+        AND %int{y} = y
+      |sql}]

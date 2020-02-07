@@ -2,7 +2,7 @@
 
 (name ppx_rapper)
 
-(version 1.0.2)
+(version 1.1.0)
 
 (source
  (github roddyyaga/ppx_rapper))
@@ -23,7 +23,8 @@
  (depends
   (ocaml
    (>= 4.07))
-  dune
+  (dune
+   (>= 2.0.1))
   pg_query
   ppxlib
   base

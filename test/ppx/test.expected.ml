@@ -215,8 +215,8 @@ let list =
             Stdlib.List.fold_left
               (fun pack ->
                  fun item ->
-                   Dynparam.add (let open Caqti_type in int) item pack)
-              Dynparam.empty elems in
+                   Dynparam.add ((let open Caqti_type in int)
+                     [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
             (let open Caqti_request in find_opt) ~oneshot:true
               (let open Caqti_type in tup2 bool packed_list_type)
@@ -252,8 +252,8 @@ let collect_list =
             Stdlib.List.fold_left
               (fun pack ->
                  fun item ->
-                   Dynparam.add (let open Caqti_type in int) item pack)
-              Dynparam.empty elems in
+                   Dynparam.add ((let open Caqti_type in int)
+                     [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
             (let open Caqti_request in collect) ~oneshot:true
               packed_list_type ((let open Caqti_type in string)
