@@ -184,5 +184,5 @@ end
 let get_cards =
   [%rapper
     get_many
-      {sql| SELECT @int{id}, @Nested.Suit{suit} FROM cards WHERE suit <> %Suit{suit} |sql}]
+      {sql| SELECT @int{id}, @Nested.Suit{suit} FROM cards WHERE suit <> %Nested.Suit{suit} |sql}]
 

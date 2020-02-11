@@ -326,8 +326,8 @@ let all_types =
 module Nested = struct module Suit = Suit end
 let get_cards =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in Suit.t)
-      [@ocaml.warning "-33"])
+    (let open Caqti_request in collect)
+      ((let open Caqti_type in Nested.Suit.t)[@ocaml.warning "-33"])
       ((let open Caqti_type in tup2 int Nested.Suit.t)[@ocaml.warning "-33"])
       " SELECT id, suit FROM cards WHERE suit <> ? " in
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~suit  =
