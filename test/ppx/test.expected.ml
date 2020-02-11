@@ -323,3 +323,17 @@ let all_types =
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query ()) in
   wrapped
+module Nested = struct module Suit = Suit end
+let get_cards =
+  let query =
+    (let open Caqti_request in collect) ((let open Caqti_type in Suit.t)
+      [@ocaml.warning "-33"])
+      ((let open Caqti_type in tup2 int Nested.Suit.t)[@ocaml.warning "-33"])
+      " SELECT id, suit FROM cards WHERE suit <> ? " in
+  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~suit  =
+    let f result =
+      let g (id, suit) = (id, suit) in
+      let f = Stdlib.List.map g in
+      match result with | Ok x -> Ok (f x) | Error e -> Error e in
+    Lwt.map f (Db.collect_list query suit) in
+  wrapped

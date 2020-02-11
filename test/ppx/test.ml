@@ -176,3 +176,13 @@ let all_types =
                 @int32{some_int32}, @int64{some_int64}, @bool{added},
                 @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span}
          FROM some_table |sql}]
+
+module Nested = struct
+  module Suit = Suit
+end
+
+let get_cards =
+  [%rapper
+    get_many
+      {sql| SELECT @int{id}, @Nested.Suit{suit} FROM cards WHERE suit <> %Suit{suit} |sql}]
+
