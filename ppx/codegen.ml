@@ -34,7 +34,7 @@ let caqti_type_of_param ~loc Query.{ typ; opt; _ } =
             raise (Error (Printf.sprintf "Base type '%s' not supported" other))
         )
     | Some module_name, typ ->
-        Buildef.pexp_ident ~loc (Loc.make ~loc (Ldot (Lident module_name, typ)))
+        Buildef.pexp_ident ~loc (Loc.make ~loc (Longident.parse (module_name ^  "." ^ typ)))
   in
   match opt with
   | true -> Buildef.(pexp_apply ~loc [%expr option] [ (Nolabel, base_expr) ])

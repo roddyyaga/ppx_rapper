@@ -96,8 +96,10 @@ let digit = ['0'-'9']
 let lower = ['a'-'z']
 let upper = ['A'-'Z']
 let underscore = '_'
+let dot = '.'
 let ident = (lower | underscore) (lower | upper | underscore | digit)*
-let spec = (lower | upper | underscore | digit)+
+let spec' = (lower | upper | underscore | digit)
+let spec = (spec' (dot spec')?)+
 
 rule main_parser buf acc_in acc_out list_status = parse
   | quot as delim

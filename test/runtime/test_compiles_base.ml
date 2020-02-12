@@ -132,3 +132,19 @@ let i =
         AND %int{x} = x
         AND %int{y} = y
       |sql}]
+
+module Double_nested = struct
+  module Nested = struct
+    module Suit = Suit
+  end
+end
+
+let nested_modules =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{id}, @Double_nested.Nested.Suit{suit}
+      FROM cards
+      WHERE suit <> %Double_nested.Nested.Suit{suit}
+      AND username IN (%list{%Double_nested.Nested.Suit{suits}})
+      |sql}]
