@@ -1,3 +1,6 @@
+# 1.1.1
+- Added support for nested modules for custom types (#2, @anmonteiro)
+
 # 1.1.0
 - Bugfixes to make lists work with other parameters
 
