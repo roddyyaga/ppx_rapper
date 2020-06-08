@@ -1,6 +1,6 @@
 # ppx_rapper
 An extension that allows named parameters in SQL with types inferred, and syntax checking of SQL as a preprocessing
-step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti/PostgreSQL/Lwt. The name comes the idea of
+step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti/PostgreSQL/Lwt. The name comes from the idea of
 [Dapper](https://github.com/StackExchange/Dapper) but with Records.
 
 ## Installation
