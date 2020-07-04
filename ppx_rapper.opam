@@ -16,6 +16,7 @@ depends: [
   "base"
   "caqti"
   "caqti-lwt"
+  "caqti-type-calendar" {with-test}
 ]
 build: [
   ["dune" "subst"] {pinned}

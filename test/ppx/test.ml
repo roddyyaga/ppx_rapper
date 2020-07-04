@@ -174,7 +174,8 @@ let all_types =
     get_many
       {sql| SELECT @string{id}, @octets{payload}, @int{version},
                 @int32{some_int32}, @int64{some_int64}, @bool{added},
-                @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span}
+                @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span},
+                @cdate{cd}, @ctime{ct}
          FROM some_table |sql}]
 
 module Nested = struct

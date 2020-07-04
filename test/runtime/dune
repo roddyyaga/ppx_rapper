@@ -7,5 +7,5 @@
 (library
 (name test_compiles_base)
 (modules test_compiles_base)
-(libraries base ppx_rapper.runtime)
+(libraries base ppx_rapper.runtime caqti-type-calendar)
 (preprocess (pps ppx_rapper)))

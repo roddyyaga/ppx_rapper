@@ -306,19 +306,25 @@ let all_types =
                   (tup2 int32
                      (tup2 int64
                         (tup2 bool
-                           (tup2 float (tup2 pdate (tup2 ptime ptime_span)))))))))
+                           (tup2 float
+                              (tup2 pdate
+                                 (tup2 ptime
+                                    (tup2 ptime_span
+                                       (tup2 Caqti_type_calendar.cdate
+                                          Caqti_type_calendar.ctime)))))))))))
       [@ocaml.warning "-33"])
-      " SELECT id, payload, version,\n                some_int32, some_int64, added,\n                fl, date, time, span\n         FROM some_table " in
+      " SELECT id, payload, version,\n                some_int32, some_int64, added,\n                fl, date, time, span,\n                cd, ct\n         FROM some_table " in
   let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
     let f result =
       let g
         (id,
          (payload,
           (version,
-           (some_int32, (some_int64, (added, (fl, (date, (time, span)))))))))
+           (some_int32,
+            (some_int64, (added, (fl, (date, (time, (span, (cd, ct)))))))))))
         =
         (id, payload, version, some_int32, some_int64, added, fl, date, time,
-          span) in
+          span, cd, ct) in
       let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Lwt.map f (Db.collect_list query ()) in
