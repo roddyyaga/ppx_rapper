@@ -72,8 +72,11 @@ Since 1-tuples don't exist, single values are used instead for that case.
 Syntax for input/output parameters is the same as ppx\_mysql: `%type{name}` for
 inputs and `@type{name}` for outputs. The set of currently supported base types
 overlaps with `Caqti`'s: `int`,`int32`,`int64`, `string`, `octets`, `float`,
-`bool`, `pdate`, `ptime` and `ptime_span` are supported. Option types can be
-specified by appending a `?` to the type specification, e.g.`int?{id}`.
+`bool`, `pdate`, `ptime` and `ptime_span` are supported, in addition to `cdate`
+and `ctime`, provided by
+[caqti-type-calendar](https://paurkedal.github.io/ocaml-caqti/caqti-type-calendar/Caqti_type_calendar/index.html).
+Option types can be specified by appending a `?` to the type specification,
+e.g.`int?{id}`.
 
 ### Custom types
 
