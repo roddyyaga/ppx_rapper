@@ -1,3 +1,6 @@
+# 1.2.0
+- Added cdate and ctype from Caqti\_type\_calendar (#3, @anmonteiro)
+
 # 1.1.1
 - Added support for nested modules for custom types (#2, @anmonteiro)
 

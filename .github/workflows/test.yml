@@ -19,6 +19,6 @@ jobs:
 
     - run: opam pin add ppx_rapper --no-action .
     - run: OPAMSOLVERTIMEOUT=3600 opam depext -yt ppx_rapper
-    - run: OPAMSOLVERTIMEOUT=3600 opam install -t . --deps-only --with-test
+    - run: OPAMSOLVERTIMEOUT=3600 opam install -t . --deps-only
     - run: opam exec -- dune build
     - run: opam exec -- dune runtest
