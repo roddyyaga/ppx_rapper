@@ -29,4 +29,5 @@
   ppxlib
   base
   caqti
-  caqti-lwt))
+  caqti-lwt
+  (caqti-type-calendar :with-test)))

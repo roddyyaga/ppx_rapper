@@ -81,7 +81,7 @@ type all_types_output = {
   time: Ptime.t;
   span: Ptime.span;
   cd: CalendarLib.Date.t;
-  ct: CalendarLib.Calendar.t
+  ct: CalendarLib.Calendar.t;
 }
 
 let all_types =
