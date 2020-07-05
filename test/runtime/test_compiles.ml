@@ -37,7 +37,11 @@ type list_in = { versions: int list }
 let collect_list =
   [%rapper
     get_many
-      {sql| SELECT @string{id} from schema_migrations where version in (%list{%int{versions}})|sql}
+      {sql|
+      SELECT @string{id}
+      FROM schema_migrations
+      WHERE version in (%list{%int{versions}})
+      |sql}
       record_in]
 
 (* Using custom types *)
@@ -85,11 +89,13 @@ type all_types_output = {
 let all_types =
   [%rapper
     get_many
-      {sql| SELECT @string{id}, @octets{payload}, @int{version},
+      {sql|
+      SELECT @string{id}, @octets{payload}, @int{version},
                 @int32{some_int32}, @int64{some_int64}, @bool{added},
                 @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span},
                 @cdate{cd}, @ctime{ct}
-         FROM some_table |sql}
+      FROM some_table
+      |sql}
       record_out]
 
 let e =

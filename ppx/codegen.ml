@@ -34,7 +34,9 @@ let caqti_type_of_param ~loc Query.{ typ; opt; _ } =
             raise (Error (Printf.sprintf "Base type '%s' not supported" other))
         )
     | Some module_name, typ ->
-        Buildef.pexp_ident ~loc (Loc.make ~loc (Longident.parse (module_name ^  "." ^ typ)))
+        (* This case covers [cdate] and [ctime] *)
+        Buildef.pexp_ident ~loc
+          (Loc.make ~loc (Longident.parse (module_name ^ "." ^ typ)))
   in
   match opt with
   | true -> Buildef.(pexp_apply ~loc [%expr option] [ (Nolabel, base_expr) ])
@@ -206,16 +208,21 @@ let query_function ~loc ?(body_fn = fun x -> x) function_body_factory
              "'record_in' should not be set when there are no input parameters")
       else
         let input_record_pattern = record_pattern ~loc deduped_in_params in
-        [%expr fun [%p input_record_pattern] -> [%e body]]
+        [%expr
+          fun [%p input_record_pattern] (module Db : Caqti_lwt.CONNECTION) ->
+            [%e body]]
   | false ->
-      if List.is_empty in_params then [%expr fun () -> [%e body]]
+      if List.is_empty in_params then
+        [%expr fun () (module Db : Caqti_lwt.CONNECTION) -> [%e body]]
       else
         let f in_param body_so_far =
           let name = in_param.Query.name in
           let pattern = Buildef.ppat_var ~loc (Loc.make ~loc name) in
           Buildef.pexp_fun ~loc (Labelled name) None pattern body_so_far
         in
-        List.fold_right ~f ~init:body deduped_in_params
+        List.fold_right ~f
+          ~init:[%expr fun (module Db : Caqti_lwt.CONNECTION) -> [%e body]]
+          deduped_in_params
 
 let exec_function ~body_fn ~loc =
   query_function ~loc ~body_fn function_body_exec [%expr Db.exec]

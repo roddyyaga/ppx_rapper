@@ -6,7 +6,9 @@ module Buildef = Ast_builder.Default
 let parse_args args =
   let allowed_args = [ "record_in"; "record_out"; "syntax_off" ] in
   match
-    List.find ~f:(fun a -> not (List.mem ~equal:String.equal allowed_args a)) args
+    List.find
+      ~f:(fun a -> not (List.mem ~equal:String.equal allowed_args a))
+      args
   with
   | Some unknown ->
       Error (Printf.sprintf "Unknown rapper argument '%s'" unknown)
@@ -32,133 +34,161 @@ let component_expressions ~loc parsed_query =
 let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
   let { Query.sql; in_params; out_params; list_params } = parsed_query in
   match list_params with
-  | Some {subsql; string_index; param_index; params} ->
-    assert (List.length params = 1);
-    let subsql_expr = Buildef.estring ~loc subsql in
-    let sql_before = Buildef.estring ~loc @@ String.sub sql ~pos:0 ~len:string_index in
-    let sql_after =
-      Buildef.estring ~loc
-      @@ String.sub sql ~pos:string_index ~len:(String.length sql - string_index)
-    in
-    let params_before, params_after = List.split_n in_params param_index in
-    let expression_contents =
-      { Codegen
-      . in_params = params_before @ params @ params_after
-      ; out_params
-      ; record_in
-      ; record_out
-      }
-    in
-    let caqti_input_type =
-      let exprs_before = List.map ~f:(Codegen.caqti_type_of_param ~loc) params_before in
-      let exprs_after = List.map ~f:(Codegen.caqti_type_of_param ~loc) params_after in
-      match List.is_empty params_before, List.is_empty params_after with
-      | true, true -> [%expr packed_list_type]
-      | true, false ->
-        let expression = Codegen.caqti_type_tup_of_expressions ~loc ([%expr packed_list_type] :: exprs_after) in
-        [%expr Caqti_type.([%e expression])]
-      | false, true ->
-        let expression = Codegen.caqti_type_tup_of_expressions ~loc (exprs_before @ [[%expr packed_list_type]]) in
-        [%expr Caqti_type.([%e expression])]
-      | false, false ->
-        let expression = Codegen.caqti_type_tup_of_expressions ~loc (exprs_before @ [[%expr packed_list_type]] @ exprs_after) in
-        [%expr Caqti_type.([%e expression])]
-    in
-    let outputs_caqti_type = Codegen.make_caqti_type_tup ~loc out_params in
-    let list_param = List.hd_exn params in
-    let make_generic make_function query_expr =
-      let body_fn body =
-       [%expr
-         match [%e Buildef.pexp_ident ~loc (Codegen.lident_of_param ~loc list_param) ] with
-         | [] ->
-           Lwt_result.fail Caqti_error.(
-             encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit (Msg "Empty list"))
-         | elems ->
-             let subsqls = Stdlib.List.map (fun _ -> [%e subsql_expr]) elems in
-             let patch = Stdlib.String.concat ", " subsqls in
-             let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
-             let open Ppx_rapper_runtime in
-             let Dynparam.Pack (packed_list_type, [%p Codegen.ppat_of_param ~loc list_param]) =
-               Stdlib.List.fold_left
-                 (fun pack item ->
-                     Dynparam.add (Caqti_type.([%e Codegen.make_caqti_type_tup ~loc [list_param]]) [@ocaml.warning "-33"]) item pack)
-                 Dynparam.empty
-                 elems
-             in
-             let query = [%e query_expr] in
-             [%e body] ]
+  | Some { subsql; string_index; param_index; params } ->
+      assert (List.length params = 1);
+      let subsql_expr = Buildef.estring ~loc subsql in
+      let sql_before =
+        Buildef.estring ~loc @@ String.sub sql ~pos:0 ~len:string_index
       in
-      [%expr
-        let wrapped (module Db : Caqti_lwt.CONNECTION) =
-          [%e make_function ~body_fn ~loc expression_contents]
-        in
-        wrapped]
-    in
-    let expand_get caqti_request_function_expr make_function =
-      try
-        Ok (make_generic make_function
-             [%expr
-               Caqti_request.([%e caqti_request_function_expr])
-               ~oneshot:true
-               ([%e caqti_input_type] [@ocaml.warning "-33"])
-               (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
-               sql ])
-      with Codegen.Error s -> Error s
-    in
-
-    let expand_exec caqti_request_function_expr make_function =
-      try
-        Ok (make_generic make_function
-             [%expr
-               Caqti_request.([%e caqti_request_function_expr])
-               [%e caqti_input_type]
-               sql ])
-      with Codegen.Error s -> Error s
-    in
-    (expand_get, expand_exec)
-
-  | None ->
-    let inputs_caqti_type, outputs_caqti_type, parsed_sql =
-      component_expressions ~loc parsed_query
-    in
-    let expression_contents =
-      Codegen.
+      let sql_after =
+        Buildef.estring ~loc
+        @@ String.sub sql ~pos:string_index
+             ~len:(String.length sql - string_index)
+      in
+      let params_before, params_after = List.split_n in_params param_index in
+      let expression_contents =
         {
-          in_params = parsed_query.in_params;
-          out_params = parsed_query.out_params;
+          Codegen.in_params = params_before @ params @ params_after;
+          out_params;
           record_in;
           record_out;
         }
-    in
-    let make_generic make_function query_expr =
-      [%expr
-        let query = [%e query_expr] in
-        let wrapped (module Db : Caqti_lwt.CONNECTION) =
-          [%e make_function ~body_fn:(fun x -> x) ~loc expression_contents]
+      in
+      let caqti_input_type =
+        let exprs_before =
+          List.map ~f:(Codegen.caqti_type_of_param ~loc) params_before
         in
-        wrapped]
-    in
-    let expand_get caqti_request_function_expr make_function =
-      try
-        Ok (make_generic make_function
-            [%expr
-              Caqti_request.([%e caqti_request_function_expr])
-                (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
-                (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
-                [%e parsed_sql]])
-      with Codegen.Error s -> Error s
-    in
+        let exprs_after =
+          List.map ~f:(Codegen.caqti_type_of_param ~loc) params_after
+        in
+        match (List.is_empty params_before, List.is_empty params_after) with
+        | true, true -> [%expr packed_list_type]
+        | true, false ->
+            let expression =
+              Codegen.caqti_type_tup_of_expressions ~loc
+                ([%expr packed_list_type] :: exprs_after)
+            in
+            [%expr Caqti_type.([%e expression])]
+        | false, true ->
+            let expression =
+              Codegen.caqti_type_tup_of_expressions ~loc
+                (exprs_before @ [ [%expr packed_list_type] ])
+            in
+            [%expr Caqti_type.([%e expression])]
+        | false, false ->
+            let expression =
+              Codegen.caqti_type_tup_of_expressions ~loc
+                (exprs_before @ [ [%expr packed_list_type] ] @ exprs_after)
+            in
+            [%expr Caqti_type.([%e expression])]
+      in
+      let outputs_caqti_type = Codegen.make_caqti_type_tup ~loc out_params in
+      let list_param = List.hd_exn params in
+      let make_generic make_function query_expr =
+        let body_fn body =
+          [%expr
+            match
+              [%e
+                Buildef.pexp_ident ~loc
+                  (Codegen.lident_of_param ~loc list_param)]
+            with
+            | [] ->
+                Lwt_result.fail
+                  Caqti_error.(
+                    encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
+                      (Msg "Empty list"))
+            | elems ->
+                let subsqls =
+                  Stdlib.List.map (fun _ -> [%e subsql_expr]) elems
+                in
+                let patch = Stdlib.String.concat ", " subsqls in
+                let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
+                let open Ppx_rapper_runtime in
+                let (Dynparam.Pack
+                      ( packed_list_type,
+                        [%p Codegen.ppat_of_param ~loc list_param] )) =
+                  Stdlib.List.fold_left
+                    (fun pack item ->
+                      Dynparam.add
+                        (Caqti_type.(
+                           [%e Codegen.make_caqti_type_tup ~loc [ list_param ]]) 
+                        [@ocaml.warning "-33"])
+                        item pack)
+                    Dynparam.empty elems
+                in
+                let query = [%e query_expr] in
+                [%e body]]
+        in
+        [%expr
+          let wrapped = [%e make_function ~body_fn ~loc expression_contents] in
+          wrapped]
+      in
+      let expand_get caqti_request_function_expr make_function =
+        try
+          Ok
+            (make_generic make_function
+               [%expr
+                 Caqti_request.([%e caqti_request_function_expr])
+                   ~oneshot:true ([%e caqti_input_type] [@ocaml.warning "-33"])
+                   (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
+                   sql])
+        with Codegen.Error s -> Error s
+      in
 
-    let expand_exec caqti_request_function_expr make_function =
-      try
-        Ok (make_generic make_function
-            [%expr
-              Caqti_request.([%e caqti_request_function_expr])
-                (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
-                [%e parsed_sql]])
-      with Codegen.Error s -> Error s
-    in
-    (expand_get, expand_exec)
+      let expand_exec caqti_request_function_expr make_function =
+        try
+          Ok
+            (make_generic make_function
+               [%expr
+                 Caqti_request.([%e caqti_request_function_expr])
+                   [%e caqti_input_type] sql])
+        with Codegen.Error s -> Error s
+      in
+      (expand_get, expand_exec)
+  | None ->
+      let inputs_caqti_type, outputs_caqti_type, parsed_sql =
+        component_expressions ~loc parsed_query
+      in
+      let expression_contents =
+        Codegen.
+          {
+            in_params = parsed_query.in_params;
+            out_params = parsed_query.out_params;
+            record_in;
+            record_out;
+          }
+      in
+      let make_generic make_function query_expr =
+        [%expr
+          let query = [%e query_expr] in
+          let wrapped =
+            [%e make_function ~body_fn:(fun x -> x) ~loc expression_contents]
+          in
+          wrapped]
+      in
+      let expand_get caqti_request_function_expr make_function =
+        try
+          Ok
+            (make_generic make_function
+               [%expr
+                 Caqti_request.([%e caqti_request_function_expr])
+                   (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
+                   (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
+                   [%e parsed_sql]])
+        with Codegen.Error s -> Error s
+      in
+
+      let expand_exec caqti_request_function_expr make_function =
+        try
+          Ok
+            (make_generic make_function
+               [%expr
+                 Caqti_request.([%e caqti_request_function_expr])
+                   (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
+                   [%e parsed_sql]])
+        with Codegen.Error s -> Error s
+      in
+      (expand_get, expand_exec)
 
 let expand ~loc ~path:_ action query args =
   let expression_result =
@@ -170,18 +200,22 @@ let expand ~loc ~path:_ action query args =
         | Ok parsed_query -> (
             let syntax_result =
               match syntax_off with
-              | false ->
-                  let query_sql = match parsed_query.list_params with
-                  | Some { subsql; string_index; _ } ->
-                    let sql = parsed_query.sql in
-                    let sql_before = String.sub sql ~pos:0 ~len:(string_index) in
-                    let sql_after =
-                      String.sub sql ~pos:string_index ~len:(String.length sql - string_index)
-                    in
-                    sql_before ^ subsql ^ sql_after
-                  | None -> parsed_query.sql
+              | false -> (
+                  let query_sql =
+                    match parsed_query.list_params with
+                    | Some { subsql; string_index; _ } ->
+                        let sql = parsed_query.sql in
+                        let sql_before =
+                          String.sub sql ~pos:0 ~len:string_index
+                        in
+                        let sql_after =
+                          String.sub sql ~pos:string_index
+                            ~len:(String.length sql - string_index)
+                        in
+                        sql_before ^ subsql ^ sql_after
+                    | None -> parsed_query.sql
                   in
-                  (match Pg_query.parse query_sql with
+                  match Pg_query.parse query_sql with
                   | Ok _ -> Ok ()
                   | Error msg ->
                       Error (Printf.sprintf "Syntax error in SQL: '%s'" msg) )

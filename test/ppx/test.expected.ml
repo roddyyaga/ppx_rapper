@@ -14,15 +14,16 @@ let many_arg_execute =
           tup2 string (tup2 string (tup2 (option string) int)))
       [@ocaml.warning "-33"])
       "\n      UPDATE users\n      SET (username, email, bio) = (?, ?, ?)\n      WHERE id = ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username 
-    ~email  ~bio  ~id  = Db.exec query (username, (email, (bio, id))) in
+  let wrapped ~username  ~email  ~bio  ~id 
+    ((module Db)  : (module Caqti_lwt.CONNECTION)) =
+    Db.exec query (username, (email, (bio, id))) in
   wrapped
 let single_arg_execute =
   let query =
     (let open Caqti_request in exec) ((let open Caqti_type in string)
       [@ocaml.warning "-33"])
       "\n      UPDATE users\n      SET username = ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
+  let wrapped ~username  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     Db.exec query username in
   wrapped
 let no_arg_execute =
@@ -30,7 +31,7 @@ let no_arg_execute =
     (let open Caqti_request in exec) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"])
       "\n      UPDATE users\n      SET username = 'Hello!'\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
+  let wrapped () ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     Db.exec query () in
   wrapped
 let many_arg_get_one =
@@ -41,8 +42,8 @@ let many_arg_get_one =
           tup2 int (tup2 string (tup2 (option string) bool)))
       [@ocaml.warning "-33"])
       "\n      SELECT id, username, bio, is_married\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username 
-    ~min_id  =
+  let wrapped ~username  ~min_id 
+    ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       match result with
       | Ok (id, (username, (bio, is_married))) ->
@@ -56,7 +57,7 @@ let single_arg_get_one =
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
+  let wrapped ~username  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       match result with
       | Ok (id, username) -> Ok { id; username }
@@ -70,7 +71,7 @@ let no_arg_get_one =
       ((let open Caqti_type in tup2 int (tup2 string string))
       [@ocaml.warning "-33"])
       "\n      SELECT id, username, email\n      FROM users\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
+  let wrapped () ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       match result with
       | Ok (id, (username, email)) -> Ok { id; username; email }
@@ -84,7 +85,7 @@ let many_arg_get_one_repeated_arg =
       [@ocaml.warning "-33"]) ((let open Caqti_type in string)
       [@ocaml.warning "-33"])
       "\n      SELECT username\n      FROM users\n      WHERE id = ? OR username = ? OR id <> ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~id  ~username 
+  let wrapped ~id  ~username  ((module Db)  : (module Caqti_lwt.CONNECTION))
     =
     let f result =
       match result with | Ok username -> Ok { username } | Error e -> Error e in
@@ -96,8 +97,8 @@ let many_arg_get_opt =
       ((let open Caqti_type in tup2 string int)[@ocaml.warning "-33"])
       ((let open Caqti_type in tup2 int string)[@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username 
-    ~min_id  =
+  let wrapped ~username  ~min_id 
+    ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, username) = (id, username) in
       let f =
@@ -112,7 +113,7 @@ let single_arg_get_opt =
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
+  let wrapped ~username  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, username) = { id; username } in
       let f =
@@ -127,7 +128,7 @@ let no_arg_get_opt =
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
+  let wrapped () ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, username) = (id, username) in
       let f =
@@ -142,8 +143,8 @@ let many_arg_get_many =
       ((let open Caqti_type in tup2 string int)[@ocaml.warning "-33"])
       ((let open Caqti_type in tup2 int string)[@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username 
-    ~min_id  =
+  let wrapped ~username  ~min_id 
+    ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, username) = { id; username } in
       let f = Stdlib.List.map g in
@@ -156,7 +157,7 @@ let single_arg_get_many =
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~username  =
+  let wrapped ~username  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, username) = (id, username) in
       let f = Stdlib.List.map g in
@@ -169,7 +170,7 @@ let no_arg_get_many =
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
+  let wrapped () ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, username) = { id; username } in
       let f = Stdlib.List.map g in
@@ -184,8 +185,8 @@ let my_query =
           tup2 int (tup2 string (tup2 bool (option string))))
       [@ocaml.warning "-33"])
       "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE username <> ? AND id > ?\n      " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~wrong_user 
-    ~min_id  =
+  let wrapped ~wrong_user  ~min_id 
+    ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, (username, (following, bio))) =
         (id, username, following, bio) in
@@ -196,8 +197,8 @@ let my_query =
     Lwt.map f (Db.find_opt query (wrong_user, min_id)) in
   wrapped
 let list =
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~following  ~ids
-     =
+  let wrapped ~following  ~ids 
+    ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     match ids with
     | [] ->
         Lwt_result.fail
@@ -234,7 +235,7 @@ let list =
           Lwt.map f (Db.find_opt query (following, ids)) in
   wrapped
 let collect_list =
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~versions  =
+  let wrapped ~versions  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     match versions with
     | [] ->
         Lwt_result.fail
@@ -288,7 +289,7 @@ let get_cards =
     (let open Caqti_request in collect) ((let open Caqti_type in Suit.t)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int Suit.t)
       [@ocaml.warning "-33"]) " SELECT id, suit FROM cards WHERE suit <> ? " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~suit  =
+  let wrapped ~suit  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, suit) = (id, suit) in
       let f = Stdlib.List.map g in
@@ -314,7 +315,7 @@ let all_types =
                                           Caqti_type_calendar.ctime)))))))))))
       [@ocaml.warning "-33"])
       " SELECT id, payload, version,\n                some_int32, some_int64, added,\n                fl, date, time, span,\n                cd, ct\n         FROM some_table " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) () =
+  let wrapped () ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g
         (id,
@@ -336,7 +337,7 @@ let get_cards =
       ((let open Caqti_type in Nested.Suit.t)[@ocaml.warning "-33"])
       ((let open Caqti_type in tup2 int Nested.Suit.t)[@ocaml.warning "-33"])
       " SELECT id, suit FROM cards WHERE suit <> ? " in
-  let wrapped ((module Db)  : (module Caqti_lwt.CONNECTION)) ~suit  =
+  let wrapped ~suit  ((module Db)  : (module Caqti_lwt.CONNECTION)) =
     let f result =
       let g (id, suit) = (id, suit) in
       let f = Stdlib.List.map g in
