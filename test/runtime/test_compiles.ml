@@ -156,6 +156,26 @@ let nested_modules =
       AND username IN (%list{%Double_nested.Nested.Suit{suits}})
       |sql}]
 
+type a' = { a1: int; a2: string }
+
+type b' = { b1: bool }
+
+type c' = { c1: int }
+
+let get_multiple_record_out =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{c.c1}, @int{a.a1}, @string{a.a2}, @bool{b.b1}
+      FROM some_table
+      |sql}
+      record_out]
+
+let get_cards_function =
+  [%rapper
+    get_many {sql| SELECT @int{id}, @Suit{suit} FROM cards |sql} function_out]
+    (fun ~suit ~id -> (id, suit))
+
 module Twoot = struct
   type t = { id: int; content: string; likes: int }
 

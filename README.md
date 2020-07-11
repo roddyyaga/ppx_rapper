@@ -90,7 +90,7 @@ following example, adapted from the `mysql_ppx`
 [ppx_mysql_custom_types]: https://github.com/issuu/ppx_mysql/blob/master/README.md#custom-types-and-deserialization-functions
 
 ```ocaml
-module Suit : Ppx_rapper_runtime.CUSTOM = struct
+module Suit : Rapper.CUSTOM = struct
   type t = Clubs | Diamonds | Hearts | Spades
 
   let t =
@@ -118,7 +118,7 @@ let get_cards =
 The syntax extension will recognize type specifications that start with an
 uppercase letter  -- `Suit` in our example -- and assume they refer to a module
 (available in the scope where the extension is evaluated) that implements the
-`Ppx_rapper_runtime.CUSTOM` signature, as listed below:
+`Rapper.CUSTOM` signature, as listed below:
 
 ```ocaml
 module type CUSTOM = sig
@@ -173,8 +173,39 @@ let my_query =
 ```
 then the input and/or output of the query will be records. For the example above, they would have type `{id: int; wrong_user: string}` and `{id: int; username: string; following: bool; bio: string option}` respectively. The default non-record methods are labelled arguments and tuples respectively.
 
+Instead of `record_out` you can give `function_out`, in which case the first argument to the generated function should
+be a function with labelled arguments of the types of the output parameters, like so:
+
+```ocaml
+let show_user_names =
+  [%rapper
+    get_many {sql| SELECT @int{id}, @string{name} FROM users |sql} function_out]
+    (fun ~name ~id -> Printf.sprintf "User %d is called %s" id name)
+```
+
 By default, queries are syntax checked using [pg_query-ocaml](https://github.com/roddyyaga/pg_query-ocaml) and the
 extension will error if syntax checking fails. If this gives a false positive error for a query it can be suppressed using the `syntax_off` option.
+
+## Multiple outputs
+With the `record_out` or `function_out` option, an output parameter `@type{param_name}` will usually map to a record field name
+or labelled argument `param_name`. However, different behaviour occurs if there are output parameters containing dots.
+In this case, multiple outputs will be produced. For example:
+
+```ocaml
+let get_user_hat =
+  [%rapper
+    get_one
+      {sql|
+      SELECT @int{users.user_id}, @string{users.name},
+             @int{hats.hat_id}, @string{hats.colour}
+      FROM users
+      JOIN hats ON hats.hat_id = users.hat_id
+      WHERE users.id = 7
+      |sql}
+      record_out]
+```
+
+will produce output with type `{ user_id: int; name: string} * { hat_id: int; colour: string}`.
 
 ## Contributions
 Contributions are very welcome!
