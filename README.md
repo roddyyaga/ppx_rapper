@@ -205,7 +205,49 @@ let get_user_hat =
       record_out]
 ```
 
-will produce output with type `{ user_id: int; name: string} * { hat_id: int; colour: string}`.
+will produce output with type `{ user_id: int; name: string} * { hat_id: int; colour: string}`. Similarly, with
+`function_out` the generated function will take a tuple of loading functions. Ordering of elements of these tuples is given by the order of their first output parameters in the query.
+
+Note that multiple outputs that share field names (for instance `@int{users.id}` and `@int{hats.id}` in the same query)
+will not work with `record_out`, but will work fine with `function_out`.
+
+## Loading data with one-to-many relationships
+The multiple outputs feature can be used with the runtime function `Rapper.load_many` to conveniently load entities with one-to-many relationships, as in the following example:
+
+```ocaml
+module Twoot = struct
+  type t = { id: int; content: string; likes: int }
+
+  let make ~id ~content ~likes = { id; content; likes }
+end
+
+module User = struct
+  type t = { id: int; name: string; twoots: Twoot.t list }
+
+  let make ~id ~name = { id; name; twoots = [] }
+end
+
+let get_multiple_function_out () dbh =
+  let open Lwt_result.Infix in
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{users.id}, @string{users.name},
+             @int{twoots.id}, @string{twoots.content}, @int{twoots.likes}
+      FROM users
+      JOIN twoots ON twoots.user_id = users.id
+      ORDER BY users.id
+      |sql}
+      function_out]
+    (User.make, Twoot.make) () dbh
+  >|= Rapper.load_many
+        (fst, fun { User.id; _ } -> id)
+        [ (snd, fun user twoots -> { user with twoots }) ]
+```
+
+Here, the query itself produces a list of tuples, where the first element is a user and the second element is one of
+that user's "twoots". The query is sorted by user id, so all twoots belonging to one user are adjacent. Using
+`Rapper.load_many` produces a list of the unique users with the `twoots` field filled correctly.
 
 ## Contributions
 Contributions are very welcome!

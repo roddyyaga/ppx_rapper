@@ -1,3 +1,8 @@
+# 2.0.0
+- Breaking change: moved Caqti connection to be last parameter of queries
+- Added `function_out` option
+- Added multiple outputs
+
 # 1.2.0
 - Added cdate and ctype from Caqti\_type\_calendar (#3, @anmonteiro)
 
