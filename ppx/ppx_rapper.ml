@@ -4,7 +4,9 @@ module Buildef = Ast_builder.Default
 
 (** Handle 'record_in' etc. in [%rapper "SELECT * FROM USERS" record_in record_out] *)
 let parse_args args =
-  let allowed_args = [ "record_in"; "record_out"; "syntax_off" ] in
+  let allowed_args =
+    [ "record_in"; "record_out"; "function_out"; "syntax_off" ]
+  in
   match
     List.find
       ~f:(fun a -> not (List.mem ~equal:String.equal allowed_args a))
@@ -15,8 +17,18 @@ let parse_args args =
   | None ->
       let record_in = List.mem args "record_in" ~equal:String.equal in
       let record_out = List.mem args "record_out" ~equal:String.equal in
+      let function_out = List.mem args "function_out" ~equal:String.equal in
+      let input_kind = if record_in then `Record else `Labelled_args in
+      let output_kind =
+        match (record_out, function_out) with
+        | false, false -> `Tuple
+        | true, false -> `Record
+        | false, true -> `Function
+        | true, true -> assert false
+      in
       let syntax_off = List.mem args "syntax_off" ~equal:String.equal in
-      Ok (record_in, record_out, syntax_off)
+      assert (not (function_out && record_out));
+      Ok (input_kind, output_kind, syntax_off)
 
 (** Make some subexpressions to be used in generated code *)
 let component_expressions ~loc parsed_query =
@@ -31,7 +43,8 @@ let component_expressions ~loc parsed_query =
   (inputs_caqti_type, outputs_caqti_type, parsed_sql)
 
 (** Make a function [expand_get] to produce the expressions for [get_one], [get_opt] and [get_many], and a similar [expand_exec] for [execute] *)
-let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
+let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
+    =
   let { Query.sql; in_params; out_params; list_params } = parsed_query in
   match list_params with
   | Some { subsql; string_index; param_index; params } ->
@@ -50,8 +63,8 @@ let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
         {
           Codegen.in_params = params_before @ params @ params_after;
           out_params;
-          record_in;
-          record_out;
+          input_kind;
+          output_kind;
         }
       in
       let caqti_input_type =
@@ -86,42 +99,58 @@ let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
       let list_param = List.hd_exn params in
       let make_generic make_function query_expr =
         let body_fn body =
-          [%expr
-            match
-              [%e
-                Buildef.pexp_ident ~loc
-                  (Codegen.lident_of_param ~loc list_param)]
-            with
-            | [] ->
-                Lwt_result.fail
-                  Caqti_error.(
-                    encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
-                      (Msg "Empty list"))
-            | elems ->
-                let subsqls =
-                  Stdlib.List.map (fun _ -> [%e subsql_expr]) elems
-                in
-                let patch = Stdlib.String.concat ", " subsqls in
-                let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
-                let open Ppx_rapper_runtime in
-                let (Dynparam.Pack
-                      ( packed_list_type,
-                        [%p Codegen.ppat_of_param ~loc list_param] )) =
-                  Stdlib.List.fold_left
-                    (fun pack item ->
-                      Dynparam.add
-                        (Caqti_type.(
-                           [%e Codegen.make_caqti_type_tup ~loc [ list_param ]]) 
-                        [@ocaml.warning "-33"])
-                        item pack)
-                    Dynparam.empty elems
-                in
-                let query = [%e query_expr] in
-                [%e body]]
+          let base =
+            [%expr
+              match
+                [%e
+                  Buildef.pexp_ident ~loc
+                    (Codegen.lident_of_param ~loc list_param)]
+              with
+              | [] ->
+                  Lwt_result.fail
+                    Caqti_error.(
+                      encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
+                        (Msg "Empty list"))
+              | elems ->
+                  let subsqls =
+                    Stdlib.List.map (fun _ -> [%e subsql_expr]) elems
+                  in
+                  let patch = Stdlib.String.concat ", " subsqls in
+                  let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
+                  let open Ppx_rapper_runtime in
+                  let (Dynparam.Pack
+                        ( packed_list_type,
+                          [%p Codegen.ppat_of_param ~loc list_param] )) =
+                    Stdlib.List.fold_left
+                      (fun pack item ->
+                        Dynparam.add
+                          (Caqti_type.(
+                             [%e
+                               Codegen.make_caqti_type_tup ~loc [ list_param ]]) 
+                          [@ocaml.warning "-33"])
+                          item pack)
+                      Dynparam.empty elems
+                  in
+                  let query = [%e query_expr] in
+                  [%e body]]
+          in
+          match output_kind with
+          | `Function -> [%expr fun loaders -> [%e base]]
+          | _ -> base
         in
-        [%expr
-          let wrapped = [%e make_function ~body_fn ~loc expression_contents] in
-          wrapped]
+        match output_kind with
+        | `Function ->
+            [%expr
+              let wrapped =
+                [%e make_function ~body_fn ~loc expression_contents]
+              in
+              wrapped loaders]
+        | _ ->
+            [%expr
+              let wrapped =
+                [%e make_function ~body_fn ~loc expression_contents]
+              in
+              wrapped]
       in
       let expand_get caqti_request_function_expr make_function =
         try
@@ -154,17 +183,29 @@ let make_expand_get_and_exec_expression ~loc parsed_query record_in record_out =
           {
             in_params = parsed_query.in_params;
             out_params = parsed_query.out_params;
-            record_in;
-            record_out;
+            input_kind;
+            output_kind;
           }
       in
       let make_generic make_function query_expr =
-        [%expr
-          let query = [%e query_expr] in
-          let wrapped =
-            [%e make_function ~body_fn:(fun x -> x) ~loc expression_contents]
-          in
-          wrapped]
+        match output_kind with
+        | `Function ->
+            [%expr
+              fun loaders ->
+                let query = [%e query_expr] in
+                let wrapped =
+                  [%e
+                    make_function ~body_fn:(fun x -> x) ~loc expression_contents]
+                in
+                wrapped loaders]
+        | _ ->
+            [%expr
+              let query = [%e query_expr] in
+              let wrapped =
+                [%e
+                  make_function ~body_fn:(fun x -> x) ~loc expression_contents]
+              in
+              wrapped]
       in
       let expand_get caqti_request_function_expr make_function =
         try
@@ -194,7 +235,7 @@ let expand ~loc ~path:_ action query args =
   let expression_result =
     match parse_args args with
     | Error err -> Error err
-    | Ok (record_in, record_out, syntax_off) -> (
+    | Ok (input_kind, output_kind, syntax_off) -> (
         match Query.parse query with
         | Error error -> Error (Query.explain_error error)
         | Ok parsed_query -> (
@@ -227,14 +268,21 @@ let expand ~loc ~path:_ action query args =
                 Ok
                   (let expand_get, expand_exec =
                      make_expand_get_and_exec_expression ~loc parsed_query
-                       record_in record_out
+                       input_kind output_kind
                    in
                    match action with
                    (* execute is special case because there is no output Caqti_type *)
-                   | "execute" ->
-                       if record_out then
-                         Error "record_out is not a valid argument for execute"
-                       else expand_exec [%expr exec] Codegen.exec_function
+                   | "execute" -> (
+                       match output_kind with
+                       | `Record ->
+                           Error
+                             "record_out is not a valid argument for execute"
+                       (* TODO - could implement this *)
+                       | `Function ->
+                           Error
+                             "function_out is not a valid argument for execute"
+                       | `Tuple ->
+                           expand_exec [%expr exec] Codegen.exec_function )
                    | "get_one" -> expand_get [%expr find] Codegen.find_function
                    | "get_opt" ->
                        expand_get [%expr find_opt] Codegen.find_opt_function

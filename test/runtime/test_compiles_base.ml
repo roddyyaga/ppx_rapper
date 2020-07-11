@@ -157,3 +157,50 @@ let nested_modules =
       WHERE suit <> %Double_nested.Nested.Suit{suit}
       AND username IN (%list{%Double_nested.Nested.Suit{suits}})
       |sql}]
+
+type user = { user_id: int; name: string }
+
+type twoot = { id: int; content: string; likes: int }
+
+module User_with_twoots = struct
+  type t = { id: int; name: string; twoots: twoot list }
+
+  let load ~id ~name = { id; name; twoots = [] }
+
+  type key = int
+
+  type child = twoot
+
+  let key { id; _ } = id
+
+  let set_child user twoots = { user with twoots }
+end
+
+let load_twoots ~id ~content ~likes = { id; content; likes }
+
+let get_multiple_function_out () dbh =
+  let open Lwt_result.Infix in
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{users.id}, @string{users.name},
+             @int{twoots.id}, @string{twoots.content}, @int{twoots.likes}
+      FROM users
+      JOIN twoots ON twoots.id = users.id
+      ORDER BY users.id
+      |sql}
+      function_out]
+    (User_with_twoots.load, load_twoots)
+    () dbh
+  >|= Rapper.load_many
+        (fst, User_with_twoots.key)
+        [ (snd, User_with_twoots.set_child) ]
+
+(*fun twoots_and_users ->
+  twoots_and_users
+  |> List.group ~break:(fun (_, user1') (_, user2') ->
+         User_with_twoots.(user1'.user_id <> user2'.user_id))
+  |> List.map ~f:(fun group ->
+         let twoots, user_copies = List.unzip group in
+         let user = List.hd_exn user_copies in
+         { user with User_with_twoots.twoots })*)

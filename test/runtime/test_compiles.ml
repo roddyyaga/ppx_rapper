@@ -155,3 +155,52 @@ let nested_modules =
       WHERE suit <> %Double_nested.Nested.Suit{suit}
       AND username IN (%list{%Double_nested.Nested.Suit{suits}})
       |sql}]
+
+type user = { user_id: int; name: string }
+
+type twoot = { twoot_id: int; content: string; likes: int }
+
+let get_multiple_record_out =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{users.user_id}, @string{users.name},
+             @int{twoots.twoot_id}, @string{twoots.content}, @int{twoots.likes}
+      FROM users
+      JOIN twoots ON twoots.user_id = users.user_id
+      ORDER BY users.user_id
+      |sql}
+      record_out]
+
+module User_with_twoots = struct
+  type t = { user_id: int; name: string; twoots: twoot list }
+
+  let load ~user_id ~name = { user_id; name; twoots = [] }
+end
+
+let load_twoots ~twoot_id ~content ~likes = { twoot_id; content; likes }
+
+let get_single_function_out =
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{id}, @string{name}
+      FROM users
+      |sql}
+      function_out]
+
+let get_multiple_function_out () dbh =
+  let open Lwt_result.Infix in
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{users.user_id}, @string{users.name},
+             @int{twoots.twoot_id}, @string{twoots.content}, @int{twoots.likes}
+      FROM users
+      JOIN twoots ON twoots.user_id = users.user_id
+      ORDER BY users.user_id
+      |sql}
+      function_out]
+    (User_with_twoots.load, load_twoots)
+    () dbh
+  >|= List.map (fun (twoots, users) -> (twoots, users))
