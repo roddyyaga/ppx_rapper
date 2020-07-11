@@ -1,5 +1,6 @@
 # 2.0.0
 - Breaking change: moved Caqti connection to be last parameter of queries
+- Breaking change: renamed runtime library
 - Added `function_out` option
 - Added multiple outputs
 
