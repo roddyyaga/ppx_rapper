@@ -47,7 +47,7 @@ let collect_list =
       record_in]
 
 (* Using custom types *)
-module Suit : Ppx_rapper_runtime.CUSTOM = struct
+module Suit : Rapper.CUSTOM = struct
   type t = Clubs | Diamonds | Hearts | Spades
 
   let t =
@@ -158,25 +158,17 @@ let nested_modules =
       AND username IN (%list{%Double_nested.Nested.Suit{suits}})
       |sql}]
 
-type user = { user_id: int; name: string }
+module Twoot = struct
+  type t = { id: int; content: string; likes: int }
 
-type twoot = { id: int; content: string; likes: int }
-
-module User_with_twoots = struct
-  type t = { id: int; name: string; twoots: twoot list }
-
-  let load ~id ~name = { id; name; twoots = [] }
-
-  type key = int
-
-  type child = twoot
-
-  let key { id; _ } = id
-
-  let set_child user twoots = { user with twoots }
+  let make ~id ~content ~likes = { id; content; likes }
 end
 
-let load_twoots ~id ~content ~likes = { id; content; likes }
+module User = struct
+  type t = { id: int; name: string; twoots: Twoot.t list }
+
+  let make ~id ~name = { id; name; twoots = [] }
+end
 
 let get_multiple_function_out () dbh =
   let open Lwt_result.Infix in
@@ -190,17 +182,7 @@ let get_multiple_function_out () dbh =
       ORDER BY users.id
       |sql}
       function_out]
-    (User_with_twoots.load, load_twoots)
-    () dbh
+    (User.make, Twoot.make) () dbh
   >|= Rapper.load_many
-        (fst, User_with_twoots.key)
-        [ (snd, User_with_twoots.set_child) ]
-
-(*fun twoots_and_users ->
-  twoots_and_users
-  |> List.group ~break:(fun (_, user1') (_, user2') ->
-         User_with_twoots.(user1'.user_id <> user2'.user_id))
-  |> List.map ~f:(fun group ->
-         let twoots, user_copies = List.unzip group in
-         let user = List.hd_exn user_copies in
-         { user with User_with_twoots.twoots })*)
+        (fst, fun { User.id; _ } -> id)
+        [ (snd, fun user twoots -> { user with twoots }) ]

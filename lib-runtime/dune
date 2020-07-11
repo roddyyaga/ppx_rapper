@@ -1,4 +1,4 @@
 (library
- (name ppx_rapper_runtime)
+ (name rapper)
  (public_name ppx_rapper.runtime)
  (libraries caqti caqti-lwt))

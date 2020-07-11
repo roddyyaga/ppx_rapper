@@ -45,7 +45,7 @@ let collect_list =
       record_in]
 
 (* Using custom types *)
-module Suit : Ppx_rapper_runtime.CUSTOM = struct
+module Suit : Rapper.CUSTOM = struct
   type t = Clubs | Diamonds | Hearts | Spades
 
   let t =
@@ -156,51 +156,31 @@ let nested_modules =
       AND username IN (%list{%Double_nested.Nested.Suit{suits}})
       |sql}]
 
-type user = { user_id: int; name: string }
+module Twoot = struct
+  type t = { id: int; content: string; likes: int }
 
-type twoot = { twoot_id: int; content: string; likes: int }
-
-let get_multiple_record_out =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{users.user_id}, @string{users.name},
-             @int{twoots.twoot_id}, @string{twoots.content}, @int{twoots.likes}
-      FROM users
-      JOIN twoots ON twoots.user_id = users.user_id
-      ORDER BY users.user_id
-      |sql}
-      record_out]
-
-module User_with_twoots = struct
-  type t = { user_id: int; name: string; twoots: twoot list }
-
-  let load ~user_id ~name = { user_id; name; twoots = [] }
+  let make ~id ~content ~likes = { id; content; likes }
 end
 
-let load_twoots ~twoot_id ~content ~likes = { twoot_id; content; likes }
+module User = struct
+  type t = { id: int; name: string; twoots: Twoot.t list }
 
-let get_single_function_out =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{id}, @string{name}
-      FROM users
-      |sql}
-      function_out]
+  let make ~id ~name = { id; name; twoots = [] }
+end
 
 let get_multiple_function_out () dbh =
   let open Lwt_result.Infix in
   [%rapper
     get_many
       {sql|
-      SELECT @int{users.user_id}, @string{users.name},
-             @int{twoots.twoot_id}, @string{twoots.content}, @int{twoots.likes}
+      SELECT @int{users.id}, @string{users.name},
+             @int{twoots.id}, @string{twoots.content}, @int{twoots.likes}
       FROM users
-      JOIN twoots ON twoots.user_id = users.user_id
-      ORDER BY users.user_id
+      JOIN twoots ON twoots.id = users.id
+      ORDER BY users.id
       |sql}
       function_out]
-    (User_with_twoots.load, load_twoots)
-    () dbh
-  >|= List.map (fun (twoots, users) -> (twoots, users))
+    (User.make, Twoot.make) () dbh
+  >|= Rapper.load_many
+        (fst, fun { User.id; _ } -> id)
+        [ (snd, fun user twoots -> { user with twoots }) ]

@@ -41,7 +41,7 @@ let collect_list =
       record_in]
 
 (* Using custom types *)
-module Suit : Ppx_rapper_runtime.CUSTOM = struct
+module Suit : Rapper.CUSTOM = struct
   type t = Clubs | Diamonds | Hearts | Spades
 
   let t =
@@ -88,3 +88,33 @@ let all_types =
                 @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span}
          FROM some_table |sql}
       record_out]
+
+(* Example of using [function_out] and [Rapper.load_many] *)
+module Twoot = struct
+  type t = { id: int; content: string; likes: int }
+
+  let make ~id ~content ~likes = { id; content; likes }
+end
+
+module User = struct
+  type t = { id: int; name: string; twoots: Twoot.t list }
+
+  let make ~id ~name = { id; name; twoots = [] }
+end
+
+let get_multiple_function_out () dbh =
+  let open Lwt_result.Infix in
+  [%rapper
+    get_many
+      {sql|
+      SELECT @int{users.id}, @string{users.name},
+             @int{twoots.id}, @string{twoots.content}, @int{twoots.likes}
+      FROM users
+      JOIN twoots ON twoots.id = users.id
+      ORDER BY users.id
+      |sql}
+      function_out]
+    (User.make, Twoot.make) () dbh
+  >|= Rapper.load_many
+        (fst, fun { User.id; _ } -> id)
+        [ (snd, fun user twoots -> { user with twoots }) ]

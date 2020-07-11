@@ -117,7 +117,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
                   in
                   let patch = Stdlib.String.concat ", " subsqls in
                   let sql = [%e sql_before] ^ patch ^ [%e sql_after] in
-                  let open Ppx_rapper_runtime in
+                  let open Rapper.Internal in
                   let (Dynparam.Pack
                         ( packed_list_type,
                           [%p Codegen.ppat_of_param ~loc list_param] )) =
