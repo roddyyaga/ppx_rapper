@@ -2,8 +2,10 @@
 
 # ppx_rapper
 An extension that allows named parameters in SQL with types inferred, and syntax checking of SQL as a preprocessing
-step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti/PostgreSQL/Lwt. The name comes from the idea of
+step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti/Lwt. The name comes from the idea of
 [Dapper](https://github.com/StackExchange/Dapper) but with Records.
+
+The syntax checking feature only works for PostgreSQL, but other features should work with other Caqti backends such as MariaDB and SQLite. If you are using a non-Postgres dialect you should use the `syntax_off` option to avoid spurious errors.
 
 ## Installation
 You can install `ppx_rapper` with opam:
@@ -184,7 +186,7 @@ let show_user_names =
 ```
 
 By default, queries are syntax checked using [pg_query-ocaml](https://github.com/roddyyaga/pg_query-ocaml) and the
-extension will error if syntax checking fails. If this gives a false positive error for a query it can be suppressed using the `syntax_off` option.
+extension will error if syntax checking fails. If you are using a non-Postgres SQL dialect or this gives a false positive error for a query it can be suppressed using the `syntax_off` option.
 
 ## Multiple outputs
 With the `record_out` or `function_out` option, an output parameter `@type{param_name}` will usually map to a record field name
