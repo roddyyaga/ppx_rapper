@@ -65,7 +65,7 @@ Query functions are
 - `execute` for queries that return 0 rows, represented as `()`
 - `get_one` for queries that return 1 rows, represented as a tuple/record
 - `get_opt` for queries that return 0 or 1 rows, represented as a tuple/record option
-- `get_many` for queries that many return any number of rows, represented as a list of tuples/records
+- `get_many` for queries that may return any number of rows, represented as a list of tuples/records
 
 These correspond to `exec`, `find`, `find_opt` and `collect` in `Caqti_request`.
 
