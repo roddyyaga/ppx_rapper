@@ -3,7 +3,7 @@ type a = { username: string }
 
 type b = { id: int; username: string }
 
-open Ppx_rapper_lwt
+open Ppx_rapper_async
 
 let many_arg_execute =
   [%rapper
@@ -39,11 +39,7 @@ type list_in = { versions: int list }
 let collect_list =
   [%rapper
     get_many
-      {sql|
-      SELECT @string{id}
-      FROM schema_migrations
-      WHERE version in (%list{%int{versions}})
-      |sql}
+      {sql| SELECT @string{id} from schema_migrations where version in (%list{%int{versions}})|sql}
       record_in]
 
 (* Using custom types *)
@@ -84,100 +80,18 @@ type all_types_output = {
   date: Ptime.t;
   time: Ptime.t;
   span: Ptime.span;
-  cd: CalendarLib.Date.t;
-  ct: CalendarLib.Calendar.t;
 }
 
 let all_types =
   [%rapper
     get_many
-      {sql|
-      SELECT @string{id}, @octets{payload}, @int{version},
+      {sql| SELECT @string{id}, @octets{payload}, @int{version},
                 @int32{some_int32}, @int64{some_int64}, @bool{added},
-                @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span},
-                @cdate{cd}, @ctime{ct}
-      FROM some_table
-      |sql}
+                @float{fl}, @pdate{date}, @ptime{time}, @ptime_span{span}
+         FROM some_table |sql}
       record_out]
 
-let e =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{id}
-      FROM users
-      WHERE id <> %int{id}
-        AND blah IN (%list{%Suit{blahs}})
-      |sql}]
-
-let f =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{id}
-      FROM users
-      WHERE id <> %int{id}
-        AND %int{seriousness} = 5
-        AND blah IN (%list{%int{blahs}})
-        AND %string{x} = 'x'
-      |sql}]
-
-let h =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{id}
-      FROM users
-      WHERE blah in (%list{%int{blahs}})
-      |sql}]
-
-let i =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{id}
-      FROM users
-      WHERE blah in (%list{%int{blahs}})
-        AND %int{x} = x
-        AND %int{y} = y
-      |sql}]
-
-module Double_nested = struct
-  module Nested = struct
-    module Suit = Suit
-  end
-end
-
-let nested_modules =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{id}, @Double_nested.Nested.Suit{suit}
-      FROM cards
-      WHERE suit <> %Double_nested.Nested.Suit{suit}
-      AND username IN (%list{%Double_nested.Nested.Suit{suits}})
-      |sql}]
-
-type a' = { a1: int; a2: string }
-
-type b' = { b1: bool }
-
-type c' = { c1: int }
-
-let get_multiple_record_out =
-  [%rapper
-    get_many
-      {sql|
-      SELECT @int{c.c1}, @int{a.a1}, @string{a.a2}, @bool{b.b1}
-      FROM some_table
-      |sql}
-      record_out]
-
-let get_cards_function =
-  [%rapper
-    get_many {sql| SELECT @int{id}, @Suit{suit} FROM cards |sql} function_out]
-    (fun ~suit ~id -> (id, suit))
-
+(* Example of using [function_out] and [Rapper.load_many] *)
 module Twoot = struct
   type t = { id: int; content: string; likes: int }
 
@@ -191,7 +105,7 @@ module User = struct
 end
 
 let get_multiple_function_out () dbh =
-  let open Lwt_result.Infix in
+  let open Async.Deferred.Result in
   [%rapper
     get_many
       {sql|
@@ -203,6 +117,6 @@ let get_multiple_function_out () dbh =
       |sql}
       function_out]
     (User.make, Twoot.make) () dbh
-  >|= Rapper.load_many
+  >>| Rapper.load_many
         (fst, fun { User.id; _ } -> id)
         [ (snd, fun user twoots -> { user with twoots }) ]

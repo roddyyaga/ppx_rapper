@@ -27,11 +27,12 @@ module type IO = sig
 
   val map : ('a -> 'b) -> 'a t -> 'b t
 
+  (* Need this for Caqti_connection_sig.S *)
   module Stream : Caqti_stream.S with type 'a future := 'a t
 end
 
-module type CONTEXT = sig
-  module Rapper_io : sig
+module type RAPPER_HELPER = sig
+  module Rapper_helper : sig
     type +'a future
 
     val map : ('a -> 'b) -> 'a future -> 'b future
@@ -47,7 +48,7 @@ module type CONTEXT = sig
   end
 end
 
-module Make_context (Io : IO) :
-  CONTEXT
-    with type 'a Rapper_io.future := 'a Io.t
-     and module Rapper_io.Stream = Io.Stream
+module Make_helper (Io : IO) :
+  RAPPER_HELPER
+    with type 'a Rapper_helper.future := 'a Io.t
+     and module Rapper_helper.Stream = Io.Stream

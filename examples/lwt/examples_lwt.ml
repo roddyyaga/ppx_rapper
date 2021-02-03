@@ -3,6 +3,8 @@ type a = { username: string }
 
 type b = { id: int; username: string }
 
+open Ppx_rapper_lwt
+
 let many_arg_execute =
   [%rapper
     execute

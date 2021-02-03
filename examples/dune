@@ -1,5 +1,0 @@
-(library
-(name examples)
-(modules examples)
-(libraries ppx_rapper.runtime base)
-(preprocess (pps ppx_rapper)))

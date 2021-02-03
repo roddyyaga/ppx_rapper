@@ -31,3 +31,27 @@
   caqti
   caqti-lwt
   (caqti-type-calendar :with-test)))
+
+(package
+ (name ppx_rapper_async)
+ (depends
+  (ocaml
+   (>= 4.07))
+  (dune
+   (>= 2.0.1))
+  ppx_rapper
+  caqti-async
+  caqti
+  async))
+
+(package
+ (name ppx_rapper_lwt)
+ (depends
+  (ocaml
+   (>= 4.07))
+  (dune
+   (>= 2.0.1))
+  ppx_rapper
+  caqti-lwt
+  caqti
+  lwt))
