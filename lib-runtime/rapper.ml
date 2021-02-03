@@ -62,36 +62,31 @@ module type IO = sig
 end
 
 module type RAPPER_HELPER = sig
-  module Rapper_helper : sig
-    type +'a future
+  type +'a future
 
-    val map : ('a -> 'b) -> 'a future -> 'b future
+  val map : ('a -> 'b) -> 'a future -> 'b future
 
-    val fail : 'e -> ('a, 'e) result future
+  val fail : 'e -> ('a, 'e) result future
 
-    module Stream : Caqti_stream.S with type 'a future := 'a future
+  module Stream : Caqti_stream.S with type 'a future := 'a future
 
-    module type CONNECTION =
-      Caqti_connection_sig.S
-        with type 'a future := 'a future
-         and type ('a, 'err) stream := ('a, 'err) Stream.t
-  end
+  module type CONNECTION =
+    Caqti_connection_sig.S
+      with type 'a future := 'a future
+       and type ('a, 'err) stream := ('a, 'err) Stream.t
 end
 
 module Make_helper (Io : IO) :
-  RAPPER_HELPER
-    with type 'a Rapper_helper.future := 'a Io.t
-     and module Rapper_helper.Stream = Io.Stream = struct
-  module Rapper_helper = struct
-    let map = Io.map
+  RAPPER_HELPER with type 'a future := 'a Io.t and module Stream = Io.Stream =
+struct
+  let map = Io.map
 
-    let fail e = Io.return (Error e)
+  let fail e = Io.return (Error e)
 
-    module Stream = Io.Stream
+  module Stream = Io.Stream
 
-    module type CONNECTION =
-      Caqti_connection_sig.S
-        with type 'a future := 'a Io.t
-         and type ('a, 'err) stream := ('a, 'err) Stream.t
-  end
+  module type CONNECTION =
+    Caqti_connection_sig.S
+      with type 'a future := 'a Io.t
+       and type ('a, 'err) stream := ('a, 'err) Stream.t
 end
