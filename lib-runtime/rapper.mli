@@ -25,7 +25,7 @@ module type IO = sig
 
   val return : 'a -> 'a t
 
-  val map : 'a t -> ('a -> 'b) -> 'b t
+  val map : ('a -> 'b) -> 'a t -> 'b t
 
   module Stream : Caqti_stream.S with type 'a future := 'a t
 end
@@ -34,7 +34,7 @@ module type CONTEXT = sig
   module Rapper_io : sig
     type +'a future
 
-    val map : 'a future -> ('a -> 'b) -> 'b future
+    val map : ('a -> 'b) -> 'a future -> 'b future
 
     val fail : 'e -> ('a, 'e) result future
 
