@@ -34,6 +34,7 @@
 
 (package
  (name ppx_rapper_async)
+ (synopsis "Async support for ppx_rapper")
  (depends
   (ocaml
    (>= 4.07))
@@ -46,6 +47,7 @@
 
 (package
  (name ppx_rapper_lwt)
+ (synopsis "Lwt support for ppx_rapper")
  (depends
   (ocaml
    (>= 4.07))
