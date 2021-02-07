@@ -257,7 +257,7 @@ let find_body_factory ~loc input_nested_tuple_pattern output_expression
       | Ok [%p input_nested_tuple_pattern] -> Ok [%e output_expression]
       | Error e -> Error e
     in
-    Lwt.map f
+    Rapper_helper.map f
       ([%e connection_function_expr] query [%e input_nested_tuple_expression])]
 
 let find_map_factory ~loc map_expr input_nested_tuple_pattern output_expression
@@ -268,7 +268,7 @@ let find_map_factory ~loc map_expr input_nested_tuple_pattern output_expression
       let f = [%e map_expr] g in
       match result with Ok x -> Ok (f x) | Error e -> Error e
     in
-    Lwt.map f
+    Rapper_helper.map f
       ([%e connection_function_expr] query [%e input_nested_tuple_expression])]
 
 (** Generates the function body for a [find] function ([get_one] statement)*)
@@ -314,11 +314,11 @@ let query_function ~loc ?(body_fn = fun x -> x) function_body_factory
         else
           let input_record_pattern = record_pattern ~loc deduped_in_params in
           [%expr
-            fun [%p input_record_pattern] (module Db : Caqti_lwt.CONNECTION) ->
+            fun [%p input_record_pattern] (module Db : Rapper_helper.CONNECTION) ->
               [%e body]]
     | `Labelled_args ->
         if List.is_empty in_params then
-          [%expr fun () (module Db : Caqti_lwt.CONNECTION) -> [%e body]]
+          [%expr fun () (module Db : Rapper_helper.CONNECTION) -> [%e body]]
         else
           let f in_param body_so_far =
             let name = in_param.Query.name in
@@ -326,7 +326,8 @@ let query_function ~loc ?(body_fn = fun x -> x) function_body_factory
             Buildef.pexp_fun ~loc (Labelled name) None pattern body_so_far
           in
           List.fold_right ~f
-            ~init:[%expr fun (module Db : Caqti_lwt.CONNECTION) -> [%e body]]
+            ~init:
+              [%expr fun (module Db : Rapper_helper.CONNECTION) -> [%e body]]
             deduped_in_params
   in
   match expression_contents.output_kind with

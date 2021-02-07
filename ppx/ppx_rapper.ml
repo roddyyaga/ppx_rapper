@@ -107,7 +107,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
                     (Codegen.lident_of_param ~loc list_param)]
               with
               | [] ->
-                  Lwt_result.fail
+                  Rapper_helper.fail
                     Caqti_error.(
                       encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
                         (Msg "Empty list"))
@@ -126,7 +126,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
                         Dynparam.add
                           (Caqti_type.(
                              [%e
-                               Codegen.make_caqti_type_tup ~loc [ list_param ]]) 
+                               Codegen.make_caqti_type_tup ~loc [ list_param ]])
                           [@ocaml.warning "-33"])
                           item pack)
                       Dynparam.empty elems
