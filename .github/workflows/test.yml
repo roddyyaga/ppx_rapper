@@ -17,6 +17,7 @@ jobs:
       with:
         ocaml-version: ${{ matrix.ocaml-version }}
 
+    - run: opam update
     - run: opam pin add ppx_rapper --no-action .
     - run: opam pin add ppx_rapper_lwt --no-action .
     - run: opam pin add ppx_rapper_async --no-action .
