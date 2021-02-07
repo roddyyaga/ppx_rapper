@@ -1,0 +1,5 @@
+(library
+ (name ppx_rapper_lwt)
+ (public_name ppx_rapper_lwt)
+ (wrapped false)
+ (libraries lwt ppx_rapper.runtime caqti-lwt caqti))
