@@ -2,7 +2,7 @@
 
 # ppx_rapper
 An extension that allows named parameters in SQL with types inferred, and syntax checking of SQL as a preprocessing
-step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti/Lwt. The name comes from the idea of
+step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti. The name comes from the idea of
 [Dapper](https://github.com/StackExchange/Dapper) but with Records.
 
 The syntax checking feature only works for PostgreSQL, but other features should work with other Caqti backends such as MariaDB and SQLite. If you are using a non-Postgres dialect you should use the `syntax_off` option to avoid spurious errors.
@@ -10,13 +10,16 @@ The syntax checking feature only works for PostgreSQL, but other features should
 ## Installation
 You can install `ppx_rapper` with opam:
 ```
-$ opam install ppx_rapper
+$ opam install ppx_rapper ppx_rapper_lwt
 ```
+(or `ppx_rapper_async` if you are using async instead).
+
 To use in a project built with dune, add these lines to the relevant stanzas:
 ```
-(libraries ppx_rapper.runtime)
+(libraries ppx_rapper_lwt)
 (preprocess (pps ppx_rapper))
 ```
+or similar for async.
 
 ## Example usage
 ```ocaml
@@ -36,24 +39,28 @@ let my_query =
   let query =
     (let open Caqti_request in
     find_opt)
-      (let open Caqti_type in
-      tup2 string int)
-      (let open Caqti_type in
-      tup2 int (tup2 string (tup2 bool (option string))))
+      ((let open Caqti_type in
+       tup2 string int) [@ocaml.warning "-33"])
+      ((let open Caqti_type in
+       tup2 int (tup2 string (tup2 bool (option string))))
+      [@ocaml.warning "-33"])
       "\n\
       \      SELECT id, username, following, bio\n\
       \      FROM users\n\
       \      WHERE username <> ? AND id > ?\n\
       \      "
   in
-  let wrapped (module Db : Caqti_lwt.CONNECTION) ~wrong_user ~min_id =
+  let wrapped ~wrong_user ~min_id (module Db : Rapper_helper.CONNECTION) =
     let f result =
       let g (id, (username, (following, bio))) =
         (id, username, following, bio)
       in
-      Result.map ~f:(Option.map ~f:g) result
+      let f =
+        (fun f x -> match x with Some x -> Some (f x) | None -> None) g
+      in
+      match result with Ok x -> Ok (f x) | Error e -> Error e
     in
-    Lwt.map f (Db.find_opt query (wrong_user, min_id))
+    Rapper_helper.map f (Db.find_opt query (wrong_user, min_id))
   in
   wrapped
 ```
