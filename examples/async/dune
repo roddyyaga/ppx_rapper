@@ -1,5 +1,5 @@
 (library
  (name examples_async)
- (libraries ppx_rapper.runtime ppx_rapper_async async base)
+ (libraries async ppx_rapper_async)
  (preprocess
   (pps ppx_rapper)))
