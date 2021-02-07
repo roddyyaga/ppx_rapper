@@ -1,5 +1,6 @@
 (tests
  (names test_compiles test_compiles_base)
+ (package ppx_rapper_lwt)
  (libraries base ppx_rapper_lwt caqti-type-calendar)
  (preprocess
   (pps ppx_rapper)))
