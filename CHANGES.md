@@ -1,3 +1,6 @@
+# 3.0.0
+- Split into separate libraries for lwt and async (#4, @bikallem)
+
 # 2.0.0
 - Breaking change: moved Caqti connection to be last parameter of queries
 - Breaking change: renamed runtime library

@@ -2,7 +2,7 @@
 
 (name ppx_rapper)
 
-(version 2.0.0)
+(version 3.0.0)
 
 (source
  (github roddyyaga/ppx_rapper))
@@ -29,7 +29,6 @@
   ppxlib
   base
   caqti
-  caqti-lwt
   (caqti-type-calendar :with-test)))
 
 (package

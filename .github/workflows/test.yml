@@ -8,7 +8,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        ocaml-version: ['4.07.1', '4.08.1', '4.09.0', '4.10.0']
+        ocaml-version: ['4.07.1', '4.08.1', '4.09.0', '4.10.0', '4.11.1']
     steps:
     - uses: actions/checkout@master
 
@@ -17,8 +17,8 @@ jobs:
       with:
         ocaml-version: ${{ matrix.ocaml-version }}
 
-    - run: opam pin add ppx_rapper --no-action .
-    - run: OPAMSOLVERTIMEOUT=3600 opam depext -yt ppx_rapper
+    - run: opam pin add ppx_rapper ppx_rapper_lwt ppx_rapper_async --no-action .
+    - run: OPAMSOLVERTIMEOUT=3600 opam depext -yt ppx_rapper ppx_rapper_lwt ppx_rapper_async
     - run: OPAMSOLVERTIMEOUT=3600 opam install -t . --deps-only
     - run: opam exec -- dune build
     - run: opam exec -- dune runtest
