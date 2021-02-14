@@ -27,7 +27,9 @@
   (ppxlib
    (>= 0.3.1))
   (base
-   (>= v0.11.1))))
+   (>= v0.11.1))
+  (caqti
+   (>= 1.2.0))))
 
 (package
  (name ppx_rapper_async)
@@ -38,8 +40,6 @@
   (ppx_rapper
    (= :version))
   caqti-async
-  (caqti
-   (= 1.2.0))
   async))
 
 (package
@@ -51,7 +51,5 @@
   (ppx_rapper
    (= :version))
   caqti-lwt
-  (caqti
-   (>= 1.2.0))
   lwt
   (caqti-type-calendar :with-test)))
