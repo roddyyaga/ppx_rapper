@@ -10,12 +10,11 @@ doc: "https://github.com/roddyyaga/ppx_rapper"
 bug-reports: "https://github.com/roddyyaga/ppx_rapper/issues"
 depends: [
   "ocaml" {>= "4.07"}
-  "dune" {>= "2.0.1"}
+  "dune"
   "pg_query"
   "ppxlib"
   "base"
   "caqti"
-  "caqti-type-calendar" {with-test}
 ]
 build: [
   ["dune" "subst"] {pinned}

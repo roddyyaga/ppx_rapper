@@ -1,4 +1,4 @@
-(lang dune 2.0.1)
+(lang dune 2.0)
 
 (name ppx_rapper)
 
@@ -23,13 +23,11 @@
  (depends
   (ocaml
    (>= 4.07))
-  (dune
-   (>= 2.0.1))
+  dune
   pg_query
   ppxlib
   base
-  caqti
-  (caqti-type-calendar :with-test)))
+  caqti))
 
 (package
  (name ppx_rapper_async)
@@ -37,9 +35,9 @@
  (depends
   (ocaml
    (>= 4.07))
-  (dune
-   (>= 2.0.1))
-  ppx_rapper
+  dune
+  (ppx_rapper
+   (= version))
   caqti-async
   caqti
   async))
@@ -50,9 +48,10 @@
  (depends
   (ocaml
    (>= 4.07))
-  (dune
-   (>= 2.0.1))
-  ppx_rapper
+  dune
+  (ppx_rapper
+   (= version))
   caqti-lwt
   caqti
-  lwt))
+  lwt
+  (caqti-type-calendar :with-test)))
