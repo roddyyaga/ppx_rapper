@@ -162,10 +162,8 @@ Current limitations for `list` include:
 
 - Only one `list` input parameter is supported at this time;
 - Generated Caqti queries are dynamically generated, and thus `oneshot` as per
-  the [documentation](caqti-oneshot-docs). Turning this off is not currently
+  the [documentation](https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/index.html#how-to-dynamically-assemble-queries-and-parameters). Turning this off is not currently
   supported, but please let us know if you have a use case for it.
-
-[caqti-oneshot-docs]: https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/index.html#how-to-dynamically-assemble-queries-and-parameters
 
 ## Extension options
 If `record_in` or `record_out` are given as options like so:
