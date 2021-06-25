@@ -231,7 +231,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
       in
       (expand_get, expand_exec)
 
-let expand ~loc ~path:_ action query args =
+let expand_apply ~loc ~path:_ action query args =
   let expression_result =
     match parse_args args with
     | Error err -> Error err
@@ -300,8 +300,17 @@ let expand ~loc ~path:_ action query args =
         (Location.Error
            (Location.Error.createf ~loc "Error in ppx_rapper: %s" msg))
 
-(** Captures [[%rapper get_one "SELECT id FROM things WHERE condition"]] *)
-let pattern =
+let expand_let ~loc ~path vb_var action query args =
+  let module Ast = Ast_builder.Default in
+  let vb =
+    Ast.value_binding ~loc
+      ~pat:(Ast.ppat_var ~loc (Ast.Located.mk ~loc vb_var))
+      ~expr:(expand_apply ~loc ~path action query args)
+  in
+  Ast.pstr_value ~loc Nonrecursive [ vb ]
+
+(** Captures [\[%rapper get_one "SELECT id FROM things WHERE condition"\]] *)
+let apply_pattern () =
   let open Ast_pattern in
   let query_action = pexp_ident (lident __) in
   let query = pair nolabel (estring __) in
@@ -312,11 +321,23 @@ let pattern =
   let arguments = query ^:: many arg in
   pexp_apply query_action arguments
 
+(** Captures [\[let%rapper get_thing = get_one "SELECT id FROM things WHERE condition"\]] *)
+let let_pattern () =
+  let open Ast_pattern in
+  pstr
+    (pstr_value nonrecursive
+       (value_binding ~pat:(ppat_var __) ~expr:(apply_pattern ()) ^:: nil)
+    ^:: nil)
+
 let name = "rapper"
 
-let ext =
+let apply_ext =
   Extension.declare name Extension.Context.expression
-    Ast_pattern.(single_expr_payload pattern)
-    expand
+    Ast_pattern.(single_expr_payload (apply_pattern ()))
+    expand_apply
 
-let () = Driver.register_transformation name ~extensions:[ ext ]
+let let_ext =
+  Extension.declare name Extension.Context.structure_item (let_pattern ())
+    expand_let
+
+let () = Driver.register_transformation name ~extensions:[ let_ext; apply_ext ]
