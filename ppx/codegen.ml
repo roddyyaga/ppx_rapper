@@ -178,7 +178,8 @@ let make_qualified_output out_params =
         in
         Hashtbl.set record_name_groups ~key ~data:(param :: current));
     let sorted_groups =
-      List.map !sorted_keys ~f:(Hashtbl.find_exn record_name_groups)
+      List.map !sorted_keys ~f:(fun k ->
+          Hashtbl.find_exn record_name_groups k |> List.rev)
     in
     Many sorted_groups
 
@@ -232,8 +233,7 @@ let function_body_general ~loc factory connection_function_expr
       in
       let function_expression ~loc n out_params =
         Buildef.(
-          pexp_apply ~loc (nth_loader ~loc n)
-            (arg_list_of_params (List.rev out_params)))
+          pexp_apply ~loc (nth_loader ~loc n) (arg_list_of_params out_params))
       in
 
       let output_nested_tuple_pattern, output_expression =
