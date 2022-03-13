@@ -118,3 +118,17 @@ let get_multiple_function_out () dbh =
   >|= Rapper.load_many
         (fst, fun { User.id; _ } -> id)
         [ (snd, fun user twoots -> { user with twoots }) ]
+
+type regclass_response = { to_regclass: string option; lec: int }
+
+type foo = { exists: bool; some_other_param: bool }
+
+let get_something =
+  [%rapper
+    get_one
+      {sql| SELECT @bool{EXISTS} (
+          /* @bool{some_other_param} */
+  SELECT 1
+  FROM pg_tables
+  WHERE schemaname = 'schema_name' AND tablename = 'table_name'
+); |sql}]

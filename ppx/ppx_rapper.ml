@@ -48,7 +48,8 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
   let { Query.sql; in_params; out_params; list_params } = parsed_query in
   match list_params with
   | Some { subsql; string_index; param_index; params } ->
-      assert (List.length params = 1);
+      if not (List.length params = 1) then
+        failwith "%list only supports one input parameter currently";
       let subsql_expr = Buildef.estring ~loc subsql in
       let sql_before =
         Buildef.estring ~loc @@ String.sub sql ~pos:0 ~len:string_index
@@ -259,7 +260,7 @@ let expand ~loc ~path:_ action query args =
                   match Pg_query.parse query_sql with
                   | Ok _ -> Ok ()
                   | Error msg ->
-                      Error (Printf.sprintf "Syntax error in SQL: '%s'" msg) )
+                      Error (Printf.sprintf "Syntax error in SQL: '%s'" msg))
               | true -> Ok ()
             in
             match syntax_result with
@@ -282,7 +283,7 @@ let expand ~loc ~path:_ action query args =
                            Error
                              "function_out is not a valid argument for execute"
                        | `Tuple ->
-                           expand_exec [%expr exec] Codegen.exec_function )
+                           expand_exec [%expr exec] Codegen.exec_function)
                    | "get_one" -> expand_get [%expr find] Codegen.find_function
                    | "get_opt" ->
                        expand_get [%expr find_opt] Codegen.find_opt_function
@@ -291,7 +292,7 @@ let expand ~loc ~path:_ action query args =
                    | _ ->
                        Error
                          "Supported actions are execute, get_one, get_opt and \
-                          get_many") ) )
+                          get_many")))
   in
   match expression_result with
   | Ok (Ok expr) -> expr

@@ -2,7 +2,6 @@ open Base
 
 (* Simple queries *)
 type a = { username: string }
-
 type b = { id: int; username: string }
 
 let many_arg_execute =
@@ -159,9 +158,7 @@ let nested_modules =
       |sql}]
 
 type a' = { a1: int; a2: string }
-
 type b' = { b1: bool }
-
 type c' = { c1: int }
 
 let get_multiple_record_out =
@@ -176,7 +173,7 @@ let get_multiple_record_out =
 let get_cards_function =
   [%rapper
     get_many {sql| SELECT @int{id}, @Suit{suit} FROM cards |sql} function_out]
-    (fun ~suit ~id -> (id, suit))
+    (fun ~id ~suit -> (id, suit))
 
 module Twoot = struct
   type t = { id: int; content: string; likes: int }
