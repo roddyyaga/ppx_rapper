@@ -158,7 +158,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
           Ok
             (make_generic make_function
                [%expr
-                 Caqti_request.([%e caqti_request_function_expr])
+                 [%e caqti_request_function_expr]
                    ~oneshot:true ([%e caqti_input_type] [@ocaml.warning "-33"])
                    (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
                    sql])
@@ -170,8 +170,8 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
           Ok
             (make_generic make_function
                [%expr
-                 Caqti_request.([%e caqti_request_function_expr])
-                   [%e caqti_input_type] sql])
+                 [%e caqti_request_function_expr]
+                   [%e caqti_input_type] (Caqti_type.unit) sql])
         with Codegen.Error s -> Error s
       in
       (expand_get, expand_exec)
@@ -213,7 +213,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
           Ok
             (make_generic make_function
                [%expr
-                 Caqti_request.([%e caqti_request_function_expr])
+                 [%e caqti_request_function_expr]
                    (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
                    (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
                    [%e parsed_sql]])
@@ -225,9 +225,9 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
           Ok
             (make_generic make_function
                [%expr
-                 Caqti_request.([%e caqti_request_function_expr])
+                 [%e caqti_request_function_expr]
                    (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
-                   [%e parsed_sql]])
+                   (Caqti_type.unit) [%e parsed_sql]])
         with Codegen.Error s -> Error s
       in
       (expand_get, expand_exec)
@@ -283,12 +283,12 @@ let expand ~loc ~path:_ action query args =
                            Error
                              "function_out is not a valid argument for execute"
                        | `Tuple ->
-                           expand_exec [%expr exec] Codegen.exec_function)
-                   | "get_one" -> expand_get [%expr find] Codegen.find_function
+                           expand_exec [%expr Caqti_request.Infix.(->.)] Codegen.exec_function)
+                   | "get_one" -> expand_get [%expr Caqti_request.Infix.(->!)] Codegen.find_function
                    | "get_opt" ->
-                       expand_get [%expr find_opt] Codegen.find_opt_function
+                       expand_get [%expr Caqti_request.Infix.(->?)] Codegen.find_opt_function
                    | "get_many" ->
-                       expand_get [%expr collect] Codegen.collect_list_function
+                       expand_get [%expr Caqti_request.Infix.(->*)] Codegen.collect_list_function
                    | _ ->
                        Error
                          "Supported actions are execute, get_one, get_opt and \
