@@ -2,7 +2,7 @@
 
 (name ppx_rapper)
 
-(version 3.0.0)
+(version 3.1.0)
 
 (source
  (github roddyyaga/ppx_rapper))

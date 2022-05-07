@@ -401,10 +401,10 @@ let get_multiple_function_out loaders =
   wrapped loaders
 let use_let_syntax =
   let query =
-    (let open Caqti_request in exec)
+    Caqti_request.Infix.(->.)
       ((let open Caqti_type in
           tup2 string (tup2 string (tup2 (option string) int)))
-      [@ocaml.warning "-33"])
+      [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET (username, email, bio) = (?, ?, ?)\n      WHERE id = ?\n      " in
   let wrapped ~username  ~email  ~bio  ~id 
     ((module Db)  : (module Rapper_helper.CONNECTION)) =

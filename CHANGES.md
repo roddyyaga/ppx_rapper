@@ -1,3 +1,8 @@
+# 3.1.0
+- Replace deprecated caqti functions (#21, @apeschar)
+- `function_out` generate labelled params in the order they're queried (#20, @anmonteiro)
+- Add support for `let%rapper` pattern captures (#13, @rizo)
+
 # 3.0.0
 - Split into separate libraries for lwt and async (#4, @bikallem)
 
