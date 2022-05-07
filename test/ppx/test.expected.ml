@@ -399,3 +399,14 @@ let get_multiple_function_out loaders =
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.collect_list query ()) in
   wrapped loaders
+let use_let_syntax =
+  let query =
+    (let open Caqti_request in exec)
+      ((let open Caqti_type in
+          tup2 string (tup2 string (tup2 (option string) int)))
+      [@ocaml.warning "-33"])
+      "\n      UPDATE users\n      SET (username, email, bio) = (?, ?, ?)\n      WHERE id = ?\n      " in
+  let wrapped ~username  ~email  ~bio  ~id 
+    ((module Db)  : (module Rapper_helper.CONNECTION)) =
+    Db.exec query (username, (email, (bio, id))) in
+  wrapped

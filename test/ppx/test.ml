@@ -223,3 +223,11 @@ let get_multiple_function_out =
       ORDER BY users.id
       |sql}
       function_out]
+
+let%rapper use_let_syntax =
+  execute
+    {sql|
+      UPDATE users
+      SET (username, email, bio) = (%string{username}, %string{email}, %string?{bio})
+      WHERE id = %int{id}
+      |sql}
