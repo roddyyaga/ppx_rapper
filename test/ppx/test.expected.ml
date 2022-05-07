@@ -9,10 +9,10 @@ type c = {
   email: string }
 let many_arg_execute =
   let query =
-    (let open Caqti_request in exec)
+    Caqti_request.Infix.(->.)
       ((let open Caqti_type in
           tup2 string (tup2 string (tup2 (option string) int)))
-      [@ocaml.warning "-33"])
+      [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET (username, email, bio) = (?, ?, ?)\n      WHERE id = ?\n      " in
   let wrapped ~username  ~email  ~bio  ~id 
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
@@ -20,24 +20,24 @@ let many_arg_execute =
   wrapped
 let single_arg_execute =
   let query =
-    (let open Caqti_request in exec) ((let open Caqti_type in string)
-      [@ocaml.warning "-33"])
+    Caqti_request.Infix.(->.) ((let open Caqti_type in string)
+      [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET username = ?\n      " in
   let wrapped ~username  ((module Db)  : (module Rapper_helper.CONNECTION)) =
     Db.exec query username in
   wrapped
 let no_arg_execute =
   let query =
-    (let open Caqti_request in exec) ((let open Caqti_type in unit)
-      [@ocaml.warning "-33"])
+    Caqti_request.Infix.(->.) ((let open Caqti_type in unit)
+      [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET username = 'Hello!'\n      " in
   let wrapped () ((module Db)  : (module Rapper_helper.CONNECTION)) =
     Db.exec query () in
   wrapped
 let many_arg_get_one =
   let query =
-    (let open Caqti_request in find)
-      ((let open Caqti_type in tup2 string int)[@ocaml.warning "-33"])
+    Caqti_request.Infix.(->!) ((let open Caqti_type in tup2 string int)
+      [@ocaml.warning "-33"])
       ((let open Caqti_type in
           tup2 int (tup2 string (tup2 (option string) bool)))
       [@ocaml.warning "-33"])
@@ -53,7 +53,7 @@ let many_arg_get_one =
   wrapped
 let single_arg_get_one =
   let query =
-    (let open Caqti_request in find) ((let open Caqti_type in string)
+    Caqti_request.Infix.(->!) ((let open Caqti_type in string)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
@@ -66,7 +66,7 @@ let single_arg_get_one =
   wrapped
 let no_arg_get_one =
   let query =
-    (let open Caqti_request in find) ((let open Caqti_type in unit)
+    Caqti_request.Infix.(->!) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"])
       ((let open Caqti_type in tup2 int (tup2 string string))
       [@ocaml.warning "-33"])
@@ -80,7 +80,7 @@ let no_arg_get_one =
   wrapped
 let many_arg_get_one_repeated_arg =
   let query =
-    (let open Caqti_request in find)
+    Caqti_request.Infix.(->!)
       ((let open Caqti_type in tup2 int (tup2 string int))
       [@ocaml.warning "-33"]) ((let open Caqti_type in string)
       [@ocaml.warning "-33"])
@@ -93,9 +93,9 @@ let many_arg_get_one_repeated_arg =
   wrapped
 let many_arg_get_opt =
   let query =
-    (let open Caqti_request in find_opt)
-      ((let open Caqti_type in tup2 string int)[@ocaml.warning "-33"])
-      ((let open Caqti_type in tup2 int string)[@ocaml.warning "-33"])
+    Caqti_request.Infix.(->?) ((let open Caqti_type in tup2 string int)
+      [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
+      [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
   let wrapped ~username  ~min_id 
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
@@ -109,7 +109,7 @@ let many_arg_get_opt =
   wrapped
 let single_arg_get_opt =
   let query =
-    (let open Caqti_request in find_opt) ((let open Caqti_type in string)
+    Caqti_request.Infix.(->?) ((let open Caqti_type in string)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
@@ -124,7 +124,7 @@ let single_arg_get_opt =
   wrapped
 let no_arg_get_opt =
   let query =
-    (let open Caqti_request in find_opt) ((let open Caqti_type in unit)
+    Caqti_request.Infix.(->?) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      " in
@@ -139,9 +139,9 @@ let no_arg_get_opt =
   wrapped
 let many_arg_get_many =
   let query =
-    (let open Caqti_request in collect)
-      ((let open Caqti_type in tup2 string int)[@ocaml.warning "-33"])
-      ((let open Caqti_type in tup2 int string)[@ocaml.warning "-33"])
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in tup2 string int)
+      [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
+      [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
   let wrapped ~username  ~min_id 
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
@@ -153,7 +153,7 @@ let many_arg_get_many =
   wrapped
 let single_arg_get_many =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in string)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in string)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
@@ -166,7 +166,7 @@ let single_arg_get_many =
   wrapped
 let no_arg_get_many =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in unit)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      " in
@@ -179,8 +179,8 @@ let no_arg_get_many =
   wrapped
 let my_query =
   let query =
-    (let open Caqti_request in find_opt)
-      ((let open Caqti_type in tup2 string int)[@ocaml.warning "-33"])
+    Caqti_request.Infix.(->?) ((let open Caqti_type in tup2 string int)
+      [@ocaml.warning "-33"])
       ((let open Caqti_type in
           tup2 int (tup2 string (tup2 bool (option string))))
       [@ocaml.warning "-33"])
@@ -219,7 +219,7 @@ let list =
                    Dynparam.add ((let open Caqti_type in int)
                      [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
-            (let open Caqti_request in find_opt) ~oneshot:true
+            Caqti_request.Infix.(->?) ~oneshot:true
               (let open Caqti_type in tup2 bool packed_list_type)
               ((let open Caqti_type in
                   tup2 int (tup2 string (tup2 bool (option string))))
@@ -256,9 +256,8 @@ let collect_list =
                    Dynparam.add ((let open Caqti_type in int)
                      [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
-            (let open Caqti_request in collect) ~oneshot:true
-              packed_list_type ((let open Caqti_type in string)
-              [@ocaml.warning "-33"]) sql in
+            Caqti_request.Infix.( ->* ) ~oneshot:true packed_list_type
+              ((let open Caqti_type in string)[@ocaml.warning "-33"]) sql in
           Db.collect_list query versions in
   wrapped
 module Suit : Ppx_rapper_runtime.CUSTOM =
@@ -286,7 +285,7 @@ module Suit : Ppx_rapper_runtime.CUSTOM =
   end 
 let get_cards =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in Suit.t)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in Suit.t)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int Suit.t)
       [@ocaml.warning "-33"]) " SELECT id, suit FROM cards WHERE suit <> ? " in
   let wrapped ~suit  ((module Db)  : (module Rapper_helper.CONNECTION)) =
@@ -298,7 +297,7 @@ let get_cards =
   wrapped
 let all_types =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in unit)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"])
       ((let open Caqti_type in
           tup2 string
@@ -333,8 +332,8 @@ let all_types =
 module Nested = struct module Suit = Suit end
 let get_cards =
   let query =
-    (let open Caqti_request in collect)
-      ((let open Caqti_type in Nested.Suit.t)[@ocaml.warning "-33"])
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in Nested.Suit.t)
+      [@ocaml.warning "-33"])
       ((let open Caqti_type in tup2 int Nested.Suit.t)[@ocaml.warning "-33"])
       " SELECT id, suit FROM cards WHERE suit <> ? " in
   let wrapped ~suit  ((module Db)  : (module Rapper_helper.CONNECTION)) =
@@ -353,7 +352,7 @@ type twoot = {
   likes: int }
 let get_multiple_record_out =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in unit)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"])
       ((let open Caqti_type in
           tup2 int (tup2 string (tup2 int (tup2 string int))))
@@ -362,27 +361,27 @@ let get_multiple_record_out =
   let wrapped () ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (user_id, (name, (twoot_id, (content, likes)))) =
-        ({ name; user_id }, { likes; content; twoot_id }) in
+        ({ user_id; name }, { twoot_id; content; likes }) in
       let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.collect_list query ()) in
   wrapped
 let get_single_function_out loaders =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in unit)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"]) ((let open Caqti_type in tup2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, name\n      FROM users\n      " in
   let wrapped loader () ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
-      let g (id, name) = loader ~name ~id in
+      let g (id, name) = loader ~id ~name in
       let f = Stdlib.List.map g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.collect_list query ()) in
   wrapped loaders
 let get_multiple_function_out loaders =
   let query =
-    (let open Caqti_request in collect) ((let open Caqti_type in unit)
+    Caqti_request.Infix.( ->* ) ((let open Caqti_type in unit)
       [@ocaml.warning "-33"])
       ((let open Caqti_type in
           tup2 int (tup2 string (tup2 int (tup2 string int))))
