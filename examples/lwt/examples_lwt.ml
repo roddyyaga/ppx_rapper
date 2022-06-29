@@ -1,6 +1,5 @@
 (* Simple queries *)
 type a = { username: string }
-
 type b = { id: int; username: string }
 
 let many_arg_execute =
@@ -120,7 +119,6 @@ let get_multiple_function_out () dbh =
         [ (snd, fun user twoots -> { user with twoots }) ]
 
 type regclass_response = { to_regclass: string option; lec: int }
-
 type foo = { exists: bool; some_other_param: bool }
 
 let get_something =
@@ -132,3 +130,16 @@ let get_something =
   FROM pg_tables
   WHERE schemaname = 'schema_name' AND tablename = 'table_name'
 ); |sql}]
+
+(* Examples of creating caqti connections and using them for queries *)
+let main_pooled () =
+  let pool =
+    Caqti_lwt.connect_pool (Uri.of_string "postgresql://example.com")
+    |> Result.get_ok
+  in
+  Caqti_lwt.Pool.use (get_something ()) pool
+
+let main_not_pooled () =
+  Caqti_lwt.with_connection
+    (Uri.of_string "postgresql://example.com")
+    (get_something ())

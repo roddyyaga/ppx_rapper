@@ -1,6 +1,5 @@
 (* Simple queries *)
 type a = { username: string }
-
 type b = { id: int; username: string }
 
 let many_arg_execute =
@@ -118,3 +117,16 @@ let get_multiple_function_out () dbh =
   >>| Rapper.load_many
         (fst, fun { User.id; _ } -> id)
         [ (snd, fun user twoots -> { user with twoots }) ]
+
+(* Examples of creating caqti connections and using them for queries *)
+let main_pooled () =
+  let pool =
+    Caqti_async.connect_pool (Uri.of_string "postgresql://example.com")
+    |> Result.get_ok
+  in
+  Caqti_async.Pool.use (get_multiple_function_out ()) pool
+
+let main_not_pooled () =
+  Caqti_async.with_connection
+    (Uri.of_string "postgresql://example.com")
+    (get_multiple_function_out ())
