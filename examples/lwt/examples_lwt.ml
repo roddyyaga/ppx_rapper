@@ -134,12 +134,12 @@ let get_something =
 (* Examples of creating caqti connections and using them for queries *)
 let main_pooled () =
   let pool =
-    Caqti_lwt.connect_pool (Uri.of_string "postgresql://example.com")
+    Caqti_lwt_unix.connect_pool (Uri.of_string "postgresql://example.com")
     |> Result.get_ok
   in
   Caqti_lwt.Pool.use (get_something ()) pool
 
 let main_not_pooled () =
-  Caqti_lwt.with_connection
+  Caqti_lwt_unix.with_connection
     (Uri.of_string "postgresql://example.com")
     (get_something ())
