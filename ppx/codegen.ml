@@ -22,10 +22,11 @@ exception Error of string
 (** [up_to_last (xs @ [x])] returns [xs] *)
 let up_to_last xs = List.take xs (List.length xs - 1)
 
+(* TODO - factoring to add some syntactic sugars *)
 (** Produces individual Caqti types from parsed parameters *)
 let caqti_type_of_param ~loc Query.{ typ; opt; _ } =
   let base_expr =
-    match typ with
+    match typ with (*Replacing "match typ with" with function *)
     | None, base_type -> (
         match base_type with
         | "string" -> [%expr string]
@@ -45,6 +46,8 @@ let caqti_type_of_param ~loc Query.{ typ; opt; _ } =
         (* This case covers [cdate] and [ctime] *)
         Buildef.pexp_ident ~loc
           (Loc.make ~loc (Longident.parse (module_name ^ "." ^ typ)))
+  (** replacing line 47 with reverse application ( |> ) to avoid multiple parenthesis 
+  typ |> ^ "." ^ |> module_name |> Longindent.parse |> Loc.make ~loc |> Buildef.pexp_indent ~loc*)
   in
   match opt with
   | true -> Buildef.(pexp_apply ~loc [%expr option] [ (Nolabel, base_expr) ])
