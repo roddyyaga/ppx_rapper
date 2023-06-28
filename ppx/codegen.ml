@@ -55,7 +55,7 @@ let caqti_type_tup_of_expressions ~loc expressions =
   | 0 -> [%expr unit]
   | _ ->
       let f elem_type_expr apply_expr =
-        [%expr tup2 [%e elem_type_expr] [%e apply_expr]]
+        [%expr t2 [%e elem_type_expr] [%e apply_expr]]
       in
       List.fold_right ~f
         ~init:(List.last_exn expressions)
