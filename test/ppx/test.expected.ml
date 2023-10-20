@@ -220,7 +220,8 @@ let list =
                      [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
             Caqti_request.Infix.(->?) ~oneshot:true
-              (let open Caqti_type in tup2 bool packed_list_type)
+              ((let open Caqti_type in tup2 bool packed_list_type)
+              [@ocaml.warning "-33"])
               ((let open Caqti_type in
                   tup2 int (tup2 string (tup2 bool (option string))))
               [@ocaml.warning "-33"]) sql in
@@ -256,8 +257,9 @@ let collect_list =
                    Dynparam.add ((let open Caqti_type in int)
                      [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
-            Caqti_request.Infix.( ->* ) ~oneshot:true packed_list_type
-              ((let open Caqti_type in string)[@ocaml.warning "-33"]) sql in
+            Caqti_request.Infix.( ->* ) ~oneshot:true ((packed_list_type)
+              [@ocaml.warning "-33"]) ((let open Caqti_type in string)
+              [@ocaml.warning "-33"]) sql in
           Db.collect_list query versions in
   wrapped
 module Suit : Ppx_rapper_runtime.CUSTOM =
