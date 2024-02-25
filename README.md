@@ -40,9 +40,9 @@ let my_query =
     (let open Caqti_request in
     find_opt)
       ((let open Caqti_type in
-       tup2 string int) [@ocaml.warning "-33"])
+       t2 string int) [@ocaml.warning "-33"])
       ((let open Caqti_type in
-       tup2 int (tup2 string (tup2 bool (option string))))
+       t2 int (t2 string (t2 bool (option string))))
       [@ocaml.warning "-33"])
       "\n\
       \      SELECT id, username, following, bio\n\
