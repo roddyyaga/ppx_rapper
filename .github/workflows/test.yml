@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        ocaml-version: ['4.08', '4.12', '4.14', '5.2']
+        ocaml-version: ['4.12', '4.14', '5.2']
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -45,6 +45,10 @@ jobs:
         opam pin add ppx_rapper_lwt.dev . -y --no-action
         opam pin add ppx_rapper_async.dev . -y --no-action
         opam install ppx_rapper_async.dev ppx_rapper_lwt.dev -t
+
+    - name: Install ppx_rapper_eio if OCaml version is 5.x
+      if: startsWith(matrix.ocaml-version, '5')
+      run: opam install ppx_rapper_eio -t
 
     - name: Save OPAM cache
       uses: actions/cache/save@v4
