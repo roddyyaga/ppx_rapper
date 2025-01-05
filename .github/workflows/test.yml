@@ -24,11 +24,10 @@ jobs:
       with:
         ocaml-compiler: ${{ matrix.ocaml-version }}
 
-    - run: opam update
-    - run: opam pin add ppx_rapper --no-action .
-    - run: opam pin add ppx_rapper_lwt --no-action .
-    - run: opam pin add ppx_rapper_async --no-action .
-    - run: OPAMSOLVERTIMEOUT=3600 opam depext -yt ppx_rapper ppx_rapper_lwt ppx_rapper_async
-    - run: OPAMSOLVERTIMEOUT=3600 opam install -t . --deps-only
-    - run: opam exec -- dune build
-    - run: opam exec -- dune runtest
+    - name: opam pin packages
+      run: |
+        opam update
+        opam pin add ppx_rapper.dev . -y --no-action
+        opam pin add ppx_rapper_lwt.dev . -y --no-action
+        opam pin add ppx_rapper_async.dev . -y --no-action
+        opam install ppx_rapper_async.dev ppx_rapper_lwt.dev -t
