@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        ocaml-version: ['4.07.1', '4.12.1', '4.14.2', '5.2']
+        ocaml-version: ['4.08', '4.12', '4.14', '5.2']
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -24,6 +24,15 @@ jobs:
       with:
         ocaml-compiler: ${{ matrix.ocaml-version }}
 
+    - name: Restore OPAM cache
+      id: opam-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.opam
+          ~/work/ppx_rapper/_opam
+        key: opam-${{ matrix.os }}-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}
+
     - name: opam pin packages
       run: |
         opam update
@@ -32,3 +41,12 @@ jobs:
         opam pin add ppx_rapper_lwt.dev . -y --no-action
         opam pin add ppx_rapper_async.dev . -y --no-action
         opam install ppx_rapper_async.dev ppx_rapper_lwt.dev -t
+
+    - name: Save OPAM cache
+      uses: actions/cache/save@v4
+      if: steps.opam-cache.outputs.cache-hit != 'true'
+      with:
+        path: |
+          ~/.opam
+          ~/work/ppx_rapper/_opam
+        key: opam-${{ matrix.os }}-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}
