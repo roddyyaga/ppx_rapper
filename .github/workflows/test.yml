@@ -1,5 +1,11 @@
 name: "Build and test"
-on: [push]
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
 jobs:
   run:
     name: "Build and test"
@@ -10,12 +16,13 @@ jobs:
         operating-system: [ubuntu-latest]
         ocaml-version: ['4.07.1', '4.08.1', '4.09.0', '4.10.0', '4.11.1']
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - name: Setup OCaml
+    - name: Setup OCaml ${{ matrix.ocaml-version }}
       uses: avsm/setup-ocaml@v3
       with:
-        ocaml-version: ${{ matrix.ocaml-version }}
+        ocaml-compiler: ${{ matrix.ocaml-version }}
 
     - run: opam update
     - run: opam pin add ppx_rapper --no-action .
