@@ -27,6 +27,7 @@ jobs:
     - name: opam pin packages
       run: |
         opam update
+        opam pin add pg_query --dev-repo -y --no-action
         opam pin add ppx_rapper.dev . -y --no-action
         opam pin add ppx_rapper_lwt.dev . -y --no-action
         opam pin add ppx_rapper_async.dev . -y --no-action
