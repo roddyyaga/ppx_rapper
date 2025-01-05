@@ -2,7 +2,7 @@
 
 # ppx_rapper
 An extension that allows named parameters in SQL with types inferred, and syntax checking of SQL as a preprocessing
-step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using Caqti. The name comes from the idea of
+step. Like [ppx_mysql](https://github.com/issuu/ppx_mysql) but using [Caqti](https://github.com/paurkedal/ocaml-caqti). The name comes from the idea of
 [Dapper](https://github.com/StackExchange/Dapper) but with Records.
 
 The syntax checking feature only works for PostgreSQL, but other features should work with other Caqti backends such as MariaDB and SQLite. If you are using a non-Postgres dialect you should use the `syntax_off` option to avoid spurious errors.
