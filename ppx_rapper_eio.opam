@@ -10,7 +10,7 @@ doc: "https://github.com/roddyyaga/ppx_rapper"
 bug-reports: "https://github.com/roddyyaga/ppx_rapper/issues"
 depends: [
   "dune" {>= "3.0"}
-  "ocaml" {>= "4.07"}
+  "ocaml" {>= "4.08"}
   "ppx_rapper" {= version}
   "caqti-eio"
   "eio"
