@@ -1,4 +1,4 @@
-(lang dune 2.0)
+(lang dune 3.0)
 
 (name ppx_rapper)
 
@@ -22,21 +22,21 @@
  (synopsis "Syntax extension for Caqti/PostgreSQL queries")
  (depends
   (ocaml
-   (>= 4.07))
+   (>= 4.08))
   pg_query
   (ppxlib
    (>= 0.3.1))
   (base
    (>= v0.11.1))
   (caqti
-   (>= 1.7.0))))
+   (>= 2.0.0))))
 
 (package
  (name ppx_rapper_async)
  (synopsis "Async support for ppx_rapper")
  (depends
   (ocaml
-   (>= 4.07))
+   (>= 4.08))
   (ppx_rapper
    (= :version))
   caqti-async
@@ -47,7 +47,7 @@
  (synopsis "Lwt support for ppx_rapper")
  (depends
   (ocaml
-   (>= 4.07))
+   (>= 4.08))
   (ppx_rapper
    (= :version))
   caqti-lwt
@@ -59,7 +59,7 @@
  (synopsis "EIO support for ppx_rapper")
  (depends
   (ocaml
-   (>= 4.07))
+   (>= 4.08))
   (ppx_rapper
    (= :version))
   caqti-eio

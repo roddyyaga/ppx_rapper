@@ -1,5 +1,15 @@
 name: "Build and test"
-on: [push]
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   run:
     name: "Build and test"
@@ -8,20 +18,45 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        ocaml-version: ['4.07.1', '4.08.1', '4.09.0', '4.10.0', '4.11.1']
+        ocaml-version: ['4.12', '4.14', '5.2']
     steps:
-    - uses: actions/checkout@master
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - name: Setup OCaml
-      uses: avsm/setup-ocaml@master
+    - name: Setup OCaml ${{ matrix.ocaml-version }}
+      uses: avsm/setup-ocaml@v3
       with:
-        ocaml-version: ${{ matrix.ocaml-version }}
+        ocaml-compiler: ${{ matrix.ocaml-version }}
 
-    - run: opam update
-    - run: opam pin add ppx_rapper --no-action .
-    - run: opam pin add ppx_rapper_lwt --no-action .
-    - run: opam pin add ppx_rapper_async --no-action .
-    - run: OPAMSOLVERTIMEOUT=3600 opam depext -yt ppx_rapper ppx_rapper_lwt ppx_rapper_async
-    - run: OPAMSOLVERTIMEOUT=3600 opam install -t . --deps-only
-    - run: opam exec -- dune build
-    - run: opam exec -- dune runtest
+    - name: Restore OPAM cache
+      id: opam-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.opam
+          ~/work/ppx_rapper/ppx_rapper/_opam
+        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}
+
+    - name: opam pin packages
+      run: |
+        opam update
+        opam pin add pg_query --dev-repo -y --no-action
+        opam pin add ppx_rapper.dev . -y --no-action
+        opam pin add ppx_rapper_lwt.dev . -y --no-action
+        opam pin add ppx_rapper_async.dev . -y --no-action
+        opam install ppx_rapper_async.dev ppx_rapper_lwt.dev -t
+
+    - name: Install ppx_rapper_eio if OCaml version is 5.x
+      if: startsWith(matrix.ocaml-version, '5')
+      run: |
+        opam pin add ppx_rapper_eio.dev . -y --no-action
+        opam install ppx_rapper_eio -t
+
+    - name: Save OPAM cache
+      uses: actions/cache/save@v4
+      if: steps.opam-cache.outputs.cache-hit != 'true'
+      with:
+        path: |
+          ~/.opam
+          ~/work/ppx_rapper/ppx_rapper/_opam
+        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}
