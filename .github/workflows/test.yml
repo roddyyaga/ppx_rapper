@@ -34,8 +34,8 @@ jobs:
       with:
         path: |
           ~/.opam
-          ~/work/ppx_rapper/_opam
-        key: opam-${{ matrix.os }}-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}
+          ~/work/ppx_rapper/ppx_rapper/_opam
+        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('ppx_rapper/*.opam') }}
 
     - name: opam pin packages
       run: |
@@ -48,12 +48,15 @@ jobs:
 
     - name: Install ppx_rapper_eio if OCaml version is 5.x
       if: startsWith(matrix.ocaml-version, '5')
-      run: opam install ppx_rapper_eio -t
+      run: |
+        opam pin add ppx_rapper_eio.dev . -y --no-action
+        opam install ppx_rapper_eio -t
 
     - name: print cache paths
       run: |
         ls -lah ~/work
         ls -lah ~/work/ppx_rapper
+        ls -lah ~/work/ppx_rapper/ppx_rapper
 
     - name: Save OPAM cache
       uses: actions/cache/save@v4
@@ -62,4 +65,4 @@ jobs:
         path: |
           ~/.opam
           ~/work/ppx_rapper/_opam
-        key: opam-${{ matrix.os }}-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}
+        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('ppx_rapper/*.opam') }}
