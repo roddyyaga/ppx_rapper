@@ -35,7 +35,7 @@ jobs:
         path: |
           ~/.opam
           ~/work/ppx_rapper/ppx_rapper/_opam
-        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('ppx_rapper/*.opam') }}
+        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}
 
     - name: opam pin packages
       run: |
@@ -64,5 +64,5 @@ jobs:
       with:
         path: |
           ~/.opam
-          ~/work/ppx_rapper/_opam
-        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('ppx_rapper/*.opam') }}
+          ~/work/ppx_rapper/ppx_rapper/_opam
+        key: opam-${{ matrix.operating-system }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}
