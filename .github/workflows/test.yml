@@ -52,12 +52,6 @@ jobs:
         opam pin add ppx_rapper_eio.dev . -y --no-action
         opam install ppx_rapper_eio -t
 
-    - name: print cache paths
-      run: |
-        ls -lah ~/work
-        ls -lah ~/work/ppx_rapper
-        ls -lah ~/work/ppx_rapper/ppx_rapper
-
     - name: Save OPAM cache
       uses: actions/cache/save@v4
       if: steps.opam-cache.outputs.cache-hit != 'true'
