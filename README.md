@@ -1,4 +1,4 @@
-![Build](https://github.com/roddyyaga/ppx_rapper/workflows/Build%20and%20test/badge.svg)
+[![Build](https://github.com/roddyyaga/ppx_rapper/workflows/Build%20and%20test/badge.svg)](https://github.com/roddyyaga/ppx_rapper/actions/workflows/test.yml)
 
 # ppx_rapper
 An extension that allows named parameters in SQL with types inferred, and syntax checking of SQL as a preprocessing
