@@ -327,7 +327,9 @@ let let_pattern () =
   let open Ast_pattern in
   pstr
     (pstr_value nonrecursive
-       (value_binding ~pat:(ppat_var __) ~expr:(apply_pattern ()) ^:: nil)
+       (value_binding
+       ~constraint_:drop
+       ~pat:(ppat_var __) ~expr:(apply_pattern ()) ^:: nil)
     ^:: nil)
 
 let name = "rapper"
