@@ -1,0 +1,5 @@
+(library
+ (name examples_eio)
+ (libraries eio ppx_rapper_eio caqti-eio.unix)
+ (preprocess
+  (pps ppx_rapper)))
