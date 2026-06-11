@@ -1,3 +1,8 @@
+(env
+ (_
+  (flags
+   (:standard -warn-error -32))))
+
 (tests
  (names test_compiles test_compiles_base)
  (package ppx_rapper_lwt)
