@@ -13,7 +13,7 @@ let many_arg_execute =
       ((let open Caqti_type in t2 string (t2 string (t2 (option string) int)))
       [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET (username, email, bio) = (?, ?, ?)\n      WHERE id = ?\n      " in
-  let wrapped ~username  ~email  ~bio  ~id 
+  let wrapped ~username ~email ~bio ~id
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     Db.exec query (username, (email, (bio, id))) in
   wrapped
@@ -22,7 +22,7 @@ let single_arg_execute =
     Caqti_request.Infix.(->.) ((let open Caqti_type in string)
       [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET username = ?\n      " in
-  let wrapped ~username  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~username ((module Db)  : (module Rapper_helper.CONNECTION)) =
     Db.exec query username in
   wrapped
 let no_arg_execute =
@@ -40,7 +40,7 @@ let many_arg_get_one =
       ((let open Caqti_type in t2 int (t2 string (t2 (option string) bool)))
       [@ocaml.warning "-33"])
       "\n      SELECT id, username, bio, is_married\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
-  let wrapped ~username  ~min_id 
+  let wrapped ~username ~min_id
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       match result with
@@ -55,7 +55,7 @@ let single_arg_get_one =
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
-  let wrapped ~username  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~username ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       match result with
       | Ok (id, username) -> Ok { id; username }
@@ -82,7 +82,7 @@ let many_arg_get_one_repeated_arg =
       ((let open Caqti_type in t2 int (t2 string int))[@ocaml.warning "-33"])
       ((let open Caqti_type in string)[@ocaml.warning "-33"])
       "\n      SELECT username\n      FROM users\n      WHERE id = ? OR username = ? OR id <> ?\n      " in
-  let wrapped ~id  ~username 
+  let wrapped ~id ~username
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       match result with | Ok username -> Ok { username } | Error e -> Error e in
@@ -94,13 +94,12 @@ let many_arg_get_opt =
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
-  let wrapped ~username  ~min_id 
+  let wrapped ~username ~min_id
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, username) = (id, username) in
       let f =
-        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
-          g in
+        (fun f x -> match x with | Some x -> Some (f x) | None -> None) g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.find_opt query (username, min_id)) in
   wrapped
@@ -110,12 +109,11 @@ let single_arg_get_opt =
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
-  let wrapped ~username  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~username ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, username) = { id; username } in
       let f =
-        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
-          g in
+        (fun f x -> match x with | Some x -> Some (f x) | None -> None) g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.find_opt query username) in
   wrapped
@@ -129,8 +127,7 @@ let no_arg_get_opt =
     let f result =
       let g (id, username) = (id, username) in
       let f =
-        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
-          g in
+        (fun f x -> match x with | Some x -> Some (f x) | None -> None) g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.find_opt query ()) in
   wrapped
@@ -140,7 +137,7 @@ let many_arg_get_many =
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ? AND id > ?\n      " in
-  let wrapped ~username  ~min_id 
+  let wrapped ~username ~min_id
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, username) = { id; username } in
@@ -154,7 +151,7 @@ let single_arg_get_many =
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int string)
       [@ocaml.warning "-33"])
       "\n      SELECT id, username\n      FROM users\n      WHERE username = ?\n      " in
-  let wrapped ~username  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~username ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, username) = (id, username) in
       let f = Stdlib.List.map g in
@@ -181,19 +178,18 @@ let my_query =
       ((let open Caqti_type in t2 int (t2 string (t2 bool (option string))))
       [@ocaml.warning "-33"])
       "\n      SELECT id, username, following, bio\n      FROM users\n      WHERE username <> ? AND id > ?\n      " in
-  let wrapped ~wrong_user  ~min_id 
+  let wrapped ~wrong_user ~min_id
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, (username, (following, bio))) =
         (id, username, following, bio) in
       let f =
-        (fun f -> fun x -> match x with | Some x -> Some (f x) | None -> None)
-          g in
+        (fun f x -> match x with | Some x -> Some (f x) | None -> None) g in
       match result with | Ok x -> Ok (f x) | Error e -> Error e in
     Rapper_helper.map f (Db.find_opt query (wrong_user, min_id)) in
   wrapped
 let list =
-  let wrapped ~following  ~ids 
+  let wrapped ~following ~ids
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     match ids with
     | [] ->
@@ -210,10 +206,9 @@ let list =
         let open Rapper.Internal in
           let Dynparam.Pack (packed_list_type, ids) =
             Stdlib.List.fold_left
-              (fun pack ->
-                 fun item ->
-                   Dynparam.add ((let open Caqti_type in int)
-                     [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
+              (fun pack item ->
+                 Dynparam.add ((let open Caqti_type in int)
+                   [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
             Caqti_request.Infix.(->?) ~oneshot:true
               ((let open Caqti_type in t2 bool packed_list_type)
@@ -225,14 +220,13 @@ let list =
             let g (id, (username, (following, bio))) =
               (id, username, following, bio) in
             let f =
-              (fun f ->
-                 fun x -> match x with | Some x -> Some (f x) | None -> None)
+              (fun f x -> match x with | Some x -> Some (f x) | None -> None)
                 g in
             match result with | Ok x -> Ok (f x) | Error e -> Error e in
           Rapper_helper.map f (Db.find_opt query (following, ids)) in
   wrapped
 let collect_list =
-  let wrapped ~versions  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~versions ((module Db)  : (module Rapper_helper.CONNECTION)) =
     match versions with
     | [] ->
         Rapper_helper.fail
@@ -248,10 +242,9 @@ let collect_list =
         let open Rapper.Internal in
           let Dynparam.Pack (packed_list_type, versions) =
             Stdlib.List.fold_left
-              (fun pack ->
-                 fun item ->
-                   Dynparam.add ((let open Caqti_type in int)
-                     [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
+              (fun pack item ->
+                 Dynparam.add ((let open Caqti_type in int)
+                   [@ocaml.warning "-33"]) item pack) Dynparam.empty elems in
           let query =
             Caqti_request.Infix.( ->* ) ~oneshot:true ((packed_list_type)
               [@ocaml.warning "-33"]) ((let open Caqti_type in string)
@@ -286,7 +279,7 @@ let get_cards =
     Caqti_request.Infix.( ->* ) ((let open Caqti_type in Suit.t)
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int Suit.t)
       [@ocaml.warning "-33"]) " SELECT id, suit FROM cards WHERE suit <> ? " in
-  let wrapped ~suit  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~suit ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, suit) = (id, suit) in
       let f = Stdlib.List.map g in
@@ -333,7 +326,7 @@ let get_cards =
     Caqti_request.Infix.( ->* ) ((let open Caqti_type in Nested.Suit.t)
       [@ocaml.warning "-33"]) ((let open Caqti_type in t2 int Nested.Suit.t)
       [@ocaml.warning "-33"]) " SELECT id, suit FROM cards WHERE suit <> ? " in
-  let wrapped ~suit  ((module Db)  : (module Rapper_helper.CONNECTION)) =
+  let wrapped ~suit ((module Db)  : (module Rapper_helper.CONNECTION)) =
     let f result =
       let g (id, suit) = (id, suit) in
       let f = Stdlib.List.map g in
@@ -400,7 +393,7 @@ let use_let_syntax =
       ((let open Caqti_type in t2 string (t2 string (t2 (option string) int)))
       [@ocaml.warning "-33"]) Caqti_type.unit
       "\n      UPDATE users\n      SET (username, email, bio) = (?, ?, ?)\n      WHERE id = ?\n      " in
-  let wrapped ~username  ~email  ~bio  ~id 
+  let wrapped ~username ~email ~bio ~id
     ((module Db)  : (module Rapper_helper.CONNECTION)) =
     Db.exec query (username, (email, (bio, id))) in
   wrapped

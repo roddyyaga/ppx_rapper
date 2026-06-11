@@ -1,7 +1,7 @@
 (env
  (_
   (flags
-   (:standard -warn-error -32))))
+   (:standard -warn-error -32-34))))
 
 (tests
  (names test_compiles test_compiles_base)
