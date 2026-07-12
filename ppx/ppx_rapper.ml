@@ -42,6 +42,22 @@ let component_expressions ~loc parsed_query =
   let parsed_sql = Buildef.estring ~loc parsed_query.sql in
   (inputs_caqti_type, outputs_caqti_type, parsed_sql)
 
+let make_request ~loc ~policy request_type query =
+  [%expr
+    Caqti.Template.Request.create [%e policy] [%e request_type]
+      (fun _ -> Caqti.Template.Query.parse [%e query])]
+
+let make_request_type ~loc kind input output =
+  match kind with
+  | `Exec ->
+      [%expr Caqti.Template.Request_type.Infix.([%e input] -->. [%e output])]
+  | `Find ->
+      [%expr Caqti.Template.Request_type.Infix.([%e input] -->! [%e output])]
+  | `Find_opt ->
+      [%expr Caqti.Template.Request_type.Infix.([%e input] -->? [%e output])]
+  | `Collect ->
+      [%expr Caqti.Template.Request_type.Infix.([%e input] -->* [%e output])]
+
 (** Make a function [expand_get] to produce the expressions for [get_one], [get_opt] and [get_many], and a similar [expand_exec] for [execute] *)
 let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
     =
@@ -82,19 +98,19 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
               Codegen.caqti_type_tup_of_expressions ~loc
                 ([%expr packed_list_type] :: exprs_after)
             in
-            [%expr Caqti_type.([%e expression])]
+            [%expr Caqti.Template.Row_type.([%e expression])]
         | false, true ->
             let expression =
               Codegen.caqti_type_tup_of_expressions ~loc
                 (exprs_before @ [ [%expr packed_list_type] ])
             in
-            [%expr Caqti_type.([%e expression])]
+            [%expr Caqti.Template.Row_type.([%e expression])]
         | false, false ->
             let expression =
               Codegen.caqti_type_tup_of_expressions ~loc
                 (exprs_before @ [ [%expr packed_list_type] ] @ exprs_after)
             in
-            [%expr Caqti_type.([%e expression])]
+            [%expr Caqti.Template.Row_type.([%e expression])]
       in
       let outputs_caqti_type = Codegen.make_caqti_type_tup ~loc out_params in
       let list_param = List.hd_exn params in
@@ -109,8 +125,9 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
               with
               | [] ->
                   Rapper_helper.fail
-                    Caqti_error.(
-                      encode_rejected ~uri:Uri.empty ~typ:Caqti_type.unit
+                    Caqti.Error.(
+                      encode_rejected ~uri:Uri.empty
+                        ~typ:Caqti.Template.Row_type.unit
                         (Msg "Empty list"))
               | elems ->
                   let subsqls =
@@ -125,7 +142,7 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
                     Stdlib.List.fold_left
                       (fun pack item ->
                         Dynparam.add
-                          (Caqti_type.(
+                          (Caqti.Template.Row_type.(
                              [%e
                                Codegen.make_caqti_type_tup ~loc [ list_param ]])
                           [@ocaml.warning "-33"])
@@ -153,25 +170,33 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
               in
               wrapped]
       in
-      let expand_get caqti_request_function_expr make_function =
+      let expand_get request_kind make_function =
         try
           Ok
             (make_generic make_function
-               [%expr
-                 [%e caqti_request_function_expr]
-                   ~oneshot:true ([%e caqti_input_type] [@ocaml.warning "-33"])
-                   (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
-                   sql])
+               (make_request
+                  ~loc
+                  ~policy:[%expr Caqti.Template.Request.Direct]
+                  (make_request_type ~loc request_kind
+                     [%expr ([%e caqti_input_type] [@ocaml.warning "-33"])]
+                     [%expr
+                       (Caqti.Template.Row_type.([%e outputs_caqti_type])
+                       [@ocaml.warning "-33"])])
+                  [%expr sql]))
         with Codegen.Error s -> Error s
       in
 
-      let expand_exec caqti_request_function_expr make_function =
+      let expand_exec request_kind make_function =
         try
           Ok
             (make_generic make_function
-               [%expr
-                 [%e caqti_request_function_expr]
-                   [%e caqti_input_type] (Caqti_type.unit) sql])
+               (make_request
+                  ~loc
+                  ~policy:[%expr Caqti.Template.Request.Direct]
+                  (make_request_type ~loc request_kind
+                     [%expr ([%e caqti_input_type] [@ocaml.warning "-33"])]
+                     [%expr Caqti.Template.Row_type.unit])
+                  [%expr sql]))
         with Codegen.Error s -> Error s
       in
       (expand_get, expand_exec)
@@ -208,26 +233,37 @@ let make_expand_get_and_exec_expression ~loc parsed_query input_kind output_kind
               in
               wrapped]
       in
-      let expand_get caqti_request_function_expr make_function =
+      let expand_get request_kind make_function =
         try
           Ok
             (make_generic make_function
-               [%expr
-                 [%e caqti_request_function_expr]
-                   (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
-                   (Caqti_type.([%e outputs_caqti_type]) [@ocaml.warning "-33"])
-                   [%e parsed_sql]])
+               (make_request
+                  ~loc
+                  ~policy:[%expr Caqti.Template.Request.Static]
+                  (make_request_type ~loc request_kind
+                     [%expr
+                       (Caqti.Template.Row_type.([%e inputs_caqti_type])
+                       [@ocaml.warning "-33"])]
+                     [%expr
+                       (Caqti.Template.Row_type.([%e outputs_caqti_type])
+                       [@ocaml.warning "-33"])])
+                  parsed_sql))
         with Codegen.Error s -> Error s
       in
 
-      let expand_exec caqti_request_function_expr make_function =
+      let expand_exec request_kind make_function =
         try
           Ok
             (make_generic make_function
-               [%expr
-                 [%e caqti_request_function_expr]
-                   (Caqti_type.([%e inputs_caqti_type]) [@ocaml.warning "-33"])
-                   (Caqti_type.unit) [%e parsed_sql]])
+               (make_request
+                  ~loc
+                  ~policy:[%expr Caqti.Template.Request.Static]
+                  (make_request_type ~loc request_kind
+                     [%expr
+                       (Caqti.Template.Row_type.([%e inputs_caqti_type])
+                       [@ocaml.warning "-33"])]
+                     [%expr Caqti.Template.Row_type.unit])
+                  parsed_sql))
         with Codegen.Error s -> Error s
       in
       (expand_get, expand_exec)
@@ -272,7 +308,7 @@ let expand_apply ~loc ~path:_ action query args =
                        input_kind output_kind
                    in
                    match action with
-                   (* execute is special case because there is no output Caqti_type *)
+                   (* execute is special case because there is no output row type *)
                    | "execute" -> (
                        match output_kind with
                        | `Record ->
@@ -283,12 +319,13 @@ let expand_apply ~loc ~path:_ action query args =
                            Error
                              "function_out is not a valid argument for execute"
                        | `Tuple ->
-                           expand_exec [%expr Caqti_request.Infix.(->.)] Codegen.exec_function)
-                   | "get_one" -> expand_get [%expr Caqti_request.Infix.(->!)] Codegen.find_function
+                           expand_exec `Exec Codegen.exec_function)
+                   | "get_one" ->
+                       expand_get `Find Codegen.find_function
                    | "get_opt" ->
-                       expand_get [%expr Caqti_request.Infix.(->?)] Codegen.find_opt_function
+                       expand_get `Find_opt Codegen.find_opt_function
                    | "get_many" ->
-                       expand_get [%expr Caqti_request.Infix.(->*)] Codegen.collect_list_function
+                       expand_get `Collect Codegen.collect_list_function
                    | _ ->
                        Error
                          "Supported actions are execute, get_one, get_opt and \
@@ -327,9 +364,7 @@ let let_pattern () =
   let open Ast_pattern in
   pstr
     (pstr_value nonrecursive
-       (value_binding
-       ~constraint_:drop
-       ~pat:(ppat_var __) ~expr:(apply_pattern ()) ^:: nil)
+       (value_binding ~pat:(ppat_var __) ~expr:(apply_pattern ()) ^:: nil)
     ^:: nil)
 
 let name = "rapper"

@@ -1,7 +1,7 @@
 module type CUSTOM = sig
   type t
 
-  val t : t Caqti_type.t
+  val t : t Caqti.Template.Row_type.t
 end
 
 (* Derived from implementation of List.group in Base.
@@ -42,10 +42,11 @@ let load_many (get_parent, parent_key) children_getters_and_setters data =
 
 module Internal = struct
   module Dynparam = struct
-    type t = Pack : 'a Caqti_type.t * 'a -> t
+    type t = Pack : 'a Caqti.Template.Row_type.t * 'a -> t
 
-    let empty = Pack (Caqti_type.unit, ())
-    let add t x (Pack (t', x')) = Pack (Caqti_type.t2 t' t, (x', x))
+    let empty = Pack (Caqti.Template.Row_type.unit, ())
+    let add t x (Pack (t', x')) =
+      Pack (Caqti.Template.Row_type.t2 t' t, (x', x))
   end
 end
 
@@ -55,8 +56,8 @@ module type IO = sig
   val return : 'a -> 'a t
   val map : ('a -> 'b) -> 'a t -> 'b t
 
-  (* Need this for Caqti_connection_sig.S *)
-  module Stream : Caqti_stream_sig.S with type 'a fiber := 'a t
+  (* Need this for Caqti.Connection.S *)
+  module Stream : Caqti.Stream.S with type 'a fiber := 'a t
 end
 
 module type RAPPER_HELPER = sig
@@ -65,10 +66,10 @@ module type RAPPER_HELPER = sig
   val map : ('a -> 'b) -> 'a future -> 'b future
   val fail : 'e -> ('a, 'e) result future
 
-  module Stream : Caqti_stream_sig.S with type 'a fiber := 'a future
+  module Stream : Caqti.Stream.S with type 'a fiber := 'a future
 
   module type CONNECTION =
-    Caqti_connection_sig.S
+    Caqti.Connection.S
       with type 'a fiber := 'a future
        and type ('a, 'err) stream := ('a, 'err) Stream.t
 end
@@ -82,7 +83,7 @@ struct
   module Stream = Io.Stream
 
   module type CONNECTION =
-    Caqti_connection_sig.S
+    Caqti.Connection.S
       with type 'a fiber := 'a Io.t
        and type ('a, 'err) stream := ('a, 'err) Stream.t
 end

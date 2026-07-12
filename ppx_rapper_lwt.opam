@@ -12,7 +12,7 @@ depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.08"}
   "ppx_rapper" {= version}
-  "caqti-lwt"
+  "caqti-lwt" {>= "3.0.0"}
   "lwt"
   "caqti-type-calendar" {with-test}
   "odoc" {with-doc}

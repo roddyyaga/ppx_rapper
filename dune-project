@@ -30,7 +30,7 @@
   (base
    (>= v0.11.1))
   (caqti
-   (>= 2.0.0))))
+   (>= 3.0.0))))
 
 (package
  (name ppx_rapper_async)
@@ -40,7 +40,8 @@
    (>= 4.08))
   (ppx_rapper
    (= :version))
-  caqti-async
+  (caqti-async
+   (>= 3.0.0))
   async))
 
 (package
@@ -51,7 +52,8 @@
    (>= 4.08))
   (ppx_rapper
    (= :version))
-  caqti-lwt
+  (caqti-lwt
+   (>= 3.0.0))
   lwt
   (caqti-type-calendar :with-test)))
 
@@ -63,6 +65,7 @@
    (>= 4.08))
   (ppx_rapper
    (= :version))
-  caqti-eio
+  (caqti-eio
+   (>= 3.0.0))
   eio
   (caqti-type-calendar :with-test)))

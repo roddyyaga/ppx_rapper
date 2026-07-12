@@ -37,18 +37,21 @@ turns into
 ```ocaml
 let my_query =
   let query =
-    (let open Caqti_request in
-    find_opt)
-      ((let open Caqti_type in
-       t2 string int) [@ocaml.warning "-33"])
-      ((let open Caqti_type in
-       t2 int (t2 string (t2 bool (option string))))
-      [@ocaml.warning "-33"])
-      "\n\
+    Caqti.Template.Request.create Caqti.Template.Request.Static
+      (let open Caqti.Template.Request_type.Infix in
+       ((let open Caqti.Template.Row_type in t2 string int)
+        [@ocaml.warning "-33"])
+       -->?
+       ((let open Caqti.Template.Row_type in
+         t2 int (t2 string (t2 bool (option string))))
+        [@ocaml.warning "-33"]))
+      (fun _ ->
+        Caqti.Template.Query.parse
+          "\n\
       \      SELECT id, username, following, bio\n\
       \      FROM users\n\
       \      WHERE username <> ? AND id > ?\n\
-      \      "
+      \      ")
   in
   let wrapped ~wrong_user ~min_id (module Db : Rapper_helper.CONNECTION) =
     let f result =
@@ -74,7 +77,7 @@ Query functions are
 - `get_opt` for queries that return 0 or 1 rows, represented as a tuple/record option
 - `get_many` for queries that may return any number of rows, represented as a list of tuples/records
 
-These correspond to `exec`, `find`, `find_opt` and `collect` in `Caqti_request`.
+These correspond to `exec`, `find`, `find_opt` and `collect_list` in `Caqti.Connection`.
 
 Since 1-tuples don't exist, single values are used instead for that case.
 
@@ -116,7 +119,7 @@ module Suit : Rapper.CUSTOM = struct
       | "s" -> Ok Spades
       | _   -> Error "invalid suit"
     in
-    Caqti_type.(custom ~encode ~decode string)
+    Caqti.Template.Row_type.(custom ~encode ~decode string)
 end
 
 let get_cards =
@@ -133,7 +136,7 @@ uppercase letter  -- `Suit` in our example -- and assume they refer to a module
 module type CUSTOM = sig
   type t
 
-  val t : t Caqti_type.t
+  val t : t Caqti.Template.Row_type.t
 end
 ```
 
@@ -161,9 +164,9 @@ let users =
 Current limitations for `list` include:
 
 - Only one `list` input parameter is supported at this time;
-- Generated Caqti queries are dynamically generated, and thus `oneshot` as per
-  the [documentation](https://paurkedal.github.io/ocaml-caqti/caqti/Caqti_request/index.html#how-to-dynamically-assemble-queries-and-parameters). Turning this off is not currently
-  supported, but please let us know if you have a use case for it.
+- Generated Caqti queries with list parameters use `Caqti.Template.Request.Direct`.
+  Turning this off is not currently supported, but please let us know if you
+  have a use case for it.
 
 ## Extension options
 If `record_in` or `record_out` are given as options like so:

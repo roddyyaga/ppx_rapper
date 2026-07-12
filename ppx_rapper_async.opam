@@ -12,7 +12,7 @@ depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.08"}
   "ppx_rapper" {= version}
-  "caqti-async"
+  "caqti-async" {>= "3.0.0"}
   "async"
   "odoc" {with-doc}
 ]

@@ -1,7 +1,7 @@
 module type CUSTOM = sig
   type t
 
-  val t : t Caqti_type.t
+  val t : t Caqti.Template.Row_type.t
 end
 
 val load_many :
@@ -12,10 +12,10 @@ val load_many :
 
 module Internal : sig
   module Dynparam : sig
-    type t = Pack : 'a Caqti_type.t * 'a -> t
+    type t = Pack : 'a Caqti.Template.Row_type.t * 'a -> t
 
     val empty : t
-    val add : 'a Caqti_type.t -> 'a -> t -> t
+    val add : 'a Caqti.Template.Row_type.t -> 'a -> t -> t
   end
 end
 
@@ -25,8 +25,8 @@ module type IO = sig
   val return : 'a -> 'a t
   val map : ('a -> 'b) -> 'a t -> 'b t
 
-  (* Need this for Caqti_connection_sig.S *)
-  module Stream : Caqti_stream_sig.S with type 'a fiber := 'a t
+  (* Need this for Caqti.Connection.S *)
+  module Stream : Caqti.Stream.S with type 'a fiber := 'a t
 end
 
 module type RAPPER_HELPER = sig
@@ -35,10 +35,10 @@ module type RAPPER_HELPER = sig
   val map : ('a -> 'b) -> 'a future -> 'b future
   val fail : 'e -> ('a, 'e) result future
 
-  module Stream : Caqti_stream_sig.S with type 'a fiber := 'a future
+  module Stream : Caqti.Stream.S with type 'a fiber := 'a future
 
   module type CONNECTION =
-    Caqti_connection_sig.S
+    Caqti.Connection.S
       with type 'a fiber := 'a future
        and type ('a, 'err) stream := ('a, 'err) Stream.t
 end

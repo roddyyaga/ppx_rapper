@@ -63,7 +63,7 @@ module Suit : Rapper.CUSTOM = struct
       | "s" -> Ok Spades
       | _ -> Error "invalid suit"
     in
-    Caqti_type.(custom ~encode ~decode string)
+    Caqti.Template.Row_type.(custom ~encode ~decode string)
 end
 
 let get_cards =
