@@ -137,7 +137,7 @@ let main_pooled () =
     Caqti_lwt_unix.connect_pool (Uri.of_string "postgresql://example.com")
     |> Result.get_ok
   in
-  Caqti_lwt.Pool.use (get_something ()) pool
+  Caqti_lwt_unix.Pool.use (get_something ()) pool
 
 let main_not_pooled () =
   Caqti_lwt_unix.with_connection

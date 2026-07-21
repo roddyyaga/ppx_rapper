@@ -29,7 +29,7 @@
   (base
    (>= v0.11.1))
   (caqti
-   (>= 2.0.0))))
+   (>= 3.0.0))))
 
 (package
  (name ppx_rapper_async)

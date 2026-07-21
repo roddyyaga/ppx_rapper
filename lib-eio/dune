@@ -2,4 +2,4 @@
  (name ppx_rapper_eio)
  (public_name ppx_rapper_eio)
  (wrapped false)
- (libraries ppx_rapper.runtime caqti-eio.unix caqti))
+ (libraries ppx_rapper.runtime caqti-eio.unix caqti.classic))

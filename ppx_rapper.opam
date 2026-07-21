@@ -14,7 +14,7 @@ depends: [
   "pg_query"
   "ppxlib" {>= "0.38.0"}
   "base" {>= "v0.11.1"}
-  "caqti" {>= "2.0.0"}
+  "caqti" {>= "3.0.0"}
   "odoc" {with-doc}
 ]
 build: [
